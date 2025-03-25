@@ -1,0 +1,62 @@
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+package main
+
+import (
+  "context"
+  "flag"
+  "fmt"
+  "net/http"
+  "os"
+
+  "github.com/stainless-sdks/stainless-v0-go"
+  "github.com/stainless-sdks/stainless-v0-go/option"
+)
+
+func createBuildsTargetRetrieveSubcommand() (Subcommand) {
+  var buildID *string = nil
+  var targetName *stainlessv0.BuildTargetGetParamsTargetName = nil
+  query := []byte("{}")
+  header := []byte("{}")
+  var flagSet = flag.NewFlagSet("builds.target.retrieve", flag.ExitOnError)
+
+  flagSet.Func(
+    "build-id",
+    "",
+    func(string string) error {
+      buildID = &string
+      return nil
+    },
+  )
+
+  flagSet.Func(
+    "target-name",
+    "",
+    func(string string) error {
+      targetName = &string
+      return nil
+    },
+  )
+
+  return Subcommand{
+    flagSet: flagSet,
+    handle: func(client *stainlessv0.Client) {
+    res, err := client.Builds.Target.Get(
+      context.TODO(),
+      *buildID,
+      *targetName,
+      option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
+        r.URL.RawQuery = serializeQuery(query).Encode()
+        r.Header = serializeHeader(header)
+        return mn(r)
+      }),
+    )
+    if err != nil {
+      fmt.Printf("%s\n", err)
+      os.Exit(1)
+    }
+
+    fmt.Printf("%s\n", res.JSON.RawJSON())
+  },
+  }
+}
