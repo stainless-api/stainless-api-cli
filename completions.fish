@@ -1,11 +1,8 @@
-set -l subcommands openapi.retrieve projects.config.create_branch projects.config.create_commit projects.config.merge builds.retrieve builds.target.retrieve builds.target.artifacts.retrieve_source
+set -l subcommands projects.config.create_branch projects.config.create_commit projects.config.merge builds.retrieve builds.target.retrieve builds.target.artifacts.retrieve_source
 complete -c stainless-v0-cli --no-files \
   -n "not __fish_seen_subcommand_from $subcommands" \
   -a "$subcommands"
 
-complete -c stainless-v0-cli --no-files \
-  -n "__fish_seen_subcommand_from openapi.retrieve" \
-  -a ""
 complete -c stainless-v0-cli --no-files \
   -n "__fish_seen_subcommand_from projects.config.create_branch" \
   -a "--project-name --branch --branch-from"

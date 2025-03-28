@@ -5,7 +5,7 @@ _main()
 {
     COMPREPLY=()
 
-    local subcommands="openapi.retrieve projects.config.create_branch projects.config.create_commit projects.config.merge builds.retrieve builds.target.retrieve builds.target.artifacts.retrieve_source"
+    local subcommands="projects.config.create_branch projects.config.create_commit projects.config.merge builds.retrieve builds.target.retrieve builds.target.artifacts.retrieve_source"
 
     if [[ "$COMP_CWORD" -eq 1 ]]
     then
@@ -17,9 +17,6 @@ _main()
     local subcommand="${COMP_WORDS[1]}"
     local flags
     case "$subcommand" in
-      openapi.retrieve)
-        flags=""
-        ;;
       projects.config.create_branch)
         flags="--project-name --branch --branch-from"
         ;;
