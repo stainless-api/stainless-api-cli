@@ -34,9 +34,6 @@ func init() {
     initialBody = []byte("{}")
   }
 
-  var openAPIRetrieveSubcommand = createOpenAPIRetrieveSubcommand()
-  subcommands[openAPIRetrieveSubcommand.flagSet.Name()] = &openAPIRetrieveSubcommand
-
   var projectsConfigCreateBranchSubcommand = createProjectsConfigCreateBranchSubcommand(initialBody)
   subcommands[projectsConfigCreateBranchSubcommand.flagSet.Name()] = &projectsConfigCreateBranchSubcommand
 
