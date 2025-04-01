@@ -15,7 +15,7 @@ import (
 
 func createBuildsTargetArtifactsRetrieveSourceSubcommand() (Subcommand) {
   var buildID *string = nil
-  var targetName *stainlessv0.BuildTargetArtifactGetSourceParamsTargetName = nil
+  var targetName *string = nil
   query := []byte("{}")
   header := []byte("{}")
   var flagSet = flag.NewFlagSet("builds.target.artifacts.retrieve_source", flag.ExitOnError)
@@ -44,7 +44,7 @@ func createBuildsTargetArtifactsRetrieveSourceSubcommand() (Subcommand) {
     res, err := client.Builds.Target.Artifacts.GetSource(
       context.TODO(),
       *buildID,
-      *targetName,
+      stainlessv0.BuildTargetArtifactGetSourceParamsTargetName(*targetName),
       option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
         r.URL.RawQuery = serializeQuery(query).Encode()
         r.Header = serializeHeader(header)
