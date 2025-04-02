@@ -13,11 +13,21 @@ import (
   "github.com/stainless-api/stainless-api-go/option"
 )
 
-func createBuildsCreateSubcommand(initialBody []byte) (Subcommand) {
+func createProjectsConfigCommitsCreateSubcommand(initialBody []byte) (Subcommand) {
+  var projectName *string = nil
   query := []byte("{}")
   header := []byte("{}")
   body := initialBody
-  var flagSet = flag.NewFlagSet("builds.create", flag.ExitOnError)
+  var flagSet = flag.NewFlagSet("projects.config.commits.create", flag.ExitOnError)
+
+  flagSet.Func(
+    "project-name",
+    "",
+    func(string string) error {
+      projectName = &string
+      return nil
+    },
+  )
 
   flagSet.Func(
     "branch",
@@ -33,11 +43,24 @@ func createBuildsCreateSubcommand(initialBody []byte) (Subcommand) {
   )
 
   flagSet.Func(
-    "config-commit",
+    "commit-message",
     "",
     func(string string) error {
       var jsonErr error
-      body, jsonErr = jsonSet(body, "config_commit", string)
+      body, jsonErr = jsonSet(body, "commit_message", string)
+      if jsonErr != nil {
+        return jsonErr
+      }
+      return nil
+    },
+  )
+
+  flagSet.BoolFunc(
+    "allow-empty",
+    "",
+    func(_ string) error {
+      var jsonErr error
+      body, jsonErr = jsonSet(body, "allow_empty", true)
       if jsonErr != nil {
         return jsonErr
       }
@@ -46,11 +69,11 @@ func createBuildsCreateSubcommand(initialBody []byte) (Subcommand) {
   )
 
   flagSet.Func(
-    "project",
+    "openapi-spec",
     "",
     func(string string) error {
       var jsonErr error
-      body, jsonErr = jsonSet(body, "project", string)
+      body, jsonErr = jsonSet(body, "openapi_spec", string)
       if jsonErr != nil {
         return jsonErr
       }
@@ -59,24 +82,11 @@ func createBuildsCreateSubcommand(initialBody []byte) (Subcommand) {
   )
 
   flagSet.Func(
-    "targets",
+    "stainless-config",
     "",
     func(string string) error {
       var jsonErr error
-      body, jsonErr = jsonSet(body, "targets.#", string)
-      if jsonErr != nil {
-        return jsonErr
-      }
-      return nil
-    },
-  )
-
-  flagSet.Func(
-    "+target",
-    "",
-    func(string string) error {
-      var jsonErr error
-      body, jsonErr = jsonSet(body, "targets.-1", string)
+      body, jsonErr = jsonSet(body, "stainless_config", string)
       if jsonErr != nil {
         return jsonErr
       }
@@ -87,52 +97,16 @@ func createBuildsCreateSubcommand(initialBody []byte) (Subcommand) {
   return Subcommand{
     flagSet: flagSet,
     handle: func(client *stainlessv0.Client) {
-    res, err := client.Builds.New(
+    res, err := client.Projects.Config.Commits.New(
       context.TODO(),
-      stainlessv0.BuildNewParams{},
+      *projectName,
+      stainlessv0.ProjectConfigCommitNewParams{},
       option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
         r.URL.RawQuery = serializeQuery(query).Encode()
         r.Header = serializeHeader(header)
         return mn(r)
       }),
       option.WithRequestBody("application/json", body),
-    )
-    if err != nil {
-      fmt.Printf("%s\n", err)
-      os.Exit(1)
-    }
-
-    fmt.Printf("%s\n", res.JSON.RawJSON())
-  },
-  }
-}
-
-func createBuildsRetrieveSubcommand() (Subcommand) {
-  var buildID *string = nil
-  query := []byte("{}")
-  header := []byte("{}")
-  var flagSet = flag.NewFlagSet("builds.retrieve", flag.ExitOnError)
-
-  flagSet.Func(
-    "build-id",
-    "",
-    func(string string) error {
-      buildID = &string
-      return nil
-    },
-  )
-
-  return Subcommand{
-    flagSet: flagSet,
-    handle: func(client *stainlessv0.Client) {
-    res, err := client.Builds.Get(
-      context.TODO(),
-      *buildID,
-      option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
-        r.URL.RawQuery = serializeQuery(query).Encode()
-        r.Header = serializeHeader(header)
-        return mn(r)
-      }),
     )
     if err != nil {
       fmt.Printf("%s\n", err)
