@@ -8,7 +8,7 @@ import (
   "log"
   "os"
 
-  "github.com/stainless-sdks/stainless-v0-go"
+  "github.com/stainless-api/stainless-api-go"
 )
 
 func main() {
