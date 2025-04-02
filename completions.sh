@@ -5,7 +5,7 @@ _main()
 {
     COMPREPLY=()
 
-    local subcommands="projects.config.create_branch projects.config.create_commit projects.config.merge builds.retrieve builds.target.retrieve builds.target.artifacts.retrieve_source"
+    local subcommands="projects.config.commits.create projects.config.branches.create projects.config.branches.merge builds.create builds.retrieve targets.artifacts.retrieve"
 
     if [[ "$COMP_CWORD" -eq 1 ]]
     then
@@ -17,22 +17,22 @@ _main()
     local subcommand="${COMP_WORDS[1]}"
     local flags
     case "$subcommand" in
-      projects.config.create_branch)
+      projects.config.commits.create)
+        flags="--project-name --branch --commit-message --allow-empty --openapi-spec --stainless-config"
+        ;;
+      projects.config.branches.create)
         flags="--project-name --branch --branch-from"
         ;;
-      projects.config.create_commit)
-        flags="--project-name --branch --commit-message --openapi-spec --stainless-config --allow-empty"
-        ;;
-      projects.config.merge)
+      projects.config.branches.merge)
         flags="--project-name --from --into"
+        ;;
+      builds.create)
+        flags="--branch --config-commit --project --targets --+target"
         ;;
       builds.retrieve)
         flags="--build-id"
         ;;
-      builds.target.retrieve)
-        flags="--build-id --target-name"
-        ;;
-      builds.target.artifacts.retrieve_source)
+      targets.artifacts.retrieve)
         flags="--build-id --target-name"
         ;;
       *)
@@ -49,14 +49,17 @@ _main()
 
     local prev="${COMP_WORDS[COMP_CWORD-1]}"
     case "$subcommand" in
-      builds.target.retrieve)
+      builds.create)
         case "$prev" in
-          --target-name)
+          --targets)
+            COMPREPLY=( $(compgen -W "node typescript python go java kotlin ruby terraform cli" -- $cur) )
+            ;;
+          --+target)
             COMPREPLY=( $(compgen -W "node typescript python go java kotlin ruby terraform cli" -- $cur) )
             ;;
         esac
         ;;
-      builds.target.artifacts.retrieve_source)
+      targets.artifacts.retrieve)
         case "$prev" in
           --target-name)
             COMPREPLY=( $(compgen -W "node typescript python go java kotlin ruby terraform cli" -- $cur) )

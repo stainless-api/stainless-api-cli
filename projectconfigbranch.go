@@ -13,11 +13,21 @@ import (
   "github.com/stainless-api/stainless-api-go/option"
 )
 
-func createBuildsCreateSubcommand(initialBody []byte) (Subcommand) {
+func createProjectsConfigBranchesCreateSubcommand(initialBody []byte) (Subcommand) {
+  var projectName *string = nil
   query := []byte("{}")
   header := []byte("{}")
   body := initialBody
-  var flagSet = flag.NewFlagSet("builds.create", flag.ExitOnError)
+  var flagSet = flag.NewFlagSet("projects.config.branches.create", flag.ExitOnError)
+
+  flagSet.Func(
+    "project-name",
+    "",
+    func(string string) error {
+      projectName = &string
+      return nil
+    },
+  )
 
   flagSet.Func(
     "branch",
@@ -33,50 +43,11 @@ func createBuildsCreateSubcommand(initialBody []byte) (Subcommand) {
   )
 
   flagSet.Func(
-    "config-commit",
+    "branch-from",
     "",
     func(string string) error {
       var jsonErr error
-      body, jsonErr = jsonSet(body, "config_commit", string)
-      if jsonErr != nil {
-        return jsonErr
-      }
-      return nil
-    },
-  )
-
-  flagSet.Func(
-    "project",
-    "",
-    func(string string) error {
-      var jsonErr error
-      body, jsonErr = jsonSet(body, "project", string)
-      if jsonErr != nil {
-        return jsonErr
-      }
-      return nil
-    },
-  )
-
-  flagSet.Func(
-    "targets",
-    "",
-    func(string string) error {
-      var jsonErr error
-      body, jsonErr = jsonSet(body, "targets.#", string)
-      if jsonErr != nil {
-        return jsonErr
-      }
-      return nil
-    },
-  )
-
-  flagSet.Func(
-    "+target",
-    "",
-    func(string string) error {
-      var jsonErr error
-      body, jsonErr = jsonSet(body, "targets.-1", string)
+      body, jsonErr = jsonSet(body, "branch_from", string)
       if jsonErr != nil {
         return jsonErr
       }
@@ -87,9 +58,10 @@ func createBuildsCreateSubcommand(initialBody []byte) (Subcommand) {
   return Subcommand{
     flagSet: flagSet,
     handle: func(client *stainlessv0.Client) {
-    res, err := client.Builds.New(
+    res, err := client.Projects.Config.Branches.New(
       context.TODO(),
-      stainlessv0.BuildNewParams{},
+      *projectName,
+      stainlessv0.ProjectConfigBranchNewParams{},
       option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
         r.URL.RawQuery = serializeQuery(query).Encode()
         r.Header = serializeHeader(header)
@@ -107,17 +79,44 @@ func createBuildsCreateSubcommand(initialBody []byte) (Subcommand) {
   }
 }
 
-func createBuildsRetrieveSubcommand() (Subcommand) {
-  var buildID *string = nil
+func createProjectsConfigBranchesMergeSubcommand(initialBody []byte) (Subcommand) {
+  var projectName *string = nil
   query := []byte("{}")
   header := []byte("{}")
-  var flagSet = flag.NewFlagSet("builds.retrieve", flag.ExitOnError)
+  body := initialBody
+  var flagSet = flag.NewFlagSet("projects.config.branches.merge", flag.ExitOnError)
 
   flagSet.Func(
-    "build-id",
+    "project-name",
     "",
     func(string string) error {
-      buildID = &string
+      projectName = &string
+      return nil
+    },
+  )
+
+  flagSet.Func(
+    "from",
+    "",
+    func(string string) error {
+      var jsonErr error
+      body, jsonErr = jsonSet(body, "from", string)
+      if jsonErr != nil {
+        return jsonErr
+      }
+      return nil
+    },
+  )
+
+  flagSet.Func(
+    "into",
+    "",
+    func(string string) error {
+      var jsonErr error
+      body, jsonErr = jsonSet(body, "into", string)
+      if jsonErr != nil {
+        return jsonErr
+      }
       return nil
     },
   )
@@ -125,14 +124,16 @@ func createBuildsRetrieveSubcommand() (Subcommand) {
   return Subcommand{
     flagSet: flagSet,
     handle: func(client *stainlessv0.Client) {
-    res, err := client.Builds.Get(
+    res, err := client.Projects.Config.Branches.Merge(
       context.TODO(),
-      *buildID,
+      *projectName,
+      stainlessv0.ProjectConfigBranchMergeParams{},
       option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
         r.URL.RawQuery = serializeQuery(query).Encode()
         r.Header = serializeHeader(header)
         return mn(r)
       }),
+      option.WithRequestBody("application/json", body),
     )
     if err != nil {
       fmt.Printf("%s\n", err)
