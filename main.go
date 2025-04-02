@@ -34,23 +34,23 @@ func init() {
     initialBody = []byte("{}")
   }
 
-  var projectsConfigCreateBranchSubcommand = createProjectsConfigCreateBranchSubcommand(initialBody)
-  subcommands[projectsConfigCreateBranchSubcommand.flagSet.Name()] = &projectsConfigCreateBranchSubcommand
+  var projectsConfigCommitsCreateSubcommand = createProjectsConfigCommitsCreateSubcommand(initialBody)
+  subcommands[projectsConfigCommitsCreateSubcommand.flagSet.Name()] = &projectsConfigCommitsCreateSubcommand
 
-  var projectsConfigCreateCommitSubcommand = createProjectsConfigCreateCommitSubcommand(initialBody)
-  subcommands[projectsConfigCreateCommitSubcommand.flagSet.Name()] = &projectsConfigCreateCommitSubcommand
+  var projectsConfigBranchesCreateSubcommand = createProjectsConfigBranchesCreateSubcommand(initialBody)
+  subcommands[projectsConfigBranchesCreateSubcommand.flagSet.Name()] = &projectsConfigBranchesCreateSubcommand
 
-  var projectsConfigMergeSubcommand = createProjectsConfigMergeSubcommand(initialBody)
-  subcommands[projectsConfigMergeSubcommand.flagSet.Name()] = &projectsConfigMergeSubcommand
+  var projectsConfigBranchesMergeSubcommand = createProjectsConfigBranchesMergeSubcommand(initialBody)
+  subcommands[projectsConfigBranchesMergeSubcommand.flagSet.Name()] = &projectsConfigBranchesMergeSubcommand
+
+  var buildsCreateSubcommand = createBuildsCreateSubcommand(initialBody)
+  subcommands[buildsCreateSubcommand.flagSet.Name()] = &buildsCreateSubcommand
 
   var buildsRetrieveSubcommand = createBuildsRetrieveSubcommand()
   subcommands[buildsRetrieveSubcommand.flagSet.Name()] = &buildsRetrieveSubcommand
 
-  var buildsTargetRetrieveSubcommand = createBuildsTargetRetrieveSubcommand()
-  subcommands[buildsTargetRetrieveSubcommand.flagSet.Name()] = &buildsTargetRetrieveSubcommand
-
-  var buildsTargetArtifactsRetrieveSourceSubcommand = createBuildsTargetArtifactsRetrieveSourceSubcommand()
-  subcommands[buildsTargetArtifactsRetrieveSourceSubcommand.flagSet.Name()] = &buildsTargetArtifactsRetrieveSourceSubcommand
+  var targetsArtifactsRetrieveSubcommand = createTargetsArtifactsRetrieveSubcommand()
+  subcommands[targetsArtifactsRetrieveSubcommand.flagSet.Name()] = &targetsArtifactsRetrieveSubcommand
 }
 
 var subcommands = map[string]*Subcommand{}
