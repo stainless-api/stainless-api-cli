@@ -65,4 +65,4 @@ _main()
         ;;
     esac
 }
-complete -F _main stainless-v0-cli
+complete -F _main stainless-api-cli

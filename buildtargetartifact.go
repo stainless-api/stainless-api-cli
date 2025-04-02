@@ -9,8 +9,8 @@ import (
   "net/http"
   "os"
 
-  "github.com/stainless-sdks/stainless-v0-go"
-  "github.com/stainless-sdks/stainless-v0-go/option"
+  "github.com/stainless-api/stainless-api-go"
+  "github.com/stainless-api/stainless-api-go/option"
 )
 
 func createBuildsTargetArtifactsRetrieveSourceSubcommand() (Subcommand) {
