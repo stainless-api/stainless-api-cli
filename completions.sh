@@ -5,7 +5,13 @@ _main()
 {
     COMPREPLY=()
 
-    local subcommands="projects.config.commits.create projects.config.branches.create projects.config.branches.merge builds.create builds.retrieve targets.artifacts.retrieve"
+    local subcommands="\
+      projects.config.commits.create \
+      projects.config.branches.create \
+      projects.config.branches.merge \
+      builds.create \
+      builds.retrieve \
+      targets.artifacts.retrieve"
 
     if [[ "$COMP_CWORD" -eq 1 ]]
     then
