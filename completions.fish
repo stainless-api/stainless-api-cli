@@ -1,4 +1,10 @@
-set -l subcommands projects.config.commits.create projects.config.branches.create projects.config.branches.merge builds.create builds.retrieve targets.artifacts.retrieve
+set -l subcommands \
+  projects.config.commits.create \
+  projects.config.branches.create \
+  projects.config.branches.merge \
+  builds.create \
+  builds.retrieve \
+  targets.artifacts.retrieve
 complete -c stainless-api-cli --no-files \
   -n "not __fish_seen_subcommand_from $subcommands" \
   -a "$subcommands"
