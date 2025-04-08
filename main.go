@@ -3,59 +3,59 @@
 package main
 
 import (
-  "flag"
-  "fmt"
-  "log"
-  "os"
+	"flag"
+	"fmt"
+	"log"
+	"os"
 
-  "github.com/stainless-api/stainless-api-go"
+	"github.com/stainless-api/stainless-api-go"
 )
 
 func main() {
-  if len(os.Args) < 2 {
-    fmt.Println("Expected subcommand")
-    os.Exit(1)
-  }
+	if len(os.Args) < 2 {
+		fmt.Println("Expected subcommand")
+		os.Exit(1)
+	}
 
-  subcommand := subcommands[os.Args[1]]
-  if subcommand == nil {
-    log.Fatalf("Unknown subcommand '%s'", os.Args[1])
-  }
+	subcommand := subcommands[os.Args[1]]
+	if subcommand == nil {
+		log.Fatalf("Unknown subcommand '%s'", os.Args[1])
+	}
 
-  subcommand.flagSet.Parse(os.Args[2:])
+	subcommand.flagSet.Parse(os.Args[2:])
 
-  var client *stainlessv0.Client = stainlessv0.NewClient()
-  subcommand.handle(client)
+	var client *stainlessv0.Client = stainlessv0.NewClient()
+	subcommand.handle(client)
 }
 
 func init() {
-  initialBody := getStdInput()
-  if initialBody == nil {
-    initialBody = []byte("{}")
-  }
+	initialBody := getStdInput()
+	if initialBody == nil {
+		initialBody = []byte("{}")
+	}
 
-  var projectsConfigCommitsCreateSubcommand = createProjectsConfigCommitsCreateSubcommand(initialBody)
-  subcommands[projectsConfigCommitsCreateSubcommand.flagSet.Name()] = &projectsConfigCommitsCreateSubcommand
+	var projectsConfigCommitsCreateSubcommand = createProjectsConfigCommitsCreateSubcommand(initialBody)
+	subcommands[projectsConfigCommitsCreateSubcommand.flagSet.Name()] = &projectsConfigCommitsCreateSubcommand
 
-  var projectsConfigBranchesCreateSubcommand = createProjectsConfigBranchesCreateSubcommand(initialBody)
-  subcommands[projectsConfigBranchesCreateSubcommand.flagSet.Name()] = &projectsConfigBranchesCreateSubcommand
+	var projectsConfigBranchesCreateSubcommand = createProjectsConfigBranchesCreateSubcommand(initialBody)
+	subcommands[projectsConfigBranchesCreateSubcommand.flagSet.Name()] = &projectsConfigBranchesCreateSubcommand
 
-  var projectsConfigBranchesMergeSubcommand = createProjectsConfigBranchesMergeSubcommand(initialBody)
-  subcommands[projectsConfigBranchesMergeSubcommand.flagSet.Name()] = &projectsConfigBranchesMergeSubcommand
+	var projectsConfigBranchesMergeSubcommand = createProjectsConfigBranchesMergeSubcommand(initialBody)
+	subcommands[projectsConfigBranchesMergeSubcommand.flagSet.Name()] = &projectsConfigBranchesMergeSubcommand
 
-  var buildsCreateSubcommand = createBuildsCreateSubcommand(initialBody)
-  subcommands[buildsCreateSubcommand.flagSet.Name()] = &buildsCreateSubcommand
+	var buildsCreateSubcommand = createBuildsCreateSubcommand(initialBody)
+	subcommands[buildsCreateSubcommand.flagSet.Name()] = &buildsCreateSubcommand
 
-  var buildsRetrieveSubcommand = createBuildsRetrieveSubcommand()
-  subcommands[buildsRetrieveSubcommand.flagSet.Name()] = &buildsRetrieveSubcommand
+	var buildsRetrieveSubcommand = createBuildsRetrieveSubcommand()
+	subcommands[buildsRetrieveSubcommand.flagSet.Name()] = &buildsRetrieveSubcommand
 
-  var targetsArtifactsRetrieveSubcommand = createTargetsArtifactsRetrieveSubcommand()
-  subcommands[targetsArtifactsRetrieveSubcommand.flagSet.Name()] = &targetsArtifactsRetrieveSubcommand
+	var targetsArtifactsRetrieveSubcommand = createTargetsArtifactsRetrieveSubcommand()
+	subcommands[targetsArtifactsRetrieveSubcommand.flagSet.Name()] = &targetsArtifactsRetrieveSubcommand
 }
 
 var subcommands = map[string]*Subcommand{}
 
 type Subcommand struct {
-  flagSet *flag.FlagSet
-  handle func(*stainlessv0.Client)
+	flagSet *flag.FlagSet
+	handle  func(*stainlessv0.Client)
 }

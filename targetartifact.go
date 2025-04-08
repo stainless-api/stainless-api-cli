@@ -3,60 +3,60 @@
 package main
 
 import (
-  "context"
-  "flag"
-  "fmt"
-  "net/http"
-  "os"
+	"context"
+	"flag"
+	"fmt"
+	"net/http"
+	"os"
 
-  "github.com/stainless-api/stainless-api-go"
-  "github.com/stainless-api/stainless-api-go/option"
+	"github.com/stainless-api/stainless-api-go"
+	"github.com/stainless-api/stainless-api-go/option"
 )
 
-func createTargetsArtifactsRetrieveSubcommand() (Subcommand) {
-  var buildID *string = nil
-  var targetName *string = nil
-  query := []byte("{}")
-  header := []byte("{}")
-  var flagSet = flag.NewFlagSet("targets.artifacts.retrieve", flag.ExitOnError)
+func createTargetsArtifactsRetrieveSubcommand() Subcommand {
+	var buildID *string = nil
+	var targetName *string = nil
+	query := []byte("{}")
+	header := []byte("{}")
+	var flagSet = flag.NewFlagSet("targets.artifacts.retrieve", flag.ExitOnError)
 
-  flagSet.Func(
-    "build-id",
-    "",
-    func(string string) error {
-      buildID = &string
-      return nil
-    },
-  )
+	flagSet.Func(
+		"build-id",
+		"",
+		func(string string) error {
+			buildID = &string
+			return nil
+		},
+	)
 
-  flagSet.Func(
-    "target-name",
-    "",
-    func(string string) error {
-      targetName = &string
-      return nil
-    },
-  )
+	flagSet.Func(
+		"target-name",
+		"",
+		func(string string) error {
+			targetName = &string
+			return nil
+		},
+	)
 
-  return Subcommand{
-    flagSet: flagSet,
-    handle: func(client *stainlessv0.Client) {
-    res, err := client.Targets.Artifacts.Get(
-      context.TODO(),
-      *buildID,
-      stainlessv0.TargetArtifactGetParamsTargetName(*targetName),
-      option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
-        r.URL.RawQuery = serializeQuery(query).Encode()
-        r.Header = serializeHeader(header)
-        return mn(r)
-      }),
-    )
-    if err != nil {
-      fmt.Printf("%s\n", err)
-      os.Exit(1)
-    }
+	return Subcommand{
+		flagSet: flagSet,
+		handle: func(client *stainlessv0.Client) {
+			res, err := client.Targets.Artifacts.Get(
+				context.TODO(),
+				*buildID,
+				stainlessv0.TargetArtifactGetParamsTargetName(*targetName),
+				option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
+					r.URL.RawQuery = serializeQuery(query).Encode()
+					r.Header = serializeHeader(header)
+					return mn(r)
+				}),
+			)
+			if err != nil {
+				fmt.Printf("%s\n", err)
+				os.Exit(1)
+			}
 
-    fmt.Printf("%s\n", res.JSON.RawJSON())
-  },
-  }
+			fmt.Printf("%s\n", res.JSON.RawJSON())
+		},
+	}
 }
