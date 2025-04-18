@@ -46,6 +46,9 @@ func init() {
 	var projectsBranchesCreateSubcommand = createProjectsBranchesCreateSubcommand(initialBody)
 	subcommands[projectsBranchesCreateSubcommand.flagSet.Name()] = &projectsBranchesCreateSubcommand
 
+	var projectsBranchesRetrieveSubcommand = createProjectsBranchesRetrieveSubcommand()
+	subcommands[projectsBranchesRetrieveSubcommand.flagSet.Name()] = &projectsBranchesRetrieveSubcommand
+
 	var buildsCreateSubcommand = createBuildsCreateSubcommand(initialBody)
 	subcommands[buildsCreateSubcommand.flagSet.Name()] = &buildsCreateSubcommand
 
