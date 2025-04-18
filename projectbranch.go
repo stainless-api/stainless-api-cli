@@ -90,3 +90,63 @@ func createProjectsBranchesCreateSubcommand(initialBody []byte) Subcommand {
 		},
 	}
 }
+
+func createProjectsBranchesRetrieveSubcommand() Subcommand {
+	var project *string = nil
+	var branch *string = nil
+	query := []byte("{}")
+	header := []byte("{}")
+	var flagSet = flag.NewFlagSet("projects.branches.retrieve", flag.ExitOnError)
+
+	flagSet.Func(
+		"project",
+		"",
+		func(string string) error {
+			project = &string
+			return nil
+		},
+	)
+
+	flagSet.Func(
+		"branch",
+		"",
+		func(string string) error {
+			branch = &string
+			return nil
+		},
+	)
+
+	return Subcommand{
+		flagSet: flagSet,
+		handle: func(client *stainlessv0.Client) {
+			res, err := client.Projects.Branches.Get(
+				context.TODO(),
+				*project,
+				*branch,
+				option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
+					q := r.URL.Query()
+					for key, values := range serializeQuery(query) {
+						for _, value := range values {
+							q.Add(key, value)
+						}
+					}
+					r.URL.RawQuery = q.Encode()
+
+					for key, values := range serializeHeader(header) {
+						for _, value := range values {
+							r.Header.Add(key, value)
+						}
+					}
+
+					return mn(r)
+				}),
+			)
+			if err != nil {
+				fmt.Printf("%s\n", err)
+				os.Exit(1)
+			}
+
+			fmt.Printf("%s\n", res.JSON.RawJSON())
+		},
+	}
+}
