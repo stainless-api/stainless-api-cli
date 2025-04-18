@@ -37,6 +37,9 @@ func init() {
   var openAPIRetrieveSubcommand = createOpenAPIRetrieveSubcommand()
   subcommands[openAPIRetrieveSubcommand.flagSet.Name()] = &openAPIRetrieveSubcommand
 
+  var projectsRetrieveSubcommand = createProjectsRetrieveSubcommand()
+  subcommands[projectsRetrieveSubcommand.flagSet.Name()] = &projectsRetrieveSubcommand
+
   var projectsUpdateSubcommand = createProjectsUpdateSubcommand(initialBody)
   subcommands[projectsUpdateSubcommand.flagSet.Name()] = &projectsUpdateSubcommand
 
