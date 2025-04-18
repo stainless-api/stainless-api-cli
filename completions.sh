@@ -13,7 +13,7 @@ _main()
       builds.create \
       builds.retrieve \
       builds.list \
-      build_target_outputs.list"
+      build_target_outputs.retrieve"
 
     if [[ "$COMP_CWORD" -eq 1 ]]
     then
@@ -46,7 +46,7 @@ _main()
       builds.list)
         flags="--project --branch --cursor --limit"
         ;;
-      build_target_outputs.list)
+      build_target_outputs.retrieve)
         flags="--build-id --target --type --output"
         ;;
       *)
@@ -73,7 +73,7 @@ _main()
             ;;
         esac
         ;;
-      build_target_outputs.list)
+      build_target_outputs.retrieve)
         case "$prev" in
           --target)
             COMPREPLY=( $(compgen -W "node typescript python go java kotlin ruby terraform cli" -- $cur) )
