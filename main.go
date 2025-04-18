@@ -55,8 +55,8 @@ func init() {
 	var buildsListSubcommand = createBuildsListSubcommand()
 	subcommands[buildsListSubcommand.flagSet.Name()] = &buildsListSubcommand
 
-	var buildTargetOutputsListSubcommand = createBuildTargetOutputsListSubcommand()
-	subcommands[buildTargetOutputsListSubcommand.flagSet.Name()] = &buildTargetOutputsListSubcommand
+	var buildTargetOutputsRetrieveSubcommand = createBuildTargetOutputsRetrieveSubcommand()
+	subcommands[buildTargetOutputsRetrieveSubcommand.flagSet.Name()] = &buildTargetOutputsRetrieveSubcommand
 }
 
 var subcommands = map[string]*Subcommand{}

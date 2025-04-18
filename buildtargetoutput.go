@@ -13,10 +13,10 @@ import (
 	"github.com/stainless-api/stainless-api-go/option"
 )
 
-func createBuildTargetOutputsListSubcommand() Subcommand {
+func createBuildTargetOutputsRetrieveSubcommand() Subcommand {
 	query := []byte("{}")
 	header := []byte("{}")
-	var flagSet = flag.NewFlagSet("build_target_outputs.list", flag.ExitOnError)
+	var flagSet = flag.NewFlagSet("build_target_outputs.retrieve", flag.ExitOnError)
 
 	flagSet.Func(
 		"build-id",
@@ -73,9 +73,9 @@ func createBuildTargetOutputsListSubcommand() Subcommand {
 	return Subcommand{
 		flagSet: flagSet,
 		handle: func(client *stainlessv0.Client) {
-			res, err := client.BuildTargetOutputs.List(
+			res, err := client.BuildTargetOutputs.Get(
 				context.TODO(),
-				stainlessv0.BuildTargetOutputListParams{},
+				stainlessv0.BuildTargetOutputGetParams{},
 				option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
 					q := r.URL.Query()
 					for key, values := range serializeQuery(query) {
