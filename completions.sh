@@ -7,7 +7,6 @@ _main()
 
     local subcommands="\
       openapi.retrieve \
-      projects.retrieve \
       projects.update \
       projects.branches.create \
       projects.branches.retrieve \
@@ -30,9 +29,6 @@ _main()
     case "$subcommand" in
       openapi.retrieve)
         flags=""
-        ;;
-      projects.retrieve)
-        flags="--project-name"
         ;;
       projects.update)
         flags="--project-name --display-name"
