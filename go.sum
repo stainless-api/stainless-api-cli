@@ -1,5 +1,5 @@
-github.com/stainless-api/stainless-api-go v0.1.0 h1:Tiot0Oj/t7W+gwqYq4g9yy6zA0yJmN12gXeEwz8crNY=
-github.com/stainless-api/stainless-api-go v0.1.0/go.mod h1:9Q2t8xq6EFgw8HYOsVxqKEfSDVe9eqCoh1zC0HMRwTY=
+github.com/stainless-api/stainless-api-go v0.1.1 h1:YrZuITXXMeOrQNK4ieLmqSG0sYWcMXQLNk22GmlkOBM=
+github.com/stainless-api/stainless-api-go v0.1.1/go.mod h1:9Q2t8xq6EFgw8HYOsVxqKEfSDVe9eqCoh1zC0HMRwTY=
 github.com/tidwall/gjson v1.14.2/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/gjson v1.14.4 h1:uo0p8EbA09J7RQaflQ1aBRffTR7xedD2bcIVSYxLnkM=
 github.com/tidwall/gjson v1.14.4/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
