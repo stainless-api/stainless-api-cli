@@ -1,5 +1,4 @@
 set -l subcommands \
-  openapi.retrieve \
   projects.retrieve \
   projects.update \
   projects.branches.create \
@@ -12,9 +11,6 @@ complete -c stainless-api-cli --no-files \
   -n "not __fish_seen_subcommand_from $subcommands" \
   -a "$subcommands"
 
-complete -c stainless-api-cli --no-files \
-  -n "__fish_seen_subcommand_from openapi.retrieve" \
-  -a ""
 complete -c stainless-api-cli --no-files \
   -n "__fish_seen_subcommand_from projects.retrieve" \
   -a "--project-name"

@@ -6,7 +6,6 @@ _main()
     COMPREPLY=()
 
     local subcommands="\
-      openapi.retrieve \
       projects.retrieve \
       projects.update \
       projects.branches.create \
@@ -26,9 +25,6 @@ _main()
     local subcommand="${COMP_WORDS[1]}"
     local flags
     case "$subcommand" in
-      openapi.retrieve)
-        flags=""
-        ;;
       projects.retrieve)
         flags="--project-name"
         ;;
