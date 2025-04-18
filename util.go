@@ -49,64 +49,64 @@ func jsonSet(json []byte, path string, value interface{}) ([]byte, error) {
 }
 
 func serializeQuery(params []byte) url.Values {
-  serialized := url.Values{}
+	serialized := url.Values{}
 
-  var serialize func(value gjson.Result, path string)
-  serialize = func(res gjson.Result, path string) {
-    if res.IsObject() {
-      for key, value := range res.Map() {
-        newPath := path
-        if len(newPath) == 0 {
-          newPath += key
-        } else {
-          newPath = "[" + key + "]"
-        }
+	var serialize func(value gjson.Result, path string)
+	serialize = func(res gjson.Result, path string) {
+		if res.IsObject() {
+			for key, value := range res.Map() {
+				newPath := path
+				if len(newPath) == 0 {
+					newPath += key
+				} else {
+					newPath = "[" + key + "]"
+				}
 
-        serialize(value, newPath)
-      }
-    } else if res.IsArray() {
-      for _, value := range res.Array() {
-        serialize(value, path)
-      }
-    } else {
-      serialized.Add(path, res.String())
-    }
-  }
-  serialize(gjson.GetBytes(params, "@this"), "")
+				serialize(value, newPath)
+			}
+		} else if res.IsArray() {
+			for _, value := range res.Array() {
+				serialize(value, path)
+			}
+		} else {
+			serialized.Add(path, res.String())
+		}
+	}
+	serialize(gjson.GetBytes(params, "@this"), "")
 
-  for key, values := range serialized {
-    serialized.Set(key, strings.Join(values, ","))
-  }
+	for key, values := range serialized {
+		serialized.Set(key, strings.Join(values, ","))
+	}
 
-  return serialized
+	return serialized
 }
 
 func serializeHeader(params []byte) http.Header {
-  serialized := http.Header{}
+	serialized := http.Header{}
 
-  var serialize func(value gjson.Result, path string)
-  serialize = func(res gjson.Result, path string) {
-    if res.IsObject() {
-      for key, value := range res.Map() {
-        newPath := path
-        if len(newPath) > 0 {
-          newPath += "."
-        }
-        newPath += key
+	var serialize func(value gjson.Result, path string)
+	serialize = func(res gjson.Result, path string) {
+		if res.IsObject() {
+			for key, value := range res.Map() {
+				newPath := path
+				if len(newPath) > 0 {
+					newPath += "."
+				}
+				newPath += key
 
-        serialize(value, newPath)
-      }
-    } else if res.IsArray() {
-      for _, value := range res.Array() {
-        serialize(value, path)
-      }
-    } else {
-      serialized.Add(path, res.String())
-    }
-  }
-  serialize(gjson.GetBytes(params, "@this"), "")
+				serialize(value, newPath)
+			}
+		} else if res.IsArray() {
+			for _, value := range res.Array() {
+				serialize(value, path)
+			}
+		} else {
+			serialized.Add(path, res.String())
+		}
+	}
+	serialize(gjson.GetBytes(params, "@this"), "")
 
-  return serialized
+	return serialized
 }
 
 func getStdInput() []byte {
