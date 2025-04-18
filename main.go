@@ -46,12 +46,6 @@ func init() {
 	var projectsBranchesCreateSubcommand = createProjectsBranchesCreateSubcommand(initialBody)
 	subcommands[projectsBranchesCreateSubcommand.flagSet.Name()] = &projectsBranchesCreateSubcommand
 
-	var projectsBranchesRetrieveSubcommand = createProjectsBranchesRetrieveSubcommand()
-	subcommands[projectsBranchesRetrieveSubcommand.flagSet.Name()] = &projectsBranchesRetrieveSubcommand
-
-	var projectsSnippetsCreateRequestSubcommand = createProjectsSnippetsCreateRequestSubcommand(initialBody)
-	subcommands[projectsSnippetsCreateRequestSubcommand.flagSet.Name()] = &projectsSnippetsCreateRequestSubcommand
-
 	var buildsCreateSubcommand = createBuildsCreateSubcommand(initialBody)
 	subcommands[buildsCreateSubcommand.flagSet.Name()] = &buildsCreateSubcommand
 
@@ -63,9 +57,6 @@ func init() {
 
 	var buildTargetOutputsListSubcommand = createBuildTargetOutputsListSubcommand()
 	subcommands[buildTargetOutputsListSubcommand.flagSet.Name()] = &buildTargetOutputsListSubcommand
-
-	var webhooksPostmanCreateNotificationSubcommand = createWebhooksPostmanCreateNotificationSubcommand(initialBody)
-	subcommands[webhooksPostmanCreateNotificationSubcommand.flagSet.Name()] = &webhooksPostmanCreateNotificationSubcommand
 }
 
 var subcommands = map[string]*Subcommand{}
