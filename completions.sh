@@ -10,13 +10,10 @@ _main()
       projects.retrieve \
       projects.update \
       projects.branches.create \
-      projects.branches.retrieve \
-      projects.snippets.create_request \
       builds.create \
       builds.retrieve \
       builds.list \
-      build_target_outputs.list \
-      webhooks.postman.create_notification"
+      build_target_outputs.list"
 
     if [[ "$COMP_CWORD" -eq 1 ]]
     then
@@ -40,12 +37,6 @@ _main()
       projects.branches.create)
         flags="--project --branch --branch-from"
         ;;
-      projects.branches.retrieve)
-        flags="--project --branch"
-        ;;
-      projects.snippets.create_request)
-        flags="--project-name --language --request.method --request.parameters.in --request.parameters.name --request.+parameter --request.path --version"
-        ;;
       builds.create)
         flags="--project --revision --allow-empty --branch --commit-message --targets --+target"
         ;;
@@ -57,9 +48,6 @@ _main()
         ;;
       build_target_outputs.list)
         flags="--build-id --target --type --output"
-        ;;
-      webhooks.postman.create_notification)
-        flags="--collection-id"
         ;;
       *)
         # Unknown subcommand
@@ -75,19 +63,6 @@ _main()
 
     local prev="${COMP_WORDS[COMP_CWORD-1]}"
     case "$subcommand" in
-      projects.snippets.create_request)
-        case "$prev" in
-          --language)
-            COMPREPLY=( $(compgen -W "node typescript python go java kotlin ruby terraform cli" -- $cur) )
-            ;;
-          --request.parameters.in)
-            COMPREPLY=( $(compgen -W "path query header cookie" -- $cur) )
-            ;;
-          --version)
-            COMPREPLY=( $(compgen -W "next latest_released" -- $cur) )
-            ;;
-        esac
-        ;;
       builds.create)
         case "$prev" in
           --targets)
