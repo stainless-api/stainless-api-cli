@@ -18,10 +18,6 @@ before making any information public.
 If you encounter security issues that are not directly related to SDKs but pertain to the services
 or products provided by Stainless V0 please follow the respective company's security reporting guidelines.
 
-### Stainless V0 Terms and Policies
-
-Please contact dev-feedback@stainless-v0.com for any questions or concerns regarding security of our services.
-
 ---
 
 Thank you for helping us keep the SDKs and systems they interact with secure.
