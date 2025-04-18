@@ -6,12 +6,17 @@ _main()
     COMPREPLY=()
 
     local subcommands="\
-      projects.config.commits.create \
-      projects.config.branches.create \
-      projects.config.branches.merge \
+      openapi.retrieve \
+      projects.retrieve \
+      projects.update \
+      projects.branches.create \
+      projects.branches.retrieve \
+      projects.snippets.create_request \
       builds.create \
       builds.retrieve \
-      targets.artifacts.retrieve"
+      builds.list \
+      build_target_outputs.list \
+      webhooks.postman.create_notification"
 
     if [[ "$COMP_CWORD" -eq 1 ]]
     then
@@ -23,23 +28,38 @@ _main()
     local subcommand="${COMP_WORDS[1]}"
     local flags
     case "$subcommand" in
-      projects.config.commits.create)
-        flags="--project-name --branch --commit-message --allow-empty --openapi-spec --stainless-config"
+      openapi.retrieve)
+        flags=""
         ;;
-      projects.config.branches.create)
-        flags="--project-name --branch --branch-from"
+      projects.retrieve)
+        flags="--project-name"
         ;;
-      projects.config.branches.merge)
-        flags="--project-name --from --into"
+      projects.update)
+        flags="--project-name --display-name"
+        ;;
+      projects.branches.create)
+        flags="--project --branch --branch-from"
+        ;;
+      projects.branches.retrieve)
+        flags="--project --branch"
+        ;;
+      projects.snippets.create_request)
+        flags="--project-name --language --request.method --request.parameters.in --request.parameters.name --request.+parameter --request.path --version"
         ;;
       builds.create)
-        flags="--branch --config-commit --project --targets --+target"
+        flags="--project --revision --allow-empty --branch --commit-message --targets --+target"
         ;;
       builds.retrieve)
         flags="--build-id"
         ;;
-      targets.artifacts.retrieve)
-        flags="--build-id --target-name"
+      builds.list)
+        flags="--project --branch --cursor --limit"
+        ;;
+      build_target_outputs.list)
+        flags="--build-id --target --type --output"
+        ;;
+      webhooks.postman.create_notification)
+        flags="--collection-id"
         ;;
       *)
         # Unknown subcommand
@@ -55,6 +75,19 @@ _main()
 
     local prev="${COMP_WORDS[COMP_CWORD-1]}"
     case "$subcommand" in
+      projects.snippets.create_request)
+        case "$prev" in
+          --language)
+            COMPREPLY=( $(compgen -W "node typescript python go java kotlin ruby terraform cli" -- $cur) )
+            ;;
+          --request.parameters.in)
+            COMPREPLY=( $(compgen -W "path query header cookie" -- $cur) )
+            ;;
+          --version)
+            COMPREPLY=( $(compgen -W "next latest_released" -- $cur) )
+            ;;
+        esac
+        ;;
       builds.create)
         case "$prev" in
           --targets)
@@ -65,10 +98,16 @@ _main()
             ;;
         esac
         ;;
-      targets.artifacts.retrieve)
+      build_target_outputs.list)
         case "$prev" in
-          --target-name)
+          --target)
             COMPREPLY=( $(compgen -W "node typescript python go java kotlin ruby terraform cli" -- $cur) )
+            ;;
+          --type)
+            COMPREPLY=( $(compgen -W "source" -- $cur) )
+            ;;
+          --output)
+            COMPREPLY=( $(compgen -W "url git" -- $cur) )
             ;;
         esac
         ;;
