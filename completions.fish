@@ -31,7 +31,7 @@ complete -c stainless-api-cli --no-files \
   -a "--build-id"
 complete -c stainless-api-cli --no-files \
   -n "__fish_seen_subcommand_from builds.list" \
-  -a "--project --branch --config-commit --cursor --limit"
+  -a "--project --branch --config-hash --cursor --limit --spec-hash"
 complete -c stainless-api-cli --no-files \
   -n "__fish_seen_subcommand_from build_target_outputs.retrieve" \
   -a "--build-id --target --type --output"

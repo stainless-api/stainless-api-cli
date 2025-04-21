@@ -239,11 +239,11 @@ func createBuildsListSubcommand() Subcommand {
 	)
 
 	flagSet.Func(
-		"config-commit",
+		"config-hash",
 		"",
 		func(string string) error {
 			var jsonErr error
-			query, jsonErr = jsonSet(query, "config_commit", string)
+			query, jsonErr = jsonSet(query, "config_hash", string)
 			if jsonErr != nil {
 				return jsonErr
 			}
@@ -274,6 +274,19 @@ func createBuildsListSubcommand() Subcommand {
 			}
 			var jsonErr error
 			query, jsonErr = jsonSet(query, "limit", float)
+			if jsonErr != nil {
+				return jsonErr
+			}
+			return nil
+		},
+	)
+
+	flagSet.Func(
+		"spec-hash",
+		"",
+		func(string string) error {
+			var jsonErr error
+			query, jsonErr = jsonSet(query, "spec_hash", string)
 			if jsonErr != nil {
 				return jsonErr
 			}
