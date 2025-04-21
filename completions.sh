@@ -38,7 +38,7 @@ _main()
         flags="--project --branch"
         ;;
       builds.create)
-        flags="--project --revision --allow-empty --branch --commit-message --targets --+target"
+        flags="--project --revision --allow-empty --branch --commit-message --parent-build-id --targets --+target"
         ;;
       builds.retrieve)
         flags="--build-id"

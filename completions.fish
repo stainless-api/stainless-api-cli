@@ -25,7 +25,7 @@ complete -c stainless-api-cli --no-files \
   -a "--project --branch"
 complete -c stainless-api-cli --no-files \
   -n "__fish_seen_subcommand_from builds.create" \
-  -a "--project --revision --allow-empty --branch --commit-message --targets --+target"
+  -a "--project --revision --allow-empty --branch --commit-message --parent-build-id --targets --+target"
 complete -c stainless-api-cli --no-files \
   -n "__fish_seen_subcommand_from builds.retrieve" \
   -a "--build-id"

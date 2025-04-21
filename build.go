@@ -85,6 +85,19 @@ func createBuildsCreateSubcommand(initialBody []byte) Subcommand {
 	)
 
 	flagSet.Func(
+		"parent-build-id",
+		"",
+		func(string string) error {
+			var jsonErr error
+			body, jsonErr = jsonSet(body, "parent_build_id", string)
+			if jsonErr != nil {
+				return jsonErr
+			}
+			return nil
+		},
+	)
+
+	flagSet.Func(
 		"targets",
 		"",
 		func(string string) error {
