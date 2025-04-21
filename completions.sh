@@ -44,7 +44,7 @@ _main()
         flags="--build-id"
         ;;
       builds.list)
-        flags="--project --branch --cursor --limit"
+        flags="--project --branch --config-commit --cursor --limit"
         ;;
       build_target_outputs.retrieve)
         flags="--build-id --target --type --output"

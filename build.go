@@ -226,6 +226,19 @@ func createBuildsListSubcommand() Subcommand {
 	)
 
 	flagSet.Func(
+		"config-commit",
+		"",
+		func(string string) error {
+			var jsonErr error
+			query, jsonErr = jsonSet(query, "config_commit", string)
+			if jsonErr != nil {
+				return jsonErr
+			}
+			return nil
+		},
+	)
+
+	flagSet.Func(
 		"cursor",
 		"",
 		func(string string) error {
