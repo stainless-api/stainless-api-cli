@@ -32,19 +32,19 @@ _main()
         flags="--project-name --display-name"
         ;;
       projects.branches.create)
-        flags="--project --branch --branch-from"
+        flags="--project --branch --branch-from --force"
         ;;
       projects.branches.retrieve)
         flags="--project --branch"
         ;;
       builds.create)
-        flags="--project --revision --allow-empty --branch --commit-message --parent-build-id --targets --+target"
+        flags="--project --revision --allow-empty --branch --commit-message --targets --+target"
         ;;
       builds.retrieve)
         flags="--build-id"
         ;;
       builds.list)
-        flags="--project --branch --config-hash --cursor --limit --spec-hash"
+        flags="--project --branch --cursor --limit --revision"
         ;;
       build_target_outputs.retrieve)
         flags="--build-id --target --type --output"

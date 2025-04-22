@@ -55,6 +55,19 @@ func createProjectsBranchesCreateSubcommand(initialBody []byte) Subcommand {
 		},
 	)
 
+	flagSet.BoolFunc(
+		"force",
+		"",
+		func(_ string) error {
+			var jsonErr error
+			body, jsonErr = jsonSet(body, "force", true)
+			if jsonErr != nil {
+				return jsonErr
+			}
+			return nil
+		},
+	)
+
 	return Subcommand{
 		flagSet: flagSet,
 		handle: func(client *stainlessv0.Client) {

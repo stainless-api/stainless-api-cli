@@ -85,19 +85,6 @@ func createBuildsCreateSubcommand(initialBody []byte) Subcommand {
 	)
 
 	flagSet.Func(
-		"parent-build-id",
-		"",
-		func(string string) error {
-			var jsonErr error
-			body, jsonErr = jsonSet(body, "parent_build_id", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
-		},
-	)
-
-	flagSet.Func(
 		"targets",
 		"",
 		func(string string) error {
@@ -239,19 +226,6 @@ func createBuildsListSubcommand() Subcommand {
 	)
 
 	flagSet.Func(
-		"config-hash",
-		"",
-		func(string string) error {
-			var jsonErr error
-			query, jsonErr = jsonSet(query, "config_hash", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
-		},
-	)
-
-	flagSet.Func(
 		"cursor",
 		"",
 		func(string string) error {
@@ -282,11 +256,11 @@ func createBuildsListSubcommand() Subcommand {
 	)
 
 	flagSet.Func(
-		"spec-hash",
+		"revision",
 		"",
 		func(string string) error {
 			var jsonErr error
-			query, jsonErr = jsonSet(query, "spec_hash", string)
+			query, jsonErr = jsonSet(query, "revision", string)
 			if jsonErr != nil {
 				return jsonErr
 			}
