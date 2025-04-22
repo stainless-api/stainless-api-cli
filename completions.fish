@@ -19,19 +19,19 @@ complete -c stainless-api-cli --no-files \
   -a "--project-name --display-name"
 complete -c stainless-api-cli --no-files \
   -n "__fish_seen_subcommand_from projects.branches.create" \
-  -a "--project --branch --branch-from"
+  -a "--project --branch --branch-from --force"
 complete -c stainless-api-cli --no-files \
   -n "__fish_seen_subcommand_from projects.branches.retrieve" \
   -a "--project --branch"
 complete -c stainless-api-cli --no-files \
   -n "__fish_seen_subcommand_from builds.create" \
-  -a "--project --revision --allow-empty --branch --commit-message --parent-build-id --targets --+target"
+  -a "--project --revision --allow-empty --branch --commit-message --targets --+target"
 complete -c stainless-api-cli --no-files \
   -n "__fish_seen_subcommand_from builds.retrieve" \
   -a "--build-id"
 complete -c stainless-api-cli --no-files \
   -n "__fish_seen_subcommand_from builds.list" \
-  -a "--project --branch --config-hash --cursor --limit --spec-hash"
+  -a "--project --branch --cursor --limit --revision"
 complete -c stainless-api-cli --no-files \
   -n "__fish_seen_subcommand_from build_target_outputs.retrieve" \
   -a "--build-id --target --type --output"
