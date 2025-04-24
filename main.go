@@ -46,6 +46,12 @@ func init() {
 	var projectsBranchesRetrieveSubcommand = createProjectsBranchesRetrieveSubcommand()
 	subcommands[projectsBranchesRetrieveSubcommand.flagSet.Name()] = &projectsBranchesRetrieveSubcommand
 
+	var projectsConfigsRetrieveSubcommand = createProjectsConfigsRetrieveSubcommand()
+	subcommands[projectsConfigsRetrieveSubcommand.flagSet.Name()] = &projectsConfigsRetrieveSubcommand
+
+	var projectsConfigsGuessSubcommand = createProjectsConfigsGuessSubcommand(initialBody)
+	subcommands[projectsConfigsGuessSubcommand.flagSet.Name()] = &projectsConfigsGuessSubcommand
+
 	var buildsCreateSubcommand = createBuildsCreateSubcommand(initialBody)
 	subcommands[buildsCreateSubcommand.flagSet.Name()] = &buildsCreateSubcommand
 
