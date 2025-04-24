@@ -10,6 +10,8 @@ _main()
       projects.update \
       projects.branches.create \
       projects.branches.retrieve \
+      projects.configs.retrieve \
+      projects.configs.guess \
       builds.create \
       builds.retrieve \
       builds.list \
@@ -36,6 +38,12 @@ _main()
         ;;
       projects.branches.retrieve)
         flags="--project --branch"
+        ;;
+      projects.configs.retrieve)
+        flags="--project --branch"
+        ;;
+      projects.configs.guess)
+        flags="--project --spec --branch"
         ;;
       builds.create)
         flags="--project --revision --allow-empty --branch --commit-message --targets --+target"

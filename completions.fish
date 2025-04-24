@@ -3,6 +3,8 @@ set -l subcommands \
   projects.update \
   projects.branches.create \
   projects.branches.retrieve \
+  projects.configs.retrieve \
+  projects.configs.guess \
   builds.create \
   builds.retrieve \
   builds.list \
@@ -23,6 +25,12 @@ complete -c stainless-api-cli --no-files \
 complete -c stainless-api-cli --no-files \
   -n "__fish_seen_subcommand_from projects.branches.retrieve" \
   -a "--project --branch"
+complete -c stainless-api-cli --no-files \
+  -n "__fish_seen_subcommand_from projects.configs.retrieve" \
+  -a "--project --branch"
+complete -c stainless-api-cli --no-files \
+  -n "__fish_seen_subcommand_from projects.configs.guess" \
+  -a "--project --spec --branch"
 complete -c stainless-api-cli --no-files \
   -n "__fish_seen_subcommand_from builds.create" \
   -a "--project --revision --allow-empty --branch --commit-message --targets --+target"
