@@ -4,300 +4,140 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/urfave/cli/v3"
 )
 
-func createBuildsCreateSubcommand(initialBody []byte) Subcommand {
-	query := []byte("{}")
-	header := []byte("{}")
-	body := initialBody
-	var flagSet = flag.NewFlagSet("builds.create", flag.ExitOnError)
-
-	flagSet.Func(
-		"project",
-		"",
-		func(string string) error {
-			var jsonErr error
-			body, jsonErr = jsonSet(body, "project", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
+var buildsCreate = cli.Command{
+	Name:  "create",
+	Usage: "TODO",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:   "project",
+			Action: getAPIFlagAction[string]("body", "project"),
 		},
-	)
-
-	flagSet.Func(
-		"revision",
-		"",
-		func(string string) error {
-			var jsonErr error
-			body, jsonErr = jsonSet(body, "revision", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
+		&cli.StringFlag{
+			Name:   "revision",
+			Action: getAPIFlagAction[string]("body", "revision"),
 		},
-	)
-
-	flagSet.BoolFunc(
-		"allow-empty",
-		"",
-		func(_ string) error {
-			var jsonErr error
-			body, jsonErr = jsonSet(body, "allow_empty", true)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
+		&cli.BoolFlag{
+			Name:   "allow-empty",
+			Action: getAPIFlagAction[bool]("body", "allow_empty"),
 		},
-	)
-
-	flagSet.Func(
-		"branch",
-		"",
-		func(string string) error {
-			var jsonErr error
-			body, jsonErr = jsonSet(body, "branch", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
+		&cli.StringFlag{
+			Name:   "branch",
+			Action: getAPIFlagAction[string]("body", "branch"),
 		},
-	)
-
-	flagSet.Func(
-		"commit-message",
-		"",
-		func(string string) error {
-			var jsonErr error
-			body, jsonErr = jsonSet(body, "commit_message", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
+		&cli.StringFlag{
+			Name:   "commit-message",
+			Action: getAPIFlagAction[string]("body", "commit_message"),
 		},
-	)
-
-	flagSet.Func(
-		"targets",
-		"",
-		func(string string) error {
-			var jsonErr error
-			body, jsonErr = jsonSet(body, "targets.#", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
+		&cli.StringFlag{
+			Name:   "targets",
+			Action: getAPIFlagAction[string]("body", "targets.#"),
 		},
-	)
-
-	flagSet.Func(
-		"+target",
-		"",
-		func(string string) error {
-			var jsonErr error
-			body, jsonErr = jsonSet(body, "targets.-1", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
+		&cli.StringFlag{
+			Name:   "+target",
+			Action: getAPIFlagAction[string]("body", "targets.-1"),
 		},
-	)
-
-	return Subcommand{
-		flagSet: flagSet,
-		handle: func(client *stainlessv0.Client) {
-			res, err := client.Builds.New(
-				context.TODO(),
-				stainlessv0.BuildNewParams{},
-				option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
-					q := r.URL.Query()
-					for key, values := range serializeQuery(query) {
-						for _, value := range values {
-							q.Add(key, value)
-						}
-					}
-					r.URL.RawQuery = q.Encode()
-
-					for key, values := range serializeHeader(header) {
-						for _, value := range values {
-							r.Header.Add(key, value)
-						}
-					}
-
-					return mn(r)
-				}),
-				option.WithRequestBody("application/json", body),
-			)
-			if err != nil {
-				fmt.Printf("%s\n", err)
-				os.Exit(1)
-			}
-
-			fmt.Printf("%s\n", res.JSON.RawJSON())
-		},
-	}
+	},
+	Before:          initAPICommand,
+	Action:          handleBuildsCreate,
+	HideHelpCommand: true,
 }
 
-func createBuildsRetrieveSubcommand() Subcommand {
-	var buildID *string = nil
-	query := []byte("{}")
-	header := []byte("{}")
-	var flagSet = flag.NewFlagSet("builds.retrieve", flag.ExitOnError)
-
-	flagSet.Func(
-		"build-id",
-		"",
-		func(string string) error {
-			buildID = &string
-			return nil
+var buildsRetrieve = cli.Command{
+	Name:  "retrieve",
+	Usage: "TODO",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name: "build-id",
 		},
-	)
-
-	return Subcommand{
-		flagSet: flagSet,
-		handle: func(client *stainlessv0.Client) {
-			res, err := client.Builds.Get(
-				context.TODO(),
-				*buildID,
-				option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
-					q := r.URL.Query()
-					for key, values := range serializeQuery(query) {
-						for _, value := range values {
-							q.Add(key, value)
-						}
-					}
-					r.URL.RawQuery = q.Encode()
-
-					for key, values := range serializeHeader(header) {
-						for _, value := range values {
-							r.Header.Add(key, value)
-						}
-					}
-
-					return mn(r)
-				}),
-			)
-			if err != nil {
-				fmt.Printf("%s\n", err)
-				os.Exit(1)
-			}
-
-			fmt.Printf("%s\n", res.JSON.RawJSON())
-		},
-	}
+	},
+	Before:          initAPICommand,
+	Action:          handleBuildsRetrieve,
+	HideHelpCommand: true,
 }
 
-func createBuildsListSubcommand() Subcommand {
-	query := []byte("{}")
-	header := []byte("{}")
-	var flagSet = flag.NewFlagSet("builds.list", flag.ExitOnError)
-
-	flagSet.Func(
-		"project",
-		"",
-		func(string string) error {
-			var jsonErr error
-			query, jsonErr = jsonSet(query, "project", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
+var buildsList = cli.Command{
+	Name:  "list",
+	Usage: "TODO",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:   "project",
+			Action: getAPIFlagAction[string]("query", "project"),
 		},
+		&cli.StringFlag{
+			Name:   "branch",
+			Action: getAPIFlagAction[string]("query", "branch"),
+		},
+		&cli.StringFlag{
+			Name:   "cursor",
+			Action: getAPIFlagAction[string]("query", "cursor"),
+		},
+		&cli.FloatFlag{
+			Name:   "limit",
+			Action: getAPIFlagAction[float64]("query", "limit"),
+		},
+		&cli.StringFlag{
+			Name:   "revision",
+			Action: getAPIFlagAction[string]("query", "revision"),
+		},
+	},
+	Before:          initAPICommand,
+	Action:          handleBuildsList,
+	HideHelpCommand: true,
+}
+
+func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(ctx, cmd)
+
+	res, err := cc.client.Builds.New(
+		context.TODO(),
+		stainlessv0.BuildNewParams{},
+		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithRequestBody("application/json", cc.body),
 	)
-
-	flagSet.Func(
-		"branch",
-		"",
-		func(string string) error {
-			var jsonErr error
-			query, jsonErr = jsonSet(query, "branch", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
-		},
-	)
-
-	flagSet.Func(
-		"cursor",
-		"",
-		func(string string) error {
-			var jsonErr error
-			query, jsonErr = jsonSet(query, "cursor", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
-		},
-	)
-
-	flagSet.Func(
-		"limit",
-		"",
-		func(string string) error {
-			float, err := parseFloat(string)
-			if err != nil {
-				return err
-			}
-			var jsonErr error
-			query, jsonErr = jsonSet(query, "limit", float)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
-		},
-	)
-
-	flagSet.Func(
-		"revision",
-		"",
-		func(string string) error {
-			var jsonErr error
-			query, jsonErr = jsonSet(query, "revision", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
-		},
-	)
-
-	return Subcommand{
-		flagSet: flagSet,
-		handle: func(client *stainlessv0.Client) {
-			res, err := client.Builds.List(
-				context.TODO(),
-				stainlessv0.BuildListParams{},
-				option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
-					q := r.URL.Query()
-					for key, values := range serializeQuery(query) {
-						for _, value := range values {
-							q.Add(key, value)
-						}
-					}
-					r.URL.RawQuery = q.Encode()
-
-					for key, values := range serializeHeader(header) {
-						for _, value := range values {
-							r.Header.Add(key, value)
-						}
-					}
-
-					return mn(r)
-				}),
-			)
-			if err != nil {
-				fmt.Printf("%s\n", err)
-				os.Exit(1)
-			}
-
-			fmt.Printf("%s\n", res.JSON.RawJSON())
-		},
+	if err != nil {
+		return err
 	}
+
+	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	return nil
+}
+
+func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(ctx, cmd)
+
+	res, err := cc.client.Builds.Get(
+		context.TODO(),
+		cmd.Value("build-id").(string),
+		option.WithMiddleware(cc.AsMiddleware()),
+	)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	return nil
+}
+
+func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(ctx, cmd)
+
+	res, err := cc.client.Builds.List(
+		context.TODO(),
+		stainlessv0.BuildListParams{},
+		option.WithMiddleware(cc.AsMiddleware()),
+	)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	return nil
 }

@@ -4,162 +4,86 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/urfave/cli/v3"
 )
 
-func createProjectsBranchesCreateSubcommand(initialBody []byte) Subcommand {
-	var project *string = nil
-	query := []byte("{}")
-	header := []byte("{}")
-	body := initialBody
-	var flagSet = flag.NewFlagSet("projects.branches.create", flag.ExitOnError)
-
-	flagSet.Func(
-		"project",
-		"",
-		func(string string) error {
-			project = &string
-			return nil
+var projectsBranchesCreate = cli.Command{
+	Name:  "create",
+	Usage: "TODO",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name: "project",
 		},
-	)
-
-	flagSet.Func(
-		"branch",
-		"",
-		func(string string) error {
-			var jsonErr error
-			body, jsonErr = jsonSet(body, "branch", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
+		&cli.StringFlag{
+			Name:   "branch",
+			Action: getAPIFlagAction[string]("body", "branch"),
 		},
-	)
-
-	flagSet.Func(
-		"branch-from",
-		"",
-		func(string string) error {
-			var jsonErr error
-			body, jsonErr = jsonSet(body, "branch_from", string)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
+		&cli.StringFlag{
+			Name:   "branch-from",
+			Action: getAPIFlagAction[string]("body", "branch_from"),
 		},
-	)
-
-	flagSet.BoolFunc(
-		"force",
-		"",
-		func(_ string) error {
-			var jsonErr error
-			body, jsonErr = jsonSet(body, "force", true)
-			if jsonErr != nil {
-				return jsonErr
-			}
-			return nil
+		&cli.BoolFlag{
+			Name:   "force",
+			Action: getAPIFlagAction[bool]("body", "force"),
 		},
-	)
-
-	return Subcommand{
-		flagSet: flagSet,
-		handle: func(client *stainlessv0.Client) {
-			res, err := client.Projects.Branches.New(
-				context.TODO(),
-				*project,
-				stainlessv0.ProjectBranchNewParams{},
-				option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
-					q := r.URL.Query()
-					for key, values := range serializeQuery(query) {
-						for _, value := range values {
-							q.Add(key, value)
-						}
-					}
-					r.URL.RawQuery = q.Encode()
-
-					for key, values := range serializeHeader(header) {
-						for _, value := range values {
-							r.Header.Add(key, value)
-						}
-					}
-
-					return mn(r)
-				}),
-				option.WithRequestBody("application/json", body),
-			)
-			if err != nil {
-				fmt.Printf("%s\n", err)
-				os.Exit(1)
-			}
-
-			fmt.Printf("%s\n", res.JSON.RawJSON())
-		},
-	}
+	},
+	Before:          initAPICommand,
+	Action:          handleProjectsBranchesCreate,
+	HideHelpCommand: true,
 }
 
-func createProjectsBranchesRetrieveSubcommand() Subcommand {
-	var project *string = nil
-	var branch *string = nil
-	query := []byte("{}")
-	header := []byte("{}")
-	var flagSet = flag.NewFlagSet("projects.branches.retrieve", flag.ExitOnError)
-
-	flagSet.Func(
-		"project",
-		"",
-		func(string string) error {
-			project = &string
-			return nil
+var projectsBranchesRetrieve = cli.Command{
+	Name:  "retrieve",
+	Usage: "TODO",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name: "project",
 		},
+		&cli.StringFlag{
+			Name: "branch",
+		},
+	},
+	Before:          initAPICommand,
+	Action:          handleProjectsBranchesRetrieve,
+	HideHelpCommand: true,
+}
+
+func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(ctx, cmd)
+
+	res, err := cc.client.Projects.Branches.New(
+		context.TODO(),
+		cmd.Value("project").(string),
+		stainlessv0.ProjectBranchNewParams{},
+		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithRequestBody("application/json", cc.body),
 	)
-
-	flagSet.Func(
-		"branch",
-		"",
-		func(string string) error {
-			branch = &string
-			return nil
-		},
-	)
-
-	return Subcommand{
-		flagSet: flagSet,
-		handle: func(client *stainlessv0.Client) {
-			res, err := client.Projects.Branches.Get(
-				context.TODO(),
-				*project,
-				*branch,
-				option.WithMiddleware(func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
-					q := r.URL.Query()
-					for key, values := range serializeQuery(query) {
-						for _, value := range values {
-							q.Add(key, value)
-						}
-					}
-					r.URL.RawQuery = q.Encode()
-
-					for key, values := range serializeHeader(header) {
-						for _, value := range values {
-							r.Header.Add(key, value)
-						}
-					}
-
-					return mn(r)
-				}),
-			)
-			if err != nil {
-				fmt.Printf("%s\n", err)
-				os.Exit(1)
-			}
-
-			fmt.Printf("%s\n", res.JSON.RawJSON())
-		},
+	if err != nil {
+		return err
 	}
+
+	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	return nil
+}
+
+func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(ctx, cmd)
+
+	res, err := cc.client.Projects.Branches.Get(
+		context.TODO(),
+		cmd.Value("project").(string),
+		cmd.Value("branch").(string),
+		option.WithMiddleware(cc.AsMiddleware()),
+	)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	return nil
 }
