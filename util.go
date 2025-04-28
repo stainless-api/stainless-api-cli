@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"log"
 	"net/http"
@@ -9,27 +10,15 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/stainless-api/stainless-api-go"
+	"github.com/stainless-api/stainless-api-go/option"
+
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/pretty"
 	"github.com/tidwall/sjson"
+	"github.com/urfave/cli/v3"
+	"golang.org/x/term"
 )
-
-func parseInt(string string) (int64, error) {
-	integer, err := strconv.ParseInt(string, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return integer, nil
-}
-
-func parseFloat(string string) (float64, error) {
-	number, err := strconv.ParseFloat(string, 64)
-	if err != nil {
-		return 0, err
-	}
-
-	return number, nil
-}
 
 func jsonSet(json []byte, path string, value interface{}) ([]byte, error) {
 	keys := strings.Split(path, ".")
@@ -46,6 +35,85 @@ func jsonSet(json []byte, path string, value interface{}) ([]byte, error) {
 		path += key
 	}
 	return sjson.SetBytes(json, path, value)
+}
+
+type apiCommandKey string
+
+type apiCommandContext struct {
+	client stainlessv0.Client
+	body   []byte
+	query  []byte
+	header []byte
+}
+
+func (c apiCommandContext) AsMiddleware() option.Middleware {
+	return func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
+		q := r.URL.Query()
+		for key, values := range serializeQuery(c.query) {
+			for _, value := range values {
+				q.Add(key, value)
+			}
+		}
+		r.URL.RawQuery = q.Encode()
+
+		for key, values := range serializeHeader(c.header) {
+			for _, value := range values {
+				r.Header.Add(key, value)
+			}
+		}
+
+		return mn(r)
+	}
+}
+
+func initAPICommand(ctx context.Context, cmd *cli.Command) (context.Context, error) {
+	client := stainlessv0.NewClient()
+	body := getStdInput()
+	if body == nil {
+		body = []byte("{}")
+	}
+	var query = []byte("{}")
+	var header = []byte("{}")
+
+	return context.WithValue(ctx, apiCommandKey(cmd.Name), &apiCommandContext{client, body, query, header}), nil
+}
+
+func getAPICommandContext(ctx context.Context, cmd *cli.Command) *apiCommandContext {
+	return ctx.Value(apiCommandKey(cmd.Name)).(*apiCommandContext)
+}
+
+func getAPIFlagAction[T any](kind string, path string) func(context.Context, *cli.Command, T) error {
+	return func(ctx context.Context, cmd *cli.Command, value T) (err error) {
+		commandContext := getAPICommandContext(ctx, cmd)
+		var dest *[]byte
+		switch kind {
+		case "body":
+			dest = &commandContext.body
+		case "query":
+			dest = &commandContext.query
+		case "header":
+			dest = &commandContext.header
+		}
+		*dest, err = jsonSet(*dest, path, value)
+		return err
+	}
+}
+
+func getAPIFlagActionWithValue[T any](kind string, path string, value interface{}) func(context.Context, *cli.Command, T) error {
+	return func(ctx context.Context, cmd *cli.Command, unusedValue T) (err error) {
+		commandContext := getAPICommandContext(ctx, cmd)
+		var dest *[]byte
+		switch kind {
+		case "body":
+			dest = &commandContext.body
+		case "query":
+			dest = &commandContext.query
+		case "header":
+			dest = &commandContext.header
+		}
+		*dest, err = jsonSet(*dest, path, value)
+		return err
+	}
 }
 
 func serializeQuery(params []byte) url.Values {
@@ -124,4 +192,39 @@ func getStdInput() []byte {
 func isInputPiped() bool {
 	stat, _ := os.Stdin.Stat()
 	return (stat.Mode() & os.ModeCharDevice) == 0
+}
+
+func isTerminal(w io.Writer) bool {
+	switch v := w.(type) {
+	case *os.File:
+		return term.IsTerminal(int(v.Fd()))
+	default:
+		return false
+	}
+}
+
+func shouldUseColors(w io.Writer) bool {
+	force, ok := os.LookupEnv("FORCE_COLOR")
+
+	if ok {
+		if force == "1" {
+			return true
+		}
+		if force == "0" {
+			return false
+		}
+	}
+
+	if isTerminal(w) {
+		return true
+	}
+	return false
+
+}
+
+func colorizeJSON(input string, w io.Writer) string {
+	if !shouldUseColors(w) {
+		return input
+	}
+	return string(pretty.Color(pretty.Pretty([]byte(input)), nil))
 }
