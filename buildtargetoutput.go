@@ -34,7 +34,33 @@ var buildTargetOutputsRetrieve = cli.Command{
 		},
 	},
 	Before:          initAPICommand,
-	Action:          handleBuildTargetOutputsRetrieve,
+	Action:          handleBuildTargetOutputsPull,
+	HideHelpCommand: true,
+}
+
+var buildTargetOutputsPull = cli.Command{
+	Name:  "pull",
+	Usage: "TODO",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:   "build-id",
+			Action: getAPIFlagAction[string]("query", "build_id"),
+		},
+		&cli.StringFlag{
+			Name:   "target",
+			Action: getAPIFlagAction[string]("query", "target"),
+		},
+		&cli.StringFlag{
+			Name:   "type",
+			Action: getAPIFlagAction[string]("query", "type"),
+		},
+		&cli.StringFlag{
+			Name:   "output",
+			Action: getAPIFlagAction[string]("query", "output"),
+		},
+	},
+	Before:          initAPICommand,
+	Action:          handleBuildTargetOutputsPull,
 	HideHelpCommand: true,
 }
 
@@ -52,4 +78,22 @@ func handleBuildTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) err
 
 	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
 	return nil
+}
+
+func handleBuildTargetOutputsPull(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(ctx, cmd)
+
+	res, err := cc.client.BuildTargetOutputs.Get(
+		context.TODO(),
+		stainlessv0.BuildTargetOutputGetParams{},
+		option.WithMiddleware(cc.AsMiddleware()),
+	)
+	if err != nil {
+		return err
+	}
+
+	targetDir := fmt.Sprintf("%s-%s", "tmp", "target")
+
+	// Use the shared pullOutput function
+	return pullOutput(res.Output, res.URL, res.Ref, targetDir)
 }

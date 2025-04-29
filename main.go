@@ -16,6 +16,15 @@ func main() {
 		Usage: "CLI for the stainless-v0 API",
 		Commands: []*cli.Command{
 			{
+				Name: "auth",
+				Commands: []*cli.Command{
+					&authLogin,
+					&authLogout,
+					&authStatus,
+				},
+			},
+
+			{
 				Name: "projects",
 				Commands: []*cli.Command{
 					&projectsRetrieve,
@@ -60,6 +69,7 @@ func main() {
 				Name: "build_target_outputs",
 				Commands: []*cli.Command{
 					&buildTargetOutputsRetrieve,
+					&buildTargetOutputsPull,
 				},
 			},
 
