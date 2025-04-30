@@ -3,59 +3,79 @@
 package main
 
 import (
-  "flag"
-  "fmt"
-  "log"
-  "os"
+	"context"
+	"log"
+	"os"
 
-  "github.com/stainless-sdks/stainless-v0-go"
+	"github.com/urfave/cli/v3"
 )
 
 func main() {
-  if len(os.Args) < 2 {
-    fmt.Println("Expected subcommand")
-    os.Exit(1)
-  }
+	app := &cli.Command{
+		Name:  "stainless-api-cli",
+		Usage: "CLI for the stainless-v0 API",
+		Commands: []*cli.Command{
+			{
+				Name: "projects",
+				Commands: []*cli.Command{
+					&projectsRetrieve,
+					&projectsUpdate,
+					&projectsList,
+				},
+			},
 
-  subcommand := subcommands[os.Args[1]]
-  if subcommand == nil {
-    log.Fatalf("Unknown subcommand '%s'", os.Args[1])
-  }
+			{
+				Name: "projects:branches",
+				Commands: []*cli.Command{
+					&projectsBranchesCreate,
+					&projectsBranchesRetrieve,
+				},
+			},
 
-  subcommand.flagSet.Parse(os.Args[2:])
+			{
+				Name: "projects:configs",
+				Commands: []*cli.Command{
+					&projectsConfigsRetrieve,
+					&projectsConfigsGuess,
+				},
+			},
 
-  var client *stainlessv0.Client = stainlessv0.NewClient()
-  subcommand.handle(client)
-}
+			{
+				Name: "projects:snippets",
+				Commands: []*cli.Command{
+					&projectsSnippetsCreateRequest,
+				},
+			},
 
-func init() {
-  initialBody := getStdInput()
-  if initialBody == nil {
-    initialBody = []byte("{}")
-  }
+			{
+				Name: "builds",
+				Commands: []*cli.Command{
+					&buildsCreate,
+					&buildsRetrieve,
+					&buildsList,
+				},
+			},
 
-  var projectsConfigCreateBranchSubcommand = createProjectsConfigCreateBranchSubcommand(initialBody)
-  subcommands[projectsConfigCreateBranchSubcommand.flagSet.Name()] = &projectsConfigCreateBranchSubcommand
+			{
+				Name: "build_target_outputs",
+				Commands: []*cli.Command{
+					&buildTargetOutputsRetrieve,
+				},
+			},
 
-  var projectsConfigCreateCommitSubcommand = createProjectsConfigCreateCommitSubcommand(initialBody)
-  subcommands[projectsConfigCreateCommitSubcommand.flagSet.Name()] = &projectsConfigCreateCommitSubcommand
+			{
+				Name: "orgs",
+				Commands: []*cli.Command{
+					&orgsRetrieve,
+					&orgsList,
+				},
+			},
+		},
+		EnableShellCompletion: true,
+		HideHelpCommand:       true,
+	}
 
-  var projectsConfigMergeSubcommand = createProjectsConfigMergeSubcommand(initialBody)
-  subcommands[projectsConfigMergeSubcommand.flagSet.Name()] = &projectsConfigMergeSubcommand
-
-  var buildsRetrieveSubcommand = createBuildsRetrieveSubcommand()
-  subcommands[buildsRetrieveSubcommand.flagSet.Name()] = &buildsRetrieveSubcommand
-
-  var buildsTargetRetrieveSubcommand = createBuildsTargetRetrieveSubcommand()
-  subcommands[buildsTargetRetrieveSubcommand.flagSet.Name()] = &buildsTargetRetrieveSubcommand
-
-  var buildsTargetArtifactsRetrieveSourceSubcommand = createBuildsTargetArtifactsRetrieveSourceSubcommand()
-  subcommands[buildsTargetArtifactsRetrieveSourceSubcommand.flagSet.Name()] = &buildsTargetArtifactsRetrieveSourceSubcommand
-}
-
-var subcommands = map[string]*Subcommand{}
-
-type Subcommand struct {
-  flagSet *flag.FlagSet
-  handle func(*stainlessv0.Client)
+	if err := app.Run(context.Background(), os.Args); err != nil {
+		log.Fatal(err)
+	}
 }
