@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.0-alpha.2 (2025-04-30)
+
+Full Changelog: [v0.1.0-alpha.1...v0.1.0-alpha.2](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.1...v0.1.0-alpha.2)
+
+### Features
+
+* Add wait flag and polling mechanism for build completion ([960b063](https://github.com/stainless-api/stainless-api-cli/commit/960b063ce27de75fd4c847e69b78b2c0610c2ac1))
+
+
+### Chores
+
+* bump go sdk version ([3cbc3e4](https://github.com/stainless-api/stainless-api-cli/commit/3cbc3e46f7b8910037fa947e712e92bf05df5fc7))
+
 ## 0.1.0-alpha.1 (2025-04-30)
 
 Full Changelog: [v0.0.1-alpha.0...v0.1.0-alpha.1](https://github.com/stainless-api/stainless-api-cli/compare/v0.0.1-alpha.0...v0.1.0-alpha.1)

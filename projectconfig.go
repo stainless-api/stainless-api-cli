@@ -53,34 +53,39 @@ var projectsConfigsGuess = cli.Command{
 func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
 
-	res, err := cc.client.Projects.Configs.Get(
+
+	res := []byte{}
+	_, err := cc.client.Projects.Configs.Get(
 		context.TODO(),
 		cmd.Value("project").(string),
 		stainlessv0.ProjectConfigGetParams{},
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	fmt.Printf("%s\n", colorizeJSON(string(res), os.Stdout))
 	return nil
 }
 
 func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
 
-	res, err := cc.client.Projects.Configs.Guess(
+	res := []byte{}
+	_, err := cc.client.Projects.Configs.Guess(
 		context.TODO(),
 		cmd.Value("project").(string),
 		stainlessv0.ProjectConfigGuessParams{},
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithRequestBody("application/json", cc.body),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	fmt.Printf("%s\n", colorizeJSON(string(res), os.Stdout))
 	return nil
 }

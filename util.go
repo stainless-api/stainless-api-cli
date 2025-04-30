@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/logrusorgru/aurora/v4"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 
@@ -51,7 +52,7 @@ func (c apiCommandContext) AsMiddleware() option.Middleware {
 		q := r.URL.Query()
 		for key, values := range serializeQuery(c.query) {
 			for _, value := range values {
-				q.Add(key, value)
+				q.Set(key, value)
 			}
 		}
 		r.URL.RawQuery = q.Encode()
@@ -67,7 +68,8 @@ func (c apiCommandContext) AsMiddleware() option.Middleware {
 }
 
 func initAPICommand(ctx context.Context, cmd *cli.Command) (context.Context, error) {
-	client := stainlessv0.NewClient()
+	client := stainlessv0.NewClient(getClientOptions(ctx, cmd)...)
+
 	body := getStdInput()
 	if body == nil {
 		body = []byte("{}")
@@ -84,6 +86,27 @@ func getAPICommandContext(ctx context.Context, cmd *cli.Command) *apiCommandCont
 
 func getAPIFlagAction[T any](kind string, path string) func(context.Context, *cli.Command, T) error {
 	return func(ctx context.Context, cmd *cli.Command, value T) (err error) {
+		commandContext := getAPICommandContext(ctx, cmd)
+		var dest *[]byte
+		switch kind {
+		case "body":
+			dest = &commandContext.body
+		case "query":
+			dest = &commandContext.query
+		case "header":
+			dest = &commandContext.header
+		}
+		*dest, err = jsonSet(*dest, path, value)
+		return err
+	}
+}
+
+func getAPIFlagFileAction(kind string, path string) func(context.Context, *cli.Command, string) error {
+	return func(ctx context.Context, cmd *cli.Command, filePath string) (err error) {
+		value, err := os.ReadFile(filePath)
+		if err != nil {
+			return err
+		}
 		commandContext := getAPICommandContext(ctx, cmd)
 		var dest *[]byte
 		switch kind {
@@ -203,9 +226,19 @@ func isTerminal(w io.Writer) bool {
 	}
 }
 
-func shouldUseColors(w io.Writer) bool {
-	force, ok := os.LookupEnv("FORCE_COLOR")
+var au *aurora.Aurora
 
+func init() {
+	au = aurora.New(aurora.WithColors(shouldUseColors(os.Stdout)))
+}
+
+func shouldUseColors(w io.Writer) bool {
+	// Check if NO_COLOR environment variable is set
+	if _, noColor := os.LookupEnv("NO_COLOR"); noColor {
+		return false
+	}
+
+	force, ok := os.LookupEnv("FORCE_COLOR")
 	if ok {
 		if force == "1" {
 			return true
@@ -219,7 +252,6 @@ func shouldUseColors(w io.Writer) bool {
 		return true
 	}
 	return false
-
 }
 
 func colorizeJSON(input string, w io.Writer) string {
