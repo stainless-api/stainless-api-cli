@@ -20,6 +20,7 @@ func main() {
 				Commands: []*cli.Command{
 					&projectsRetrieve,
 					&projectsUpdate,
+					&projectsList,
 				},
 			},
 
@@ -40,6 +41,13 @@ func main() {
 			},
 
 			{
+				Name: "projects:snippets",
+				Commands: []*cli.Command{
+					&projectsSnippetsCreateRequest,
+				},
+			},
+
+			{
 				Name: "builds",
 				Commands: []*cli.Command{
 					&buildsCreate,
@@ -52,6 +60,14 @@ func main() {
 				Name: "build_target_outputs",
 				Commands: []*cli.Command{
 					&buildTargetOutputsRetrieve,
+				},
+			},
+
+			{
+				Name: "orgs",
+				Commands: []*cli.Command{
+					&orgsRetrieve,
+					&orgsList,
 				},
 			},
 		},
