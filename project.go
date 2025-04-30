@@ -42,6 +42,28 @@ var projectsUpdate = cli.Command{
 	HideHelpCommand: true,
 }
 
+var projectsList = cli.Command{
+	Name:  "list",
+	Usage: "TODO",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:   "org",
+			Action: getAPIFlagAction[string]("query", "org"),
+		},
+		&cli.StringFlag{
+			Name:   "cursor",
+			Action: getAPIFlagAction[string]("query", "cursor"),
+		},
+		&cli.FloatFlag{
+			Name:   "limit",
+			Action: getAPIFlagAction[float64]("query", "limit"),
+		},
+	},
+	Before:          initAPICommand,
+	Action:          handleProjectsList,
+	HideHelpCommand: true,
+}
+
 func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
 
@@ -67,6 +89,22 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 		stainlessv0.ProjectUpdateParams{},
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithRequestBody("application/json", cc.body),
+	)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	return nil
+}
+
+func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(ctx, cmd)
+
+	res, err := cc.client.Projects.List(
+		context.TODO(),
+		stainlessv0.ProjectListParams{},
+		option.WithMiddleware(cc.AsMiddleware()),
 	)
 	if err != nil {
 		return err
