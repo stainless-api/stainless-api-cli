@@ -14,7 +14,7 @@ import (
 
 var buildTargetOutputsRetrieve = cli.Command{
 	Name:  "retrieve",
-	Usage: "TODO",
+	Usage: "Download the output of a build target",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:   "build-id",

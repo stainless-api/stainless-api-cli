@@ -14,7 +14,7 @@ import (
 
 var buildsCreate = cli.Command{
 	Name:  "create",
-	Usage: "TODO",
+	Usage: "Create a new build",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:   "project",
@@ -52,7 +52,7 @@ var buildsCreate = cli.Command{
 
 var buildsRetrieve = cli.Command{
 	Name:  "retrieve",
-	Usage: "TODO",
+	Usage: "Retrieve a build by ID",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "build-id",
@@ -65,7 +65,7 @@ var buildsRetrieve = cli.Command{
 
 var buildsList = cli.Command{
 	Name:  "list",
-	Usage: "TODO",
+	Usage: "List builds for a project",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:   "project",
