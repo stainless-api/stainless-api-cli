@@ -14,7 +14,7 @@ import (
 
 var projectsSnippetsCreateRequest = cli.Command{
 	Name:  "create_request",
-	Usage: "TODO",
+	Usage: "Perform create_request operation",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project-name",

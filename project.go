@@ -14,7 +14,7 @@ import (
 
 var projectsRetrieve = cli.Command{
 	Name:  "retrieve",
-	Usage: "TODO",
+	Usage: "Retrieve a project by name",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project-name",
@@ -27,7 +27,7 @@ var projectsRetrieve = cli.Command{
 
 var projectsUpdate = cli.Command{
 	Name:  "update",
-	Usage: "TODO",
+	Usage: "Update a project's properties",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project-name",
@@ -44,7 +44,7 @@ var projectsUpdate = cli.Command{
 
 var projectsList = cli.Command{
 	Name:  "list",
-	Usage: "TODO",
+	Usage: "List projects in an organization",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:   "org",

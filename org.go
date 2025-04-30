@@ -13,7 +13,7 @@ import (
 
 var orgsRetrieve = cli.Command{
 	Name:  "retrieve",
-	Usage: "TODO",
+	Usage: "Retrieve an organization by name",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "org-name",
@@ -26,7 +26,7 @@ var orgsRetrieve = cli.Command{
 
 var orgsList = cli.Command{
 	Name:            "list",
-	Usage:           "TODO",
+	Usage:           "List organizations the user has access to",
 	Flags:           []cli.Flag{},
 	Before:          initAPICommand,
 	Action:          handleOrgsList,

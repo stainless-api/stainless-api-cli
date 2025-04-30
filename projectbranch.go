@@ -14,7 +14,7 @@ import (
 
 var projectsBranchesCreate = cli.Command{
 	Name:  "create",
-	Usage: "TODO",
+	Usage: "Create a new branch for a project",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project",
@@ -39,7 +39,7 @@ var projectsBranchesCreate = cli.Command{
 
 var projectsBranchesRetrieve = cli.Command{
 	Name:  "retrieve",
-	Usage: "TODO",
+	Usage: "Retrieve a project branch",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project",
