@@ -2,7 +2,7 @@ module github.com/stainless-api/stainless-api-cli
 
 go 1.23.0
 
-toolchain go1.23.8
+toolchain go1.23.9
 
 require (
 	github.com/logrusorgru/aurora/v4 v4.0.0
