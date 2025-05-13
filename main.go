@@ -62,6 +62,7 @@ func main() {
 					&buildsCreate,
 					&buildsRetrieve,
 					&buildsList,
+					&buildsCompare,
 				},
 			},
 
