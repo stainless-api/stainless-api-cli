@@ -27,55 +27,55 @@ func getCompletedTargets(buildRes stainlessv0.BuildObject) []targetInfo {
 	targets := []targetInfo{}
 
 	// Check each target and add it to the list if it's completed or in postgen
-	if buildRes.Targets.JSON.Node.IsPresent() {
+	if buildRes.Targets.JSON.Node.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "node",
 			status: buildRes.Targets.Node.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Typescript.IsPresent() {
+	if buildRes.Targets.JSON.Typescript.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "typescript",
 			status: buildRes.Targets.Typescript.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Python.IsPresent() {
+	if buildRes.Targets.JSON.Python.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "python",
 			status: buildRes.Targets.Python.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Go.IsPresent() {
+	if buildRes.Targets.JSON.Go.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "go",
 			status: buildRes.Targets.Go.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Cli.IsPresent() {
+	if buildRes.Targets.JSON.Cli.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "cli",
 			status: buildRes.Targets.Cli.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Kotlin.IsPresent() {
+	if buildRes.Targets.JSON.Kotlin.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "kotlin",
 			status: buildRes.Targets.Kotlin.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Java.IsPresent() {
+	if buildRes.Targets.JSON.Java.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "java",
 			status: buildRes.Targets.Java.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Ruby.IsPresent() {
+	if buildRes.Targets.JSON.Ruby.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "ruby",
 			status: buildRes.Targets.Ruby.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Terraform.IsPresent() {
+	if buildRes.Targets.JSON.Terraform.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "terraform",
 			status: buildRes.Targets.Terraform.Status,

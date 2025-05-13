@@ -76,8 +76,10 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 
 	res, err := cc.client.Projects.Branches.Get(
 		context.TODO(),
-		cmd.Value("project").(string),
 		cmd.Value("branch").(string),
+		stainlessv0.ProjectBranchGetParams {
+			Project: cmd.Value("project").(string),
+		},
 		option.WithMiddleware(cc.AsMiddleware()),
 	)
 	if err != nil {
