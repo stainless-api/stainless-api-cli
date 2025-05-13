@@ -93,6 +93,52 @@ var buildsList = cli.Command{
 	HideHelpCommand: true,
 }
 
+var buildsCompare = cli.Command{
+	Name:  "compare",
+	Usage: "Creates two builds whose outputs can be compared directly",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:   "base.revision",
+			Action: getAPIFlagAction[string]("body", "base.revision"),
+		},
+		&cli.StringFlag{
+			Name:   "base.branch",
+			Action: getAPIFlagAction[string]("body", "base.branch"),
+		},
+		&cli.StringFlag{
+			Name:   "base.commit_message",
+			Action: getAPIFlagAction[string]("body", "base.commit_message"),
+		},
+		&cli.StringFlag{
+			Name:   "head.revision",
+			Action: getAPIFlagAction[string]("body", "head.revision"),
+		},
+		&cli.StringFlag{
+			Name:   "head.branch",
+			Action: getAPIFlagAction[string]("body", "head.branch"),
+		},
+		&cli.StringFlag{
+			Name:   "head.commit_message",
+			Action: getAPIFlagAction[string]("body", "head.commit_message"),
+		},
+		&cli.StringFlag{
+			Name:   "project",
+			Action: getAPIFlagAction[string]("body", "project"),
+		},
+		&cli.StringFlag{
+			Name:   "targets",
+			Action: getAPIFlagAction[string]("body", "targets.#"),
+		},
+		&cli.StringFlag{
+			Name:   "+target",
+			Action: getAPIFlagAction[string]("body", "targets.-1"),
+		},
+	},
+	Before:          initAPICommand,
+	Action:          handleBuildsCompare,
+	HideHelpCommand: true,
+}
+
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
 
@@ -133,6 +179,23 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 		context.TODO(),
 		stainlessv0.BuildListParams{},
 		option.WithMiddleware(cc.AsMiddleware()),
+	)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	return nil
+}
+
+func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(ctx, cmd)
+
+	res, err := cc.client.Builds.Compare(
+		context.TODO(),
+		stainlessv0.BuildCompareParams{},
+		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithRequestBody("application/json", cc.body),
 	)
 	if err != nil {
 		return err
