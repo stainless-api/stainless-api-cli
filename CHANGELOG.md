@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.1.0-alpha.3 (2025-05-22)
+
+Full Changelog: [v0.1.0-alpha.2...v0.1.0-alpha.3](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.2...v0.1.0-alpha.3)
+
+### Features
+
+* add readme ([517510b](https://github.com/stainless-api/stainless-api-cli/commit/517510b292283dff91a6f6403a133200050a49b2))
+* **api:** add build compare to v0 ([ce9328e](https://github.com/stainless-api/stainless-api-cli/commit/ce9328e38387835ac55410e401194dc63d4e0fd9))
+* **api:** bump go sdk version ([8500bf3](https://github.com/stainless-api/stainless-api-cli/commit/8500bf36df104935d6f63e3fd6ef651f21a253df))
+* **api:** enable macos publishing ([c49364b](https://github.com/stainless-api/stainless-api-cli/commit/c49364b09ca3eb23f01ab254a1ec2c5b10a67a26))
+
+
+### Bug Fixes
+
+* fix custom code ([7d5ba04](https://github.com/stainless-api/stainless-api-cli/commit/7d5ba043c02683f4cf75c09029d65c136e39692e))
+* update request schema for Postman webhook ([a9c5de3](https://github.com/stainless-api/stainless-api-cli/commit/a9c5de30d3ac155e9be266f29a35de13e7a84edc))
+
+
+### Chores
+
+* **internal:** codegen related update ([81448ca](https://github.com/stainless-api/stainless-api-cli/commit/81448cab092f0f1b50e1613c100f2fc2c97770d3))
+* **internal:** codegen related update ([ac9557a](https://github.com/stainless-api/stainless-api-cli/commit/ac9557a75a32c0f838ab920648ef475969784cd8))
+* **internal:** codegen related update ([4a1d74a](https://github.com/stainless-api/stainless-api-cli/commit/4a1d74ae1856a1375dbf74699d80823e5b5fb0cd))
+
 ## 0.1.0-alpha.2 (2025-04-30)
 
 Full Changelog: [v0.1.0-alpha.1...v0.1.0-alpha.2](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.1...v0.1.0-alpha.2)

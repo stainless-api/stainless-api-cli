@@ -27,55 +27,55 @@ func getCompletedTargets(buildRes stainlessv0.BuildObject) []targetInfo {
 	targets := []targetInfo{}
 
 	// Check each target and add it to the list if it's completed or in postgen
-	if buildRes.Targets.JSON.Node.IsPresent() {
+	if buildRes.Targets.JSON.Node.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "node",
 			status: buildRes.Targets.Node.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Typescript.IsPresent() {
+	if buildRes.Targets.JSON.Typescript.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "typescript",
 			status: buildRes.Targets.Typescript.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Python.IsPresent() {
+	if buildRes.Targets.JSON.Python.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "python",
 			status: buildRes.Targets.Python.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Go.IsPresent() {
+	if buildRes.Targets.JSON.Go.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "go",
 			status: buildRes.Targets.Go.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Cli.IsPresent() {
+	if buildRes.Targets.JSON.Cli.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "cli",
 			status: buildRes.Targets.Cli.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Kotlin.IsPresent() {
+	if buildRes.Targets.JSON.Kotlin.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "kotlin",
 			status: buildRes.Targets.Kotlin.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Java.IsPresent() {
+	if buildRes.Targets.JSON.Java.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "java",
 			status: buildRes.Targets.Java.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Ruby.IsPresent() {
+	if buildRes.Targets.JSON.Ruby.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "ruby",
 			status: buildRes.Targets.Ruby.Status,
 		})
 	}
-	if buildRes.Targets.JSON.Terraform.IsPresent() {
+	if buildRes.Targets.JSON.Terraform.Valid() {
 		targets = append(targets, targetInfo{
 			name:   "terraform",
 			status: buildRes.Targets.Terraform.Status,
@@ -185,6 +185,52 @@ var buildsList = cli.Command{
 	},
 	Before:          initAPICommand,
 	Action:          handleBuildsList,
+	HideHelpCommand: true,
+}
+
+var buildsCompare = cli.Command{
+	Name:  "compare",
+	Usage: "Creates two builds whose outputs can be compared directly",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:   "base.revision",
+			Action: getAPIFlagAction[string]("body", "base.revision"),
+		},
+		&cli.StringFlag{
+			Name:   "base.branch",
+			Action: getAPIFlagAction[string]("body", "base.branch"),
+		},
+		&cli.StringFlag{
+			Name:   "base.commit_message",
+			Action: getAPIFlagAction[string]("body", "base.commit_message"),
+		},
+		&cli.StringFlag{
+			Name:   "head.revision",
+			Action: getAPIFlagAction[string]("body", "head.revision"),
+		},
+		&cli.StringFlag{
+			Name:   "head.branch",
+			Action: getAPIFlagAction[string]("body", "head.branch"),
+		},
+		&cli.StringFlag{
+			Name:   "head.commit_message",
+			Action: getAPIFlagAction[string]("body", "head.commit_message"),
+		},
+		&cli.StringFlag{
+			Name:   "project",
+			Action: getAPIFlagAction[string]("body", "project"),
+		},
+		&cli.StringFlag{
+			Name:   "targets",
+			Action: getAPIFlagAction[string]("body", "targets.#"),
+		},
+		&cli.StringFlag{
+			Name:   "+target",
+			Action: getAPIFlagAction[string]("body", "targets.-1"),
+		},
+	},
+	Before:          initAPICommand,
+	Action:          handleBuildsCompare,
 	HideHelpCommand: true,
 }
 
@@ -442,6 +488,23 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 		context.TODO(),
 		stainlessv0.BuildListParams{},
 		option.WithMiddleware(cc.AsMiddleware()),
+	)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	return nil
+}
+
+func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(ctx, cmd)
+
+	res, err := cc.client.Builds.Compare(
+		context.TODO(),
+		stainlessv0.BuildCompareParams{},
+		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithRequestBody("application/json", cc.body),
 	)
 	if err != nil {
 		return err
