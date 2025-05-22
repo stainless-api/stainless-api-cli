@@ -17,7 +17,7 @@ var projectsRetrieve = cli.Command{
 	Usage: "Retrieve a project by name",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name: "project-name",
+			Name: "project",
 		},
 	},
 	Before:          initAPICommand,
@@ -30,7 +30,7 @@ var projectsUpdate = cli.Command{
 	Usage: "Update a project's properties",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name: "project-name",
+			Name: "project",
 		},
 		&cli.StringFlag{
 			Name:   "display-name",
@@ -69,7 +69,7 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 	res, err := cc.client.Projects.Get(
 		context.TODO(),
-		cmd.Value("project-name").(string),
+		cmd.Value("project").(string),
 		option.WithMiddleware(cc.AsMiddleware()),
 	)
 	if err != nil {
@@ -85,7 +85,7 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 
 	res, err := cc.client.Projects.Update(
 		context.TODO(),
-		cmd.Value("project-name").(string),
+		cmd.Value("project").(string),
 		stainlessv0.ProjectUpdateParams{},
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithRequestBody("application/json", cc.body),

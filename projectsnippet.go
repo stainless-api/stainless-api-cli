@@ -20,10 +20,6 @@ var projectsSnippetsCreateRequest = cli.Command{
 			Name: "project-name",
 		},
 		&cli.StringFlag{
-			Name:   "language",
-			Action: getAPIFlagAction[string]("body", "language"),
-		},
-		&cli.StringFlag{
 			Name:   "request.method",
 			Action: getAPIFlagAction[string]("body", "request.method"),
 		},
@@ -50,6 +46,14 @@ var projectsSnippetsCreateRequest = cli.Command{
 		&cli.StringFlag{
 			Name:   "request.body.filePath",
 			Action: getAPIFlagAction[string]("body", "request.body.filePath"),
+		},
+		&cli.BoolFlag{
+			Name:   "har",
+			Action: getAPIFlagActionWithValue[bool]("body", "har", nil),
+		},
+		&cli.StringFlag{
+			Name:   "language",
+			Action: getAPIFlagAction[string]("body", "language"),
 		},
 		&cli.StringFlag{
 			Name:   "version",
