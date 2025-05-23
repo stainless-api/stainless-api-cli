@@ -35,7 +35,6 @@ var orgsList = cli.Command{
 
 func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-
 	res, err := cc.client.Orgs.Get(
 		context.TODO(),
 		cmd.Value("org-name").(string),
@@ -51,7 +50,6 @@ func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 func handleOrgsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-
 	res, err := cc.client.Orgs.List(context.TODO(), option.WithMiddleware(cc.AsMiddleware()))
 	if err != nil {
 		return err

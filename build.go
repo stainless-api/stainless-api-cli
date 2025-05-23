@@ -141,10 +141,10 @@ var buildsCompare = cli.Command{
 
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-
+	params := stainlessv0.BuildNewParams{}
 	res, err := cc.client.Builds.New(
 		context.TODO(),
-		stainlessv0.BuildNewParams{},
+		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithRequestBody("application/json", cc.body),
 	)
@@ -158,7 +158,6 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-
 	res, err := cc.client.Builds.Get(
 		context.TODO(),
 		cmd.Value("build-id").(string),
@@ -174,10 +173,10 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-
+	params := stainlessv0.BuildListParams{}
 	res, err := cc.client.Builds.List(
 		context.TODO(),
-		stainlessv0.BuildListParams{},
+		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 	)
 	if err != nil {
@@ -190,10 +189,10 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 
 func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-
+	params := stainlessv0.BuildCompareParams{}
 	res, err := cc.client.Builds.Compare(
 		context.TODO(),
-		stainlessv0.BuildCompareParams{},
+		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithRequestBody("application/json", cc.body),
 	)
