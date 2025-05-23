@@ -66,9 +66,13 @@ var projectsList = cli.Command{
 
 func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
+	params := stainlessv0.ProjectGetParams{}
+	if cmd.IsSet("project") {
+		params.Project = stainlessv0.String(cmd.Value("project").(string))
+	}
 	res, err := cc.client.Projects.Get(
 		context.TODO(),
-		cmd.Value("project").(string),
+		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 	)
 	if err != nil {
@@ -82,9 +86,11 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
 	params := stainlessv0.ProjectUpdateParams{}
+	if cmd.IsSet("project") {
+		params.Project = stainlessv0.String(cmd.Value("project").(string))
+	}
 	res, err := cc.client.Projects.Update(
 		context.TODO(),
-		cmd.Value("project").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithRequestBody("application/json", cc.body),

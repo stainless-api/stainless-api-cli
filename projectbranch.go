@@ -56,9 +56,11 @@ var projectsBranchesRetrieve = cli.Command{
 func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
 	params := stainlessv0.ProjectBranchNewParams{}
+	if cmd.IsSet("project") {
+		params.Project = stainlessv0.String(cmd.Value("project").(string))
+	}
 	res, err := cc.client.Projects.Branches.New(
 		context.TODO(),
-		cmd.Value("project").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithRequestBody("application/json", cc.body),
@@ -73,12 +75,14 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 
 func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
+	params := stainlessv0.ProjectBranchGetParams{}
+	if cmd.IsSet("project") {
+		params.Project = stainlessv0.String(cmd.Value("project").(string))
+	}
 	res, err := cc.client.Projects.Branches.Get(
 		context.TODO(),
 		cmd.Value("branch").(string),
-		stainlessv0.ProjectBranchGetParams {
-			Project: cmd.Value("project").(string),
-		},
+		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 	)
 	if err != nil {

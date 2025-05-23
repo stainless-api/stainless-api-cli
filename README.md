@@ -26,7 +26,6 @@ stainless-api-cli [resource] [command] [flags]
 
 ```sh
 stainless-api-cli builds create \
-  --project project \
   --revision string
 ```
 
