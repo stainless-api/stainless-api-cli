@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.23.9
 
 require (
-	github.com/stainless-api/stainless-api-go v0.5.0
+	github.com/stainless-api/stainless-api-go v0.5.1
 	github.com/logrusorgru/aurora/v4 v4.0.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
 	github.com/tidwall/gjson v1.17.0
