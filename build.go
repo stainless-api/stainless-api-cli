@@ -142,7 +142,7 @@ var buildsCreate = cli.Command{
 			Action: getAPIFlagAction[string]("body", "targets.-1"),
 		},
 	},
-	Before:          initAPICommand,
+	Before:          initAPICommandWithWorkspaceDefaults,
 	Action:          handleBuildsCreate,
 	HideHelpCommand: true,
 }
@@ -525,4 +525,29 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 
 	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
 	return nil
+}
+
+// initAPICommandWithWorkspaceDefaults applies workspace defaults before initializing API command
+func initAPICommandWithWorkspaceDefaults(ctx context.Context, cmd *cli.Command) (context.Context, error) {
+	cc, err := initAPICommand(ctx, cmd)
+	if err != nil {
+		return nil, err
+	}
+	config, _, err := FindWorkspaceConfig()
+	if err == nil && config != nil {
+		if !cmd.IsSet("openapi-spec") && !cmd.IsSet("oas") && config.OpenAPISpec != "" {
+			fileAction := getAPIFlagFileAction("body", "revision.openapi\\.yml.content")
+			if err := fileAction(cc, cmd, config.OpenAPISpec); err != nil {
+				return nil, fmt.Errorf("failed to load OpenAPI spec from workspace config: %v", err)
+			}
+		}
+
+		if !cmd.IsSet("stainless-config") && !cmd.IsSet("config") && config.StainlessConfig != "" {
+			fileAction := getAPIFlagFileAction("body", "revision.openapi\\.stainless\\.yml.content")
+			if err := fileAction(cc, cmd, config.StainlessConfig); err != nil {
+				return nil, fmt.Errorf("failed to load Stainless config from workspace config: %v", err)
+			}
+		}
+	}
+	return cc, err
 }
