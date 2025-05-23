@@ -17,7 +17,7 @@ var projectsRetrieve = cli.Command{
 	Usage: "Retrieve a project by name",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name: "project-name",
+			Name: "project",
 		},
 	},
 	Before:          initAPICommand,
@@ -30,7 +30,7 @@ var projectsUpdate = cli.Command{
 	Usage: "Update a project's properties",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name: "project-name",
+			Name: "project",
 		},
 		&cli.StringFlag{
 			Name:   "display-name",
@@ -66,10 +66,13 @@ var projectsList = cli.Command{
 
 func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-
+	params := stainlessv0.ProjectGetParams{}
+	if cmd.IsSet("project") {
+		params.Project = stainlessv0.String(cmd.Value("project").(string))
+	}
 	res, err := cc.client.Projects.Get(
 		context.TODO(),
-		cmd.Value("project-name").(string),
+		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 	)
 	if err != nil {
@@ -82,11 +85,13 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-
+	params := stainlessv0.ProjectUpdateParams{}
+	if cmd.IsSet("project") {
+		params.Project = stainlessv0.String(cmd.Value("project").(string))
+	}
 	res, err := cc.client.Projects.Update(
 		context.TODO(),
-		cmd.Value("project-name").(string),
-		stainlessv0.ProjectUpdateParams{},
+		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithRequestBody("application/json", cc.body),
 	)
@@ -100,10 +105,10 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 
 func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-
+	params := stainlessv0.ProjectListParams{}
 	res, err := cc.client.Projects.List(
 		context.TODO(),
-		stainlessv0.ProjectListParams{},
+		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 	)
 	if err != nil {

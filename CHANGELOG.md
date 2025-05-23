@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.0-alpha.4 (2025-05-23)
+
+Full Changelog: [v0.1.0-alpha.3...v0.1.0-alpha.4](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.3...v0.1.0-alpha.4)
+
+### Features
+
+* **api:** change v0 path param projectName -&gt; project ([f4d71d2](https://github.com/stainless-api/stainless-api-cli/commit/f4d71d2a7329db59b1a9fa6d341619ab0532db6b))
+* **api:** manual updates ([ad21d1e](https://github.com/stainless-api/stainless-api-cli/commit/ad21d1e0ee263bda24f88823c31f998295c842a2))
+* **api:** manual updates ([2539725](https://github.com/stainless-api/stainless-api-cli/commit/253972559414ee57ef40cfcfc989fd5ea4e4cc27))
+
+
+### Refactors
+
+* minor refactor of method bodies ([8a3745d](https://github.com/stainless-api/stainless-api-cli/commit/8a3745dd7415ac36eeba2ec8b54e695845ffc9b5))
+
 ## 0.1.0-alpha.3 (2025-05-22)
 
 Full Changelog: [v0.1.0-alpha.2...v0.1.0-alpha.3](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.2...v0.1.0-alpha.3)
