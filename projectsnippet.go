@@ -67,11 +67,11 @@ var projectsSnippetsCreateRequest = cli.Command{
 
 func handleProjectsSnippetsCreateRequest(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-
+	params := stainlessv0.ProjectSnippetNewRequestParams{}
 	res, err := cc.client.Projects.Snippets.NewRequest(
 		context.TODO(),
 		cmd.Value("project-name").(string),
-		stainlessv0.ProjectSnippetNewRequestParams{},
+		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithRequestBody("application/json", cc.body),
 	)
