@@ -58,7 +58,7 @@ func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
 	if err := SaveAuthConfig(config); err != nil {
 		return fmt.Errorf("%s", au.Red(fmt.Sprintf("Failed to save authentication: %v", err)))
 	}
-	fmt.Printf("%s %s\n", au.BrightGreen("✓"), "Authentication successful! Your credentials have been saved.")
+	fmt.Printf("%s %s\n", au.BrightGreen("✱"), "Authentication successful! Your credentials have been saved.")
 	return nil
 }
 
@@ -142,14 +142,14 @@ func handleAuthLogout(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("failed to remove auth file: %v", err)
 	}
 
-	fmt.Printf("%s %s\n", au.BrightGreen("✓"), "Successfully logged out.")
+	fmt.Printf("%s %s\n", au.BrightGreen("✱"), "Successfully logged out.")
 	return nil
 }
 
 func handleAuthStatus(ctx context.Context, cmd *cli.Command) error {
 	// Check for API key in environment variables first
 	if apiKey := os.Getenv("STAINLESS_API_KEY"); apiKey != "" {
-		fmt.Printf("%s %s\n", au.BrightGreen("✓"), "Authenticated via STAINLESS_API_KEY environment variable")
+		fmt.Printf("%s %s\n", au.BrightGreen("✱"), "Authenticated via STAINLESS_API_KEY environment variable")
 		return nil
 	}
 
@@ -160,12 +160,12 @@ func handleAuthStatus(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if config == nil {
-		fmt.Printf("%s %s\n", au.BrightYellow("!"), "Not logged in.")
+		fmt.Printf("%s %s\n", au.BrightYellow("✱"), "Not logged in.")
 		return nil
 	}
 
 	// If we have a config file with a token
-	fmt.Printf("%s %s\n", au.BrightGreen("✓"), "Authenticated via saved credentials")
+	fmt.Printf("%s %s\n", au.BrightGreen("✱"), "Authenticated via saved credentials")
 
 	// Show a truncated version of the token for verification
 	if len(config.AccessToken) > 10 {
@@ -316,6 +316,12 @@ func getClientOptions(ctx context.Context, cmd *cli.Command) []option.RequestOpt
 	config, err := LoadAuthConfig()
 	if err == nil && config != nil {
 		options = append(options, option.WithAPIKey(config.AccessToken))
+	}
+
+	// Add default project from workspace config if available
+	projectName := GetProjectNameFromConfig()
+	if projectName != "" {
+		options = append(options, option.WithProject(projectName))
 	}
 
 	return options

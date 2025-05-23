@@ -25,6 +25,13 @@ func main() {
 			},
 
 			{
+				Name: "workspace",
+				Commands: []*cli.Command{
+					&initWorkspaceCommand,
+				},
+			},
+
+			{
 				Name: "projects",
 				Commands: []*cli.Command{
 					&projectsRetrieve,

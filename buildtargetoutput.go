@@ -95,5 +95,5 @@ func handleBuildTargetOutputsPull(ctx context.Context, cmd *cli.Command) error {
 	targetDir := fmt.Sprintf("%s-%s", "tmp", "target")
 
 	// Use the shared pullOutput function
-	return pullOutput(res.Output, res.URL, res.Ref, targetDir)
+	return pullOutput(res.Output, res.URL, res.Ref, targetDir, "target")
 }

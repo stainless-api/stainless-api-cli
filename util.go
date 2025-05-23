@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -61,6 +62,42 @@ func (c apiCommandContext) AsMiddleware() option.Middleware {
 			for _, value := range values {
 				r.Header.Add(key, value)
 			}
+		}
+
+		// Handle request body merging if there's a body to process
+		if r.Body != nil && len(c.body) > 2 { // More than just "{}"
+			// Read the existing request body
+			existingBody, err := io.ReadAll(r.Body)
+			r.Body.Close()
+			if err != nil {
+				return nil, fmt.Errorf("failed to read existing request body: %v", err)
+			}
+
+			// Start with existing body as base (default from API params)
+			mergedBody := existingBody
+			if len(existingBody) == 0 {
+				mergedBody = []byte("{}")
+			}
+
+			// Parse command body and merge top-level keys
+			commandResult := gjson.ParseBytes(c.body)
+			if commandResult.IsObject() {
+				commandResult.ForEach(func(key, value gjson.Result) bool {
+					// Set each top-level key from command body, overwriting existing values
+					var err error
+					mergedBody, err = sjson.SetBytes(mergedBody, key.String(), value.Value())
+					if err != nil {
+						// Continue on error to merge as much as possible
+						return true
+					}
+					return true
+				})
+			}
+
+			// Set the new body
+			r.Body = io.NopCloser(strings.NewReader(string(mergedBody)))
+			r.ContentLength = int64(len(mergedBody))
+			r.Header.Set("Content-Type", "application/json")
 		}
 
 		return mn(r)
@@ -259,4 +296,51 @@ func colorizeJSON(input string, w io.Writer) string {
 		return input
 	}
 	return string(pretty.Color(pretty.Pretty([]byte(input)), nil))
+}
+
+// GetProjectName returns the project name from the command line flag or workspace config
+func GetProjectName(cmd *cli.Command, flagName string) string {
+	// First check if the flag was provided
+	projectName := cmd.String(flagName)
+	if projectName != "" {
+		return projectName
+	}
+
+	// Otherwise, try to get from workspace config
+	configProjectName := GetProjectNameFromConfig()
+	if configProjectName != "" {
+		// Log that we're using the workspace config if in interactive mode
+		if isTerminal(os.Stdout) {
+			fmt.Printf("%s %s\n", au.BrightBlue("i"), fmt.Sprintf("Using project '%s' from workspace config", configProjectName))
+		}
+	}
+
+	return configProjectName
+}
+
+// CheckInteractiveAndInitWorkspace checks if running in interactive mode and prompts to init workspace if needed
+func CheckInteractiveAndInitWorkspace(cmd *cli.Command, projectName string) {
+	// Only run in interactive mode with a terminal
+	if !isTerminal(os.Stdout) {
+		return
+	}
+
+	// Check if workspace config exists
+	config, _, _ := FindWorkspaceConfig()
+	if config != nil {
+		return
+	}
+
+	// Prompt user to initialize workspace
+	var answer string
+	fmt.Printf("%s %s", au.BrightYellow("?"), fmt.Sprintf("Would you like to initialize a workspace config with project '%s'? [y/N] ", projectName))
+	fmt.Scanln(&answer)
+
+	if strings.ToLower(answer) == "y" || strings.ToLower(answer) == "yes" {
+		if err := InitWorkspaceConfig(projectName); err != nil {
+			fmt.Printf("%s %s\n", au.BrightRed("✱"), fmt.Sprintf("Failed to initialize workspace: %v", err))
+			return
+		}
+		fmt.Printf("%s %s\n", au.BrightGreen("✱"), fmt.Sprintf("Workspace initialized with project: %s", projectName))
+	}
 }
