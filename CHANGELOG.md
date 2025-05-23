@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0-alpha.5 (2025-05-23)
+
+Full Changelog: [v0.1.0-alpha.4...v0.1.0-alpha.5](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.4...v0.1.0-alpha.5)
+
+### Features
+
+* add preloading of the stainless config and openapi path ([37c089e](https://github.com/stainless-api/stainless-api-cli/commit/37c089eaf6df1150fa708cbccec3098b766e8417))
+* add workspace command ([ad64eb7](https://github.com/stainless-api/stainless-api-cli/commit/ad64eb739a5ac2202e0fc7c720327945db7d679a))
+
 ## 0.1.0-alpha.4 (2025-05-23)
 
 Full Changelog: [v0.1.0-alpha.3...v0.1.0-alpha.4](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.3...v0.1.0-alpha.4)
