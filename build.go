@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -117,7 +118,8 @@ var buildsCreate = cli.Command{
 			Action: getAPIFlagAction[bool]("body", "allow_empty"),
 		},
 		&cli.BoolFlag{
-			Name: "wait",
+			Name:  "wait",
+			Value: true,
 		},
 		&cli.BoolFlag{
 			Name:  "pull",
@@ -236,24 +238,23 @@ var buildsCompare = cli.Command{
 
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-	// Log to stderr that we're creating a build (using white text)
-	fmt.Fprintf(os.Stderr, "Creating build...\n")
+	// Log to stderr that we're creating a build
+	fmt.Fprintf(os.Stderr, "%s Creating build...\n", au.BrightCyan("✱"))
 	params := stainlessv0.BuildNewParams{}
 	res, err := cc.client.Builds.New(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
-		option.WithRequestBody("application/json", cc.body),
 	)
 	if err != nil {
 		return err
 	}
 
-	// Print the build ID to stderr (using white text)
-	fmt.Fprintf(os.Stderr, "Build created: %s\n", res.ID)
+	// Print the build ID to stderr
+	fmt.Fprintf(os.Stderr, "  %s Build created: %s\n", au.BrightGreen("•"), au.Bold(res.ID))
 
 	if cmd.Bool("wait") {
-		fmt.Fprintf(os.Stderr, "Waiting for build to complete...\n")
+		fmt.Fprintf(os.Stderr, "%s Waiting for build to complete...\n", au.BrightCyan("✱"))
 
 		ticker := time.NewTicker(3 * time.Second)
 		defer ticker.Stop()
@@ -289,14 +290,15 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 						// Only print completed statuses with a green checkmark
 						if isTargetCompleted(target.status) {
-							fmt.Fprintf(os.Stderr, "%s Target %s: %s\n",
-								au.BrightGreen("✓"),
+							fmt.Fprintf(os.Stderr, "  %s Target %s: %s\n",
+								au.BrightGreen("•"),
 								target.name,
 								string(target.status))
 							anyCompleted = true
 						} else if target.status == "failed" {
 							// For failures, use red text
-							fmt.Fprintf(os.Stderr, "Target %s: %s\n",
+							fmt.Fprintf(os.Stderr, "  %s Target %s: %s\n",
+								au.BrightRed("•"),
 								target.name,
 								au.BrightRed(string(target.status)))
 						}
@@ -310,7 +312,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 				if (allCompleted || anyCompleted) && len(targets) > 0 {
 					if allCompleted {
-						fmt.Fprintf(os.Stderr, "%s Build completed successfully\n", au.BrightGreen("✓"))
+						fmt.Fprintf(os.Stderr, "  %s Build completed successfully\n", au.BrightGreen("✱"))
 						break loop
 					}
 				}
@@ -321,11 +323,11 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		if cmd.Bool("pull") {
-			fmt.Fprintf(os.Stderr, "Pulling build outputs...\n")
+			fmt.Fprintf(os.Stderr, "%s Pulling build outputs...\n", au.BrightCyan("✱"))
 			if err := pullBuildOutputs(context.TODO(), cc.client, *res); err != nil {
-				fmt.Fprintf(os.Stderr, "%s Failed to pull outputs: %v\n", au.BrightRed("!"), err)
+				fmt.Fprintf(os.Stderr, "%s Failed to pull outputs: %v\n", au.BrightRed("✱"), err)
 			} else {
-				fmt.Fprintf(os.Stderr, "%s Successfully pulled all outputs\n", au.BrightGreen("✓"))
+				fmt.Fprintf(os.Stderr, "%s Successfully pulled all outputs\n", au.BrightGreen("✱"))
 			}
 		}
 	}
@@ -367,11 +369,12 @@ func pullBuildOutputs(ctx context.Context, client stainlessv0.Client, res stainl
 		return fmt.Errorf("no completed targets found in build %s", res.ID)
 	}
 
-	fmt.Fprintf(os.Stderr, "Found completed targets: %v\n", targets)
-
 	// Pull each target
-	for _, target := range targets {
-		fmt.Fprintf(os.Stderr, "Pulling output for target: %s\n", target)
+	for i, target := range targets {
+		targetDir := fmt.Sprintf("%s-%s", res.Project, target)
+
+		fmt.Fprintf(os.Stderr, "%s [%d/%d] Pulling %s → %s\n",
+			au.BrightCyan("✱"), i+1, len(targets), au.Bold(target), au.Cyan(targetDir))
 
 		// Get the output details
 		outputRes, err := client.BuildTargetOutputs.Get(
@@ -384,19 +387,24 @@ func pullBuildOutputs(ctx context.Context, client stainlessv0.Client, res stainl
 			},
 		)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s Error getting output for target %s: %v\n", au.BrightRed("!"), target, err)
+			fmt.Fprintf(os.Stderr, "%s Failed to get output details for %s: %v\n",
+				au.BrightRed("✱"), target, err)
 			continue
 		}
 
-		targetDir := fmt.Sprintf("%s-sdk", target)
-
 		// Handle based on output type
-		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, targetDir)
+		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, targetDir, target)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s Error pulling output for target %s: %v\n", au.BrightRed("!"), target, err)
+			fmt.Fprintf(os.Stderr, "%s Failed to pull %s: %v\n",
+				au.BrightRed("✱"), target, err)
 			continue
-		} else {
-			fmt.Fprintf(os.Stderr, "%s Successfully pulled output for target %s\n", au.BrightGreen("✓"), target)
+		}
+
+		fmt.Fprintf(os.Stderr, "  %s Successfully pulled to %s\n",
+			au.BrightBlack("•"), au.Cyan(targetDir))
+
+		if i < len(targets)-1 {
+			fmt.Fprintf(os.Stderr, "\n")
 		}
 	}
 
@@ -404,8 +412,16 @@ func pullBuildOutputs(ctx context.Context, client stainlessv0.Client, res stainl
 }
 
 // pullOutput handles downloading or cloning a build target output
-func pullOutput(output, url, ref, targetDir string) error {
-	// Create a directory for the output
+func pullOutput(output, url, ref, targetDir, target string) error {
+	// Remove existing directory if it exists
+	if _, err := os.Stat(targetDir); err == nil {
+		fmt.Fprintf(os.Stderr, "  %s Removing existing directory %s\n", au.BrightBlack("•"), targetDir)
+		if err := os.RemoveAll(targetDir); err != nil {
+			return fmt.Errorf("failed to remove existing directory %s: %v", targetDir, err)
+		}
+	}
+
+	// Create a fresh directory for the output
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory %s: %v", targetDir, err)
 	}
@@ -413,28 +429,30 @@ func pullOutput(output, url, ref, targetDir string) error {
 	switch output {
 	case "git":
 		// Clone the repository
-		fmt.Fprintf(os.Stderr, "Cloning repository %s (ref: %s) to %s\n", url, ref, targetDir)
+		fmt.Fprintf(os.Stderr, "  %s Cloning repository\n", au.BrightBlack("•"))
+		fmt.Fprintf(os.Stderr, "  %s Checking out ref %s\n", au.BrightBlack("•"), au.Bold(ref))
 
 		cmd := exec.Command("git", "clone", url, targetDir)
-		cmd.Stdout = os.Stderr
-		cmd.Stderr = os.Stderr
+		var stderr bytes.Buffer
+		cmd.Stdout = nil // Suppress git clone output
+		cmd.Stderr = &stderr
 		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("git clone failed: %v", err)
+			return fmt.Errorf("git clone failed: %v\nGit error: %s", err, stderr.String())
 		}
 
 		// Checkout the specific ref
 		cmd = exec.Command("git", "-C", targetDir, "checkout", ref)
-		cmd.Stdout = os.Stderr
-		cmd.Stderr = os.Stderr
+		stderr.Reset()
+		cmd.Stdout = nil // Suppress git checkout output
+		cmd.Stderr = &stderr
 		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("git checkout failed: %v", err)
+			return fmt.Errorf("git checkout failed: %v\nGit error: %s", err, stderr.String())
 		}
-
-		fmt.Fprintf(os.Stderr, "%s Successfully cloned repository to %s\n", au.BrightGreen("✓"), targetDir)
 
 	case "url":
 		// Download the tar file
-		fmt.Fprintf(os.Stderr, "Downloading from %s to %s\n", url, targetDir)
+		fmt.Fprintf(os.Stderr, "  %s Downloading archive %s\n", au.BrightBlack("•"), au.Underline(url))
+		fmt.Fprintf(os.Stderr, "  %s Extracting to %s\n", au.BrightBlack("•"), targetDir)
 
 		// Create a temporary file for the tar download
 		tmpFile, err := os.CreateTemp("", "stainless-*.tar.gz")
@@ -464,13 +482,11 @@ func pullOutput(output, url, ref, targetDir string) error {
 
 		// Extract the tar file
 		cmd := exec.Command("tar", "-xzf", tmpFile.Name(), "-C", targetDir)
-		cmd.Stdout = os.Stderr
-		cmd.Stderr = os.Stderr
+		cmd.Stdout = nil // Suppress tar output
+		cmd.Stderr = nil
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("tar extraction failed: %v", err)
 		}
-
-		fmt.Fprintf(os.Stderr, "%s Successfully downloaded and extracted to %s\n", au.BrightGreen("✓"), targetDir)
 
 	default:
 		return fmt.Errorf("unsupported output type: %s. Supported types are 'git' and 'url'", output)
@@ -502,7 +518,6 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
-		option.WithRequestBody("application/json", cc.body),
 	)
 	if err != nil {
 		return err
