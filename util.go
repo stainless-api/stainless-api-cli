@@ -337,7 +337,7 @@ func CheckInteractiveAndInitWorkspace(cmd *cli.Command, projectName string) {
 	fmt.Scanln(&answer)
 
 	if strings.ToLower(answer) == "y" || strings.ToLower(answer) == "yes" {
-		if err := InitWorkspaceConfig(projectName); err != nil {
+		if err := InitWorkspaceConfig(projectName, "", ""); err != nil {
 			fmt.Printf("%s %s\n", au.BrightRed("✱"), fmt.Sprintf("Failed to initialize workspace: %v", err))
 			return
 		}

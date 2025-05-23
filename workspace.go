@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"maps"
 	"os"
@@ -11,7 +12,6 @@ import (
 	"slices"
 	"strings"
 
-	"encoding/json"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -56,21 +56,34 @@ func handleInitWorkspace(ctx context.Context, cmd *cli.Command) error {
 
 	fmt.Println()
 
-	// If project name wasn't provided via flag, prompt the user interactively
+	// Set up form theme and keymap for use in multiple forms
+	keyMap := huh.NewDefaultKeyMap()
+	keyMap.Input.AcceptSuggestion = key.NewBinding(
+		key.WithKeys("tab"),
+		key.WithHelp("tab", "complete"),
+	)
+	keyMap.Input.Next = key.NewBinding(
+		key.WithKeys("tab", "down", "enter"),
+		key.WithHelp("tab/↓/enter", "next"),
+	)
+	keyMap.Input.Prev = key.NewBinding(
+		key.WithKeys("shift+tab", "up"),
+		key.WithHelp("shift+tab/↑", "previous"),
+	)
+
+	// Create custom theme with bullet point cursor and no borders
+	theme := huh.ThemeBase()
+	theme.Focused.Base = theme.Focused.Base.BorderStyle(lipgloss.NormalBorder())
+	theme.Focused.Title = theme.Focused.Title.Bold(true)
+
+	// Get project name from flag or prepare for interactive prompt
 	projectName := cmd.String("project-name")
+	var openAPISpec, stainlessConfig string
+
+	// If project name wasn't provided via flag, prompt for all fields interactively
 	if projectName == "" {
 		projectInfoMap := fetchUserProjects(ctx)
 
-		keyMap := huh.NewDefaultKeyMap()
-		keyMap.Input.AcceptSuggestion = key.NewBinding(
-			key.WithKeys("tab"),
-			key.WithHelp("tab", "complete"),
-		)
-
-		// Create custom theme with bullet point cursor and no borders
-		theme := huh.ThemeBase()
-		theme.Focused.Base = theme.Focused.Base.BorderStyle(lipgloss.NormalBorder())
-		theme.Focused.Title = theme.Focused.Title.Bold(true)
 		form := huh.NewForm(
 			huh.NewGroup(
 				huh.NewInput().
@@ -79,16 +92,33 @@ func handleInitWorkspace(ctx context.Context, cmd *cli.Command) error {
 					Suggestions(slices.Collect(maps.Keys(projectInfoMap))).
 					Description("Enter the stainless project for this workspace").
 					Validate(createProjectValidator(projectInfoMap)),
+				huh.NewInput().
+					Title("OpenAPI spec path (optional)").
+					Description("Relative path to your OpenAPI spec file").
+					Placeholder("openapi.yml").
+					Value(&openAPISpec),
+				huh.NewInput().
+					Title("Stainless config path (optional)").
+					Description("Relative path to your Stainless config file").
+					Placeholder("openapi.stainless.yml").
+					Value(&stainlessConfig),
 			),
 		).WithTheme(theme).WithKeyMap(keyMap)
 
 		if err := form.Run(); err != nil {
-			return fmt.Errorf("failed to get project name: %v", err)
+			return fmt.Errorf("failed to get workspace configuration: %v", err)
 		}
+
 		fmt.Printf("%s project name: %s\n", aurora.Bold("✱"), projectName)
+		if openAPISpec != "" {
+			fmt.Printf("%s openapi spec: %s\n", aurora.Bold("✱"), openAPISpec)
+		}
+		if stainlessConfig != "" {
+			fmt.Printf("%s stainless config: %s\n", aurora.Bold("✱"), stainlessConfig)
+		}
 	}
 
-	if err := InitWorkspaceConfig(projectName); err != nil {
+	if err := InitWorkspaceConfig(projectName, openAPISpec, stainlessConfig); err != nil {
 		return fmt.Errorf("failed to initialize workspace: %v", err)
 	}
 
@@ -152,7 +182,9 @@ func createProjectValidator(projectInfoMap map[string]projectInfo) func(string) 
 
 // WorkspaceConfig stores workspace-level configuration
 type WorkspaceConfig struct {
-	ProjectName string `json:"projectName"`
+	ProjectName     string `json:"projectName"`
+	OpenAPISpec     string `json:"openapi_spec,omitempty"`
+	StainlessConfig string `json:"stainless_config,omitempty"`
 }
 
 // FindWorkspaceConfig searches for a stainless-workspace.json file starting from the current directory
@@ -224,7 +256,7 @@ func GetProjectNameFromConfig() string {
 }
 
 // InitWorkspaceConfig initializes a new workspace config in the current directory
-func InitWorkspaceConfig(projectName string) error {
+func InitWorkspaceConfig(projectName, openAPISpec, stainlessConfig string) error {
 	// Get current working directory
 	dir, err := os.Getwd()
 	if err != nil {
@@ -233,7 +265,9 @@ func InitWorkspaceConfig(projectName string) error {
 
 	configPath := filepath.Join(dir, "stainless-workspace.json")
 	config := WorkspaceConfig{
-		ProjectName: projectName,
+		ProjectName:     projectName,
+		OpenAPISpec:     openAPISpec,
+		StainlessConfig: stainlessConfig,
 	}
 
 	return SaveWorkspaceConfig(configPath, &config)
