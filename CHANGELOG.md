@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.0-alpha.6 (2025-05-28)
+
+Full Changelog: [v0.1.0-alpha.5...v0.1.0-alpha.6](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.5...v0.1.0-alpha.6)
+
+### Features
+
+* change projectName to project ([6ff942e](https://github.com/stainless-api/stainless-api-cli/commit/6ff942e73aa932b0986f13bdc28a6eef5f52e124))
+
+
+### Chores
+
+* add macos secrets to github workflwo ([cfb8c55](https://github.com/stainless-api/stainless-api-cli/commit/cfb8c55e2b5a61ffb27dd565f6d30d1c3705a993))
+
 ## 0.1.0-alpha.5 (2025-05-23)
 
 Full Changelog: [v0.1.0-alpha.4...v0.1.0-alpha.5](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.4...v0.1.0-alpha.5)
