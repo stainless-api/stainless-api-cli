@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.7 (2025-05-28)
+
+Full Changelog: [v0.1.0-alpha.6...v0.1.0-alpha.7](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.6...v0.1.0-alpha.7)
+
+### Chores
+
+* **internal:** codegen related update ([d50536d](https://github.com/stainless-api/stainless-api-cli/commit/d50536d13567bd394438d2521f00adb41d565037))
+
 ## 0.1.0-alpha.6 (2025-05-28)
 
 Full Changelog: [v0.1.0-alpha.5...v0.1.0-alpha.6](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.5...v0.1.0-alpha.6)
