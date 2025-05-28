@@ -34,16 +34,10 @@ var initWorkspaceCommand = cli.Command{
 }
 
 func handleInitWorkspace(ctx context.Context, cmd *cli.Command) error {
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("11"))
-
-	fmt.Printf("%s\n", titleStyle.Render("workspace init"))
-
 	// Check for existing workspace configuration
 	existingConfig, existingPath, err := FindWorkspaceConfig()
 	if err == nil && existingConfig != nil {
-		fmt.Printf("Existing workspace detected: %s (project: %s)\n", aurora.Bold(existingPath), existingConfig.ProjectName)
+		fmt.Printf("Existing workspace detected: %s (project: %s)\n", aurora.Bold(existingPath), existingConfig.Project)
 	}
 
 	// Get current directory and show where the file will be written
@@ -182,7 +176,7 @@ func createProjectValidator(projectInfoMap map[string]projectInfo) func(string) 
 
 // WorkspaceConfig stores workspace-level configuration
 type WorkspaceConfig struct {
-	ProjectName     string `json:"projectName"`
+	Project         string `json:"project"`
 	OpenAPISpec     string `json:"openapi_spec,omitempty"`
 	StainlessConfig string `json:"stainless_config,omitempty"`
 }
@@ -249,10 +243,10 @@ func SaveWorkspaceConfig(configPath string, config *WorkspaceConfig) error {
 // GetProjectNameFromConfig returns the project name from workspace config if available
 func GetProjectNameFromConfig() string {
 	config, _, err := FindWorkspaceConfig()
-	if err != nil || config == nil || config.ProjectName == "" {
+	if err != nil || config == nil || config.Project == "" {
 		return ""
 	}
-	return config.ProjectName
+	return config.Project
 }
 
 // InitWorkspaceConfig initializes a new workspace config in the current directory
@@ -265,7 +259,7 @@ func InitWorkspaceConfig(projectName, openAPISpec, stainlessConfig string) error
 
 	configPath := filepath.Join(dir, "stainless-workspace.json")
 	config := WorkspaceConfig{
-		ProjectName:     projectName,
+		Project:         projectName,
 		OpenAPISpec:     openAPISpec,
 		StainlessConfig: stainlessConfig,
 	}
