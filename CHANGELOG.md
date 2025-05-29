@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.0-alpha.8 (2025-05-29)
+
+Full Changelog: [v0.1.0-alpha.7...v0.1.0-alpha.8](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.7...v0.1.0-alpha.8)
+
+### Features
+
+* **api:** manual updates ([27eb403](https://github.com/stainless-api/stainless-api-cli/commit/27eb403a9a2798555385c5ccb68c4b39080d40c0))
+
+
+### Refactors
+
+* move files into pkg/cmd ([1cdcbf4](https://github.com/stainless-api/stainless-api-cli/commit/1cdcbf46ca7f84c37b7e387a20f7a9c303498083))
+
 ## 0.1.0-alpha.7 (2025-05-28)
 
 Full Changelog: [v0.1.0-alpha.6...v0.1.0-alpha.7](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.6...v0.1.0-alpha.7)
