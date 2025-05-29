@@ -8,7 +8,7 @@ if [[ -n "$1" ]]; then
   LOCAL_GO="$1"
   shift
 else
-  LOCAL_GO=../stainless-v0-go
+  LOCAL_GO=../stainless-go
 fi
 
 echo "==> Linking with local directory"

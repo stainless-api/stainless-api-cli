@@ -1,6 +1,6 @@
-# Stainless V0 CLI
+# Stainless CLI
 
-The official CLI for the Stainless V0 REST API.
+The official CLI for the Stainless REST API.
 
 It is generated with [Stainless](https://www.stainless.com/).
 
@@ -21,11 +21,11 @@ go install 'github.com/stainless-api/stainless-api-cli'
 The CLI follows a resource-based command structure:
 
 ```sh
-stainless-api-cli [resource] [command] [flags]
+stl [resource] [command] [flags]
 ```
 
 ```sh
-stainless-api-cli builds create \
+stl builds create \
   --revision string
 ```
 
