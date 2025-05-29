@@ -1,6 +1,6 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-package main
+package cmd
 
 import (
 	"context"
@@ -12,54 +12,58 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var projectsConfigsRetrieve = cli.Command{
-	Name:  "retrieve",
-	Usage: "Retrieve configuration files for a project",
+var projectsBranchesCreate = cli.Command{
+	Name:  "create",
+	Usage: "Create a new branch for a project",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project",
-		},
-		&cli.StringFlag{
-			Name:   "branch",
-			Action: getAPIFlagAction[string]("query", "branch"),
-		},
-	},
-	Before:          initAPICommand,
-	Action:          handleProjectsConfigsRetrieve,
-	HideHelpCommand: true,
-}
-
-var projectsConfigsGuess = cli.Command{
-	Name:  "guess",
-	Usage: "Generate configuration suggestions based on an OpenAPI spec",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name: "project",
-		},
-		&cli.StringFlag{
-			Name:   "spec",
-			Action: getAPIFlagAction[string]("body", "spec"),
 		},
 		&cli.StringFlag{
 			Name:   "branch",
 			Action: getAPIFlagAction[string]("body", "branch"),
 		},
+		&cli.StringFlag{
+			Name:   "branch-from",
+			Action: getAPIFlagAction[string]("body", "branch_from"),
+		},
+		&cli.BoolFlag{
+			Name:   "force",
+			Action: getAPIFlagAction[bool]("body", "force"),
+		},
 	},
 	Before:          initAPICommand,
-	Action:          handleProjectsConfigsGuess,
+	Action:          handleProjectsBranchesCreate,
 	HideHelpCommand: true,
 }
 
-func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error {
+var projectsBranchesRetrieve = cli.Command{
+	Name:  "retrieve",
+	Usage: "Retrieve a project branch",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name: "project",
+		},
+		&cli.StringFlag{
+			Name: "branch",
+		},
+	},
+	Before:          initAPICommand,
+	Action:          handleProjectsBranchesRetrieve,
+	HideHelpCommand: true,
+}
+
+func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-	params := stainlessv0.ProjectConfigGetParams{}
+	params := stainlessv0.ProjectBranchNewParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainlessv0.String(cmd.Value("project").(string))
 	}
-	res, err := cc.client.Projects.Configs.Get(
+	res, err := cc.client.Projects.Branches.New(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithRequestBody("application/json", cc.body),
 	)
 	if err != nil {
 		return err
@@ -69,17 +73,17 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 	return nil
 }
 
-func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-	params := stainlessv0.ProjectConfigGuessParams{}
+	params := stainlessv0.ProjectBranchGetParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainlessv0.String(cmd.Value("project").(string))
 	}
-	res, err := cc.client.Projects.Configs.Guess(
+	res, err := cc.client.Projects.Branches.Get(
 		context.TODO(),
+		cmd.Value("branch").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
-		option.WithRequestBody("application/json", cc.body),
 	)
 	if err != nil {
 		return err

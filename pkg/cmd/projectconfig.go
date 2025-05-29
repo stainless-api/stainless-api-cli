@@ -1,6 +1,6 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-package main
+package cmd
 
 import (
 	"context"
@@ -12,58 +12,54 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var projectsBranchesCreate = cli.Command{
-	Name:  "create",
-	Usage: "Create a new branch for a project",
+var projectsConfigsRetrieve = cli.Command{
+	Name:  "retrieve",
+	Usage: "Retrieve configuration files for a project",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project",
 		},
 		&cli.StringFlag{
 			Name:   "branch",
-			Action: getAPIFlagAction[string]("body", "branch"),
-		},
-		&cli.StringFlag{
-			Name:   "branch-from",
-			Action: getAPIFlagAction[string]("body", "branch_from"),
-		},
-		&cli.BoolFlag{
-			Name:   "force",
-			Action: getAPIFlagAction[bool]("body", "force"),
+			Action: getAPIFlagAction[string]("query", "branch"),
 		},
 	},
 	Before:          initAPICommand,
-	Action:          handleProjectsBranchesCreate,
+	Action:          handleProjectsConfigsRetrieve,
 	HideHelpCommand: true,
 }
 
-var projectsBranchesRetrieve = cli.Command{
-	Name:  "retrieve",
-	Usage: "Retrieve a project branch",
+var projectsConfigsGuess = cli.Command{
+	Name:  "guess",
+	Usage: "Generate configuration suggestions based on an OpenAPI spec",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project",
 		},
 		&cli.StringFlag{
-			Name: "branch",
+			Name:   "spec",
+			Action: getAPIFlagAction[string]("body", "spec"),
+		},
+		&cli.StringFlag{
+			Name:   "branch",
+			Action: getAPIFlagAction[string]("body", "branch"),
 		},
 	},
 	Before:          initAPICommand,
-	Action:          handleProjectsBranchesRetrieve,
+	Action:          handleProjectsConfigsGuess,
 	HideHelpCommand: true,
 }
 
-func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-	params := stainlessv0.ProjectBranchNewParams{}
+	params := stainlessv0.ProjectConfigGetParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainlessv0.String(cmd.Value("project").(string))
 	}
-	res, err := cc.client.Projects.Branches.New(
+	res, err := cc.client.Projects.Configs.Get(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
-		option.WithRequestBody("application/json", cc.body),
 	)
 	if err != nil {
 		return err
@@ -73,17 +69,17 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	return nil
 }
 
-func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
-	params := stainlessv0.ProjectBranchGetParams{}
+	params := stainlessv0.ProjectConfigGuessParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainlessv0.String(cmd.Value("project").(string))
 	}
-	res, err := cc.client.Projects.Branches.Get(
+	res, err := cc.client.Projects.Configs.Guess(
 		context.TODO(),
-		cmd.Value("branch").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithRequestBody("application/json", cc.body),
 	)
 	if err != nil {
 		return err
