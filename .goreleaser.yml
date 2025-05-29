@@ -1,4 +1,4 @@
-project_name: stainless-api-cli
+project_name: stl
 version: 2
 
 builds:
@@ -6,7 +6,7 @@ builds:
     goos: [darwin]
     goarch: [amd64, arm64]
     binary: '{{ .ProjectName }}'
-    main: ./cmd/stainless-api-cli/main.go
+    main: ./cmd/stl/main.go
     mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - "-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}"
@@ -17,7 +17,7 @@ builds:
     env:
       - CGO_ENABLED=0
     binary: '{{ .ProjectName }}'
-    main: ./cmd/stainless-api-cli/main.go
+    main: ./cmd/stl/main.go
     mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - "-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}"
@@ -26,7 +26,7 @@ builds:
     goos: [windows]
     goarch: ['386', amd64, arm64]
     binary: '{{ .ProjectName }}'
-    main: ./cmd/stainless-api-cli/main.go
+    main: ./cmd/stl/main.go
     mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
       - "-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}"

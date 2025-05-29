@@ -7,8 +7,8 @@ import (
 )
 
 var Command = cli.Command{
-	Name:  "stainless-api-cli",
-	Usage: "CLI for the stainless-v0 API",
+	Name:  "stl",
+	Usage: "CLI for the stainless API",
 	Commands: []*cli.Command{
 		{
 			Name: "projects",
