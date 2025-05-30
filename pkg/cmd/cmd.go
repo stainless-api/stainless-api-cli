@@ -11,6 +11,22 @@ var Command = cli.Command{
 	Usage: "CLI for the stainless API",
 	Commands: []*cli.Command{
 		{
+			Name: "auth",
+			Commands: []*cli.Command{
+				&authLogin,
+				&authLogout,
+				&authStatus,
+			},
+		},
+
+		{
+			Name: "workspace",
+			Commands: []*cli.Command{
+				&initWorkspaceCommand,
+			},
+		},
+
+		{
 			Name: "projects",
 			Commands: []*cli.Command{
 				&projectsRetrieve,
