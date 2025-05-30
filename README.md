@@ -6,6 +6,13 @@ It is generated with [Stainless](https://www.stainless.com/).
 
 ## Installation
 
+### Installing with Homebrew
+
+```sh
+brew tap stainless-api/homebrew-stl
+brew install stl
+```
+
 ### Installing with Go
 
 <!-- x-release-please-start-version -->
