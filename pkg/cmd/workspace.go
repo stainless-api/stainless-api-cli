@@ -25,7 +25,7 @@ var initWorkspaceCommand = cli.Command{
 	Usage: "Initialize stainless workspace configuration in current directory",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:  "project-name",
+			Name:  "project",
 			Usage: "Project name to use for this workspace",
 		},
 	},
@@ -71,7 +71,7 @@ func handleInitWorkspace(ctx context.Context, cmd *cli.Command) error {
 	theme.Focused.Title = theme.Focused.Title.Bold(true)
 
 	// Get project name from flag or prepare for interactive prompt
-	projectName := cmd.String("project-name")
+	projectName := cmd.String("project")
 	var openAPISpec, stainlessConfig string
 
 	// If project name wasn't provided via flag, prompt for all fields interactively
