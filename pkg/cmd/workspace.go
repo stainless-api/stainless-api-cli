@@ -74,6 +74,10 @@ func handleInitWorkspace(ctx context.Context, cmd *cli.Command) error {
 	projectName := cmd.String("project")
 	var openAPISpec, stainlessConfig string
 
+	// Pre-fill OpenAPI spec and Stainless config if found
+	openAPISpec = findOpenAPISpec()
+	stainlessConfig = findStainlessConfig()
+
 	// If project name wasn't provided via flag, prompt for all fields interactively
 	if projectName == "" {
 		projectInfoMap := fetchUserProjects(ctx)
@@ -247,6 +251,42 @@ func GetProjectNameFromConfig() string {
 		return ""
 	}
 	return config.Project
+}
+
+// findOpenAPISpec searches for common OpenAPI spec files in the current directory
+func findOpenAPISpec() string {
+	commonOpenAPIFiles := []string{
+		"openapi.yml",
+		"openapi.yaml",
+		"api.yml",
+		"api.yaml",
+		"spec.yml",
+		"spec.yaml",
+	}
+
+	for _, filename := range commonOpenAPIFiles {
+		if _, err := os.Stat(filename); err == nil {
+			return filename
+		}
+	}
+	return ""
+}
+
+// findStainlessConfig searches for common Stainless config files in the current directory
+func findStainlessConfig() string {
+	commonStainlessFiles := []string{
+		"openapi.stainless.yml",
+		"openapi.stainless.yaml",
+		"stainless.yml",
+		"stainless.yaml",
+	}
+
+	for _, filename := range commonStainlessFiles {
+		if _, err := os.Stat(filename); err == nil {
+			return filename
+		}
+	}
+	return ""
 }
 
 // InitWorkspaceConfig initializes a new workspace config in the current directory
