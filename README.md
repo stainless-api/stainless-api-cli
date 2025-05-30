@@ -50,7 +50,7 @@ The CLI supports workspace configuration to avoid repeatedly specifying the proj
 You can initialize a workspace configuration with:
 
 ```sh
-stl init --project your-project-name
+stl workspace init --project your-project-name
 ```
 
 If you don't provide the `--project` flag, you'll be prompted to enter a project name.
