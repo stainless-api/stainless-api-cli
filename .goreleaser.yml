@@ -1,15 +1,22 @@
 project_name: stl
 version: 2
 
+before:
+  hooks:
+    - mkdir -p completions
+    - sh -c "go run ./cmd/stl/main.go completion bash > completions/stl.bash"
+    - sh -c "go run ./cmd/stl/main.go completion zsh > completions/stl.zsh"
+    - sh -c "go run ./cmd/stl/main.go completion fish > completions/stl.fish"
+
 builds:
   - id: macos
     goos: [darwin]
     goarch: [amd64, arm64]
     binary: '{{ .ProjectName }}'
     main: ./cmd/stl/main.go
-    mod_timestamp: "{{ .CommitTimestamp }}"
+    mod_timestamp: '{{ .CommitTimestamp }}'
     ldflags:
-      - "-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}"
+      - '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}'
 
   - id: linux
     goos: [linux]
@@ -18,18 +25,18 @@ builds:
       - CGO_ENABLED=0
     binary: '{{ .ProjectName }}'
     main: ./cmd/stl/main.go
-    mod_timestamp: "{{ .CommitTimestamp }}"
+    mod_timestamp: '{{ .CommitTimestamp }}'
     ldflags:
-      - "-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}"
+      - '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}'
 
   - id: windows
     goos: [windows]
     goarch: ['386', amd64, arm64]
     binary: '{{ .ProjectName }}'
     main: ./cmd/stl/main.go
-    mod_timestamp: "{{ .CommitTimestamp }}"
+    mod_timestamp: '{{ .CommitTimestamp }}'
     ldflags:
-      - "-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}"
+      - '-s -w -X main.version={{.Version}} -X main.commit={{.Commit}}'
 
 archives:
   - id: linux-archive
@@ -37,19 +44,25 @@ archives:
     name_template: '{{ .ProjectName }}_{{ .Version }}_linux_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
     wrap_in_directory: true
     formats: [tar.gz]
+    files:
+      - completions/*
   - id: macos-archive
     ids: [macos]
     name_template: '{{ .ProjectName }}_{{ .Version }}_macos_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
     wrap_in_directory: true
     formats: [zip]
+    files:
+      - completions/*
   - id: windows-archive
     ids: [windows]
     name_template: '{{ .ProjectName }}_{{ .Version }}_windows_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
     wrap_in_directory: false
     formats: [zip]
+    files:
+      - completions/*
 
 snapshot:
-  version_template: "{{ .Tag }}-next"
+  version_template: '{{ .Tag }}-next'
 
 nfpms:
   - license: Apache-2.0
@@ -58,6 +71,21 @@ nfpms:
     formats:
       - deb
       - rpm
+
+brews:
+  - name: stl
+    repository:
+      owner: stainless-api
+      name: homebrew-stl
+    homepage: https://stainless.com
+    description: The official CLI for stainless.
+    license: Apache-2.0
+    install: |
+      bin.install "stl"
+      bash_completion.install "completions/stl.bash" => "stl"
+      zsh_completion.install "completions/stl.zsh" => "_stl"
+      fish_completion.install "completions/stl.fish"
+
 notarize:
   macos:
     - enabled: '{{ isEnvSet "MACOS_SIGN_P12" }}'
