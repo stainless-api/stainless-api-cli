@@ -32,8 +32,7 @@ stl [resource] [command] [flags]
 ```
 
 ```sh
-stl builds create \
-  --revision string
+stl builds create [--allow-empty] [--project <name>]
 ```
 
 For details about specific commands, use the `--help` flag.
