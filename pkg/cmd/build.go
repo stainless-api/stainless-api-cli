@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	"github.com/stainless-api/stainless-api-go"
@@ -533,18 +534,25 @@ func initAPICommandWithWorkspaceDefaults(ctx context.Context, cmd *cli.Command) 
 	if err != nil {
 		return nil, err
 	}
-	config, _, err := FindWorkspaceConfig()
+	config, configPath, err := FindWorkspaceConfig()
 	if err == nil && config != nil {
+		// Get the directory containing the workspace config file
+		configDir := filepath.Dir(configPath)
+
 		if !cmd.IsSet("openapi-spec") && !cmd.IsSet("oas") && config.OpenAPISpec != "" {
+			// Resolve OpenAPI spec path relative to workspace config directory
+			openAPIPath := filepath.Join(configDir, config.OpenAPISpec)
 			fileAction := getAPIFlagFileAction("body", "revision.openapi\\.yml.content")
-			if err := fileAction(cc, cmd, config.OpenAPISpec); err != nil {
+			if err := fileAction(cc, cmd, openAPIPath); err != nil {
 				return nil, fmt.Errorf("failed to load OpenAPI spec from workspace config: %v", err)
 			}
 		}
 
 		if !cmd.IsSet("stainless-config") && !cmd.IsSet("config") && config.StainlessConfig != "" {
+			// Resolve Stainless config path relative to workspace config directory
+			stainlessConfigPath := filepath.Join(configDir, config.StainlessConfig)
 			fileAction := getAPIFlagFileAction("body", "revision.openapi\\.stainless\\.yml.content")
-			if err := fileAction(cc, cmd, config.StainlessConfig); err != nil {
+			if err := fileAction(cc, cmd, stainlessConfigPath); err != nil {
 				return nil, fmt.Errorf("failed to load Stainless config from workspace config: %v", err)
 			}
 		}
