@@ -44,9 +44,9 @@ The CLI supports workspace configuration to avoid repeatedly specifying the proj
 You can initialize a workspace configuration with:
 
 ```sh
-stainless-api-cli init --project-name your-project-name
+stl init --project your-project-name
 ```
 
-If you don't provide the `--project-name` flag, you'll be prompted to enter a project name.
+If you don't provide the `--project` flag, you'll be prompted to enter a project name.
 
 Additionally, when you run a command with a project name flag in an interactive terminal, the CLI will offer to initialize a workspace configuration for you.
