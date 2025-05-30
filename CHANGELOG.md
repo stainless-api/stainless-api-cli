@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-alpha.10 (2025-05-30)
+
+Full Changelog: [v0.1.0-alpha.9...v0.1.0-alpha.10](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.9...v0.1.0-alpha.10)
+
+### Bug Fixes
+
+* link auth and workspace subcommands to main CLI ([e73a657](https://github.com/stainless-api/stainless-api-cli/commit/e73a657b89ced3d651a82185755aa8d56c44c319))
+
+
+### Chores
+
+* add completions to .gitignore ([acf78a9](https://github.com/stainless-api/stainless-api-cli/commit/acf78a9bdd09c08d7c3846a465f50a7b1d070922))
+* improve readme ([bf63975](https://github.com/stainless-api/stainless-api-cli/commit/bf63975c1fd32b59ae75bf1e6d345be584aae53d))
+
 ## 0.1.0-alpha.9 (2025-05-30)
 
 Full Changelog: [v0.1.0-alpha.8...v0.1.0-alpha.9](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.8...v0.1.0-alpha.9)
