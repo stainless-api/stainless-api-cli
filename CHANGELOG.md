@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.0-alpha.9 (2025-05-30)
+
+Full Changelog: [v0.1.0-alpha.8...v0.1.0-alpha.9](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.8...v0.1.0-alpha.9)
+
+### Features
+
+* change --project-name flag to --project in workspace init command ([b1131e6](https://github.com/stainless-api/stainless-api-cli/commit/b1131e6259052b592af5b5a65f859357215a74e4))
+* enhance workspace init with auto-detection and relative path resolution ([df091f0](https://github.com/stainless-api/stainless-api-cli/commit/df091f0fc109245407619bcae02e107ef5d6b28e))
+
+
+### Chores
+
+* add completions to release ([553394c](https://github.com/stainless-api/stainless-api-cli/commit/553394cbc05009671d5eef31e750a7b605ae7393))
+* **internal:** codegen related update ([b90b5a6](https://github.com/stainless-api/stainless-api-cli/commit/b90b5a63cb1ecab77ac27ab3200b7cfa440e83c8))
+
 ## 0.1.0-alpha.8 (2025-05-29)
 
 Full Changelog: [v0.1.0-alpha.7...v0.1.0-alpha.8](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.7...v0.1.0-alpha.8)
