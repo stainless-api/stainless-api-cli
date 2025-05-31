@@ -9,7 +9,7 @@ It is generated with [Stainless](https://www.stainless.com/).
 ### Installing with Homebrew
 
 ```sh
-brew tap stainless-api/homebrew-stl
+brew tap stainless-api/stl
 brew install stl
 ```
 
