@@ -47,16 +47,16 @@ var projectsList = cli.Command{
 	Usage: "List projects in an organization",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:   "org",
-			Action: getAPIFlagAction[string]("query", "org"),
-		},
-		&cli.StringFlag{
 			Name:   "cursor",
 			Action: getAPIFlagAction[string]("query", "cursor"),
 		},
 		&cli.FloatFlag{
 			Name:   "limit",
 			Action: getAPIFlagAction[float64]("query", "limit"),
+		},
+		&cli.StringFlag{
+			Name:   "org",
+			Action: getAPIFlagAction[string]("query", "org"),
 		},
 	},
 	Before:          initAPICommand,
