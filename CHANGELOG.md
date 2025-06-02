@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.0-alpha.11 (2025-06-02)
+
+Full Changelog: [v0.1.0-alpha.10...v0.1.0-alpha.11](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.10...v0.1.0-alpha.11)
+
+### Features
+
+* **api:** add diagnostics to build object ([fbbf7eb](https://github.com/stainless-api/stainless-api-cli/commit/fbbf7eba1eb3c06a9040a5e30904521a26021fa2))
+
+
+### Chores
+
+* make tap installation command shorter ([e8b060c](https://github.com/stainless-api/stainless-api-cli/commit/e8b060c69eb65b9828c863f97bd8fd4d064f7c0f))
+
 ## 0.1.0-alpha.10 (2025-05-30)
 
 Full Changelog: [v0.1.0-alpha.9...v0.1.0-alpha.10](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.9...v0.1.0-alpha.10)
