@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var buildTargetOutputsRetrieve = cli.Command{
+var buildsTargetOutputsRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Download the output of a build target",
 	Flags: []cli.Flag{
@@ -34,14 +34,14 @@ var buildTargetOutputsRetrieve = cli.Command{
 		},
 	},
 	Before:          initAPICommand,
-	Action:          handleBuildTargetOutputsRetrieve,
+	Action:          handleBuildsTargetOutputsRetrieve,
 	HideHelpCommand: true,
 }
 
-func handleBuildTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) error {
+func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
 	params := stainlessv0.BuildTargetOutputGetParams{}
-	res, err := cc.client.BuildTargetOutputs.Get(
+	res, err := cc.client.Builds.TargetOutputs.Get(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
