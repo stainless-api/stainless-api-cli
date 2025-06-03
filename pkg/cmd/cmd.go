@@ -69,9 +69,9 @@ var Command = cli.Command{
 		},
 
 		{
-			Name: "build_target_outputs",
+			Name: "builds:target_outputs",
 			Commands: []*cli.Command{
-				&buildTargetOutputsRetrieve,
+				&buildsTargetOutputsRetrieve,
 			},
 		},
 
