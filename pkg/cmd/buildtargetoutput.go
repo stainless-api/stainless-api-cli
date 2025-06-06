@@ -12,7 +12,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var buildTargetOutputsRetrieve = cli.Command{
+var buildsTargetOutputsRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Download the output of a build target",
 	Flags: []cli.Flag{
@@ -33,12 +33,11 @@ var buildTargetOutputsRetrieve = cli.Command{
 			Action: getAPIFlagAction[string]("query", "output"),
 		},
 	},
-	Before:          initAPICommand,
-	Action:          handleBuildTargetOutputsPull,
-	HideHelpCommand: true,
+	Before: initAPICommand,
+	Action: handleBuildsTargetOutputsRetrieve,
 }
 
-var buildTargetOutputsPull = cli.Command{
+var buildsTargetOutputsPull = cli.Command{
 	Name:  "pull",
 	Usage: "TODO",
 	Flags: []cli.Flag{
@@ -64,10 +63,10 @@ var buildTargetOutputsPull = cli.Command{
 	HideHelpCommand: true,
 }
 
-func handleBuildTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) error {
+func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
 	params := stainlessv0.BuildTargetOutputGetParams{}
-	res, err := cc.client.BuildTargetOutputs.Get(
+	res, err := cc.client.Builds.TargetOutputs.Get(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
@@ -83,7 +82,7 @@ func handleBuildTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) err
 func handleBuildTargetOutputsPull(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
 
-	res, err := cc.client.BuildTargetOutputs.Get(
+	res, err := cc.client.Builds.TargetOutputs.Get(
 		context.TODO(),
 		stainlessv0.BuildTargetOutputGetParams{},
 		option.WithMiddleware(cc.AsMiddleware()),
