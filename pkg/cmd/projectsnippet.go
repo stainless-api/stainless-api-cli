@@ -20,10 +20,6 @@ var projectsSnippetsCreateRequest = cli.Command{
 			Name: "project-name",
 		},
 		&cli.StringFlag{
-			Name:   "language",
-			Action: getAPIFlagAction[string]("body", "language"),
-		},
-		&cli.StringFlag{
 			Name:   "request.method",
 			Action: getAPIFlagAction[string]("body", "request.method"),
 		},
@@ -51,29 +47,13 @@ var projectsSnippetsCreateRequest = cli.Command{
 			Name:   "request.body.filePath",
 			Action: getAPIFlagAction[string]("body", "request.body.filePath"),
 		},
-		&cli.StringFlag{
-			Name:   "request.queryString.name",
-			Action: getAPIFlagAction[string]("body", "request.queryString.#.name"),
-		},
-		&cli.StringFlag{
-			Name:   "request.queryString.value",
-			Action: getAPIFlagAction[string]("body", "request.queryString.#.value"),
-		},
 		&cli.BoolFlag{
-			Name:   "request.+query_string",
-			Action: getAPIFlagActionWithValue[bool]("body", "request.queryString.-1", map[string]interface{}{}),
+			Name:   "har",
+			Action: getAPIFlagActionWithValue[bool]("body", "har", nil),
 		},
 		&cli.StringFlag{
-			Name:   "request.url",
-			Action: getAPIFlagAction[string]("body", "request.url"),
-		},
-		&cli.StringFlag{
-			Name:   "request.postData.mimeType",
-			Action: getAPIFlagAction[string]("body", "request.postData.mimeType"),
-		},
-		&cli.StringFlag{
-			Name:   "request.postData.text",
-			Action: getAPIFlagAction[string]("body", "request.postData.text"),
+			Name:   "language",
+			Action: getAPIFlagAction[string]("body", "language"),
 		},
 		&cli.StringFlag{
 			Name:   "version",

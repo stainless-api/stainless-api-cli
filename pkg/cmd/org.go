@@ -16,7 +16,7 @@ var orgsRetrieve = cli.Command{
 	Usage: "Retrieve an organization by name",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name: "org-name",
+			Name: "org",
 		},
 	},
 	Before:          initAPICommand,
@@ -37,7 +37,7 @@ func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(ctx, cmd)
 	res, err := cc.client.Orgs.Get(
 		context.TODO(),
-		cmd.Value("org-name").(string),
+		cmd.Value("org").(string),
 		option.WithMiddleware(cc.AsMiddleware()),
 	)
 	if err != nil {

@@ -29,6 +29,7 @@ var Command = cli.Command{
 		{
 			Name: "projects",
 			Commands: []*cli.Command{
+				&projectsCreate,
 				&projectsRetrieve,
 				&projectsUpdate,
 				&projectsList,
