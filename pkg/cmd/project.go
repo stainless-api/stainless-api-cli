@@ -12,6 +12,36 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
+var projectsCreate = cli.Command{
+	Name:  "create",
+	Usage: "Create a new project",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:   "display-name",
+			Action: getAPIFlagAction[string]("body", "display_name"),
+		},
+		&cli.StringFlag{
+			Name:   "org",
+			Action: getAPIFlagAction[string]("body", "org"),
+		},
+		&cli.StringFlag{
+			Name:   "slug",
+			Action: getAPIFlagAction[string]("body", "slug"),
+		},
+		&cli.StringFlag{
+			Name:   "targets",
+			Action: getAPIFlagAction[string]("body", "targets.#"),
+		},
+		&cli.StringFlag{
+			Name:   "+target",
+			Action: getAPIFlagAction[string]("body", "targets.-1"),
+		},
+	},
+	Before:          initAPICommand,
+	Action:          handleProjectsCreate,
+	HideHelpCommand: true,
+}
+
 var projectsRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Retrieve a project by name",
@@ -62,6 +92,23 @@ var projectsList = cli.Command{
 	Before:          initAPICommand,
 	Action:          handleProjectsList,
 	HideHelpCommand: true,
+}
+
+func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(ctx, cmd)
+	params := stainlessv0.ProjectNewParams{}
+	res, err := cc.client.Projects.New(
+		context.TODO(),
+		params,
+		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithRequestBody("application/json", cc.body),
+	)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	return nil
 }
 
 func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {

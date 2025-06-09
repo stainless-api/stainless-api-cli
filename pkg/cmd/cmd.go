@@ -29,6 +29,7 @@ var Command = cli.Command{
 		{
 			Name: "projects",
 			Commands: []*cli.Command{
+				&projectsCreate,
 				&projectsRetrieve,
 				&projectsUpdate,
 				&projectsList,
@@ -69,9 +70,9 @@ var Command = cli.Command{
 		},
 
 		{
-			Name: "build_target_outputs",
+			Name: "builds:target_outputs",
 			Commands: []*cli.Command{
-				&buildTargetOutputsRetrieve,
+				&buildsTargetOutputsRetrieve,
 			},
 		},
 
