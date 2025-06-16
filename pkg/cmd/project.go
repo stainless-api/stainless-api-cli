@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/urfave/cli/v3"
@@ -16,28 +17,42 @@ var projectsCreate = cli.Command{
 	Name:  "create",
 	Usage: "Create a new project",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:   "display-name",
-			Action: getAPIFlagAction[string]("body", "display_name"),
+		&jsonflag.JSONStringFlag{
+			Name: "display-name",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "display_name",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "org",
-			Action: getAPIFlagAction[string]("body", "org"),
+		&jsonflag.JSONStringFlag{
+			Name: "org",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "org",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "slug",
-			Action: getAPIFlagAction[string]("body", "slug"),
+		&jsonflag.JSONStringFlag{
+			Name: "slug",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "slug",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "targets",
-			Action: getAPIFlagAction[string]("body", "targets.#"),
+		&jsonflag.JSONStringFlag{
+			Name: "targets",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "targets.#",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "+target",
-			Action: getAPIFlagAction[string]("body", "targets.-1"),
+		&jsonflag.JSONStringFlag{
+			Name: "+target",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "targets.-1",
+			},
 		},
 	},
-	Before:          initAPICommand,
 	Action:          handleProjectsCreate,
 	HideHelpCommand: true,
 }
@@ -50,7 +65,6 @@ var projectsRetrieve = cli.Command{
 			Name: "project",
 		},
 	},
-	Before:          initAPICommand,
 	Action:          handleProjectsRetrieve,
 	HideHelpCommand: true,
 }
@@ -62,12 +76,14 @@ var projectsUpdate = cli.Command{
 		&cli.StringFlag{
 			Name: "project",
 		},
-		&cli.StringFlag{
-			Name:   "display-name",
-			Action: getAPIFlagAction[string]("body", "display_name"),
+		&jsonflag.JSONStringFlag{
+			Name: "display-name",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "display_name",
+			},
 		},
 	},
-	Before:          initAPICommand,
 	Action:          handleProjectsUpdate,
 	HideHelpCommand: true,
 }
@@ -76,26 +92,34 @@ var projectsList = cli.Command{
 	Name:  "list",
 	Usage: "List projects in an organization",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:   "cursor",
-			Action: getAPIFlagAction[string]("query", "cursor"),
+		&jsonflag.JSONStringFlag{
+			Name: "cursor",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "cursor",
+			},
 		},
-		&cli.FloatFlag{
-			Name:   "limit",
-			Action: getAPIFlagAction[float64]("query", "limit"),
+		&jsonflag.JSONFloatFlag{
+			Name: "limit",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "limit",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "org",
-			Action: getAPIFlagAction[string]("query", "org"),
+		&jsonflag.JSONStringFlag{
+			Name: "org",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "org",
+			},
 		},
 	},
-	Before:          initAPICommand,
 	Action:          handleProjectsList,
 	HideHelpCommand: true,
 }
 
 func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	params := stainlessv0.ProjectNewParams{}
 	res, err := cc.client.Projects.New(
 		context.TODO(),
@@ -112,7 +136,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	params := stainlessv0.ProjectGetParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainlessv0.String(cmd.Value("project").(string))
@@ -131,7 +155,7 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	params := stainlessv0.ProjectUpdateParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainlessv0.String(cmd.Value("project").(string))
@@ -151,7 +175,7 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	params := stainlessv0.ProjectListParams{}
 	res, err := cc.client.Projects.List(
 		context.TODO(),

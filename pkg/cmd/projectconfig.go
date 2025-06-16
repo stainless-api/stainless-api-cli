@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/urfave/cli/v3"
@@ -19,12 +20,14 @@ var projectsConfigsRetrieve = cli.Command{
 		&cli.StringFlag{
 			Name: "project",
 		},
-		&cli.StringFlag{
-			Name:   "branch",
-			Action: getAPIFlagAction[string]("query", "branch"),
+		&jsonflag.JSONStringFlag{
+			Name: "branch",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "branch",
+			},
 		},
 	},
-	Before:          initAPICommand,
 	Action:          handleProjectsConfigsRetrieve,
 	HideHelpCommand: true,
 }
@@ -36,55 +39,64 @@ var projectsConfigsGuess = cli.Command{
 		&cli.StringFlag{
 			Name: "project",
 		},
-		&cli.StringFlag{
-			Name:   "spec",
-			Action: getAPIFlagAction[string]("body", "spec"),
+		&jsonflag.JSONStringFlag{
+			Name: "spec",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "spec",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "branch",
-			Action: getAPIFlagAction[string]("body", "branch"),
+		&jsonflag.JSONStringFlag{
+			Name: "branch",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "branch",
+			},
 		},
 	},
-	Before:          initAPICommand,
 	Action:          handleProjectsConfigsGuess,
 	HideHelpCommand: true,
 }
 
 func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	params := stainlessv0.ProjectConfigGetParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainlessv0.String(cmd.Value("project").(string))
 	}
-	res, err := cc.client.Projects.Configs.Get(
+	res := []byte{}
+	_, err := cc.client.Projects.Configs.Get(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	fmt.Printf("%s\n", colorizeJSON(string(res), os.Stdout))
 	return nil
 }
 
 func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	params := stainlessv0.ProjectConfigGuessParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainlessv0.String(cmd.Value("project").(string))
 	}
-	res, err := cc.client.Projects.Configs.Guess(
+	res := []byte{}
+	_, err := cc.client.Projects.Configs.Guess(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithRequestBody("application/json", cc.body),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	fmt.Printf("%s\n", colorizeJSON(string(res), os.Stdout))
 	return nil
 }
