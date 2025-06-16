@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/urfave/cli/v3"
@@ -19,74 +20,122 @@ var projectsSnippetsCreateRequest = cli.Command{
 		&cli.StringFlag{
 			Name: "project-name",
 		},
-		&cli.StringFlag{
-			Name:   "language",
-			Action: getAPIFlagAction[string]("body", "language"),
+		&jsonflag.JSONStringFlag{
+			Name: "language",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "language",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "request.method",
-			Action: getAPIFlagAction[string]("body", "request.method"),
+		&jsonflag.JSONStringFlag{
+			Name: "request.method",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "request.method",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "request.parameters.in",
-			Action: getAPIFlagAction[string]("body", "request.parameters.#.in"),
+		&jsonflag.JSONStringFlag{
+			Name: "request.parameters.in",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "request.parameters.#.in",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "request.parameters.name",
-			Action: getAPIFlagAction[string]("body", "request.parameters.#.name"),
+		&jsonflag.JSONStringFlag{
+			Name: "request.parameters.name",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "request.parameters.#.name",
+			},
 		},
-		&cli.BoolFlag{
-			Name:   "request.+parameter",
-			Action: getAPIFlagActionWithValue[bool]("body", "request.parameters.-1", map[string]interface{}{}),
+		&jsonflag.JSONAnyFlag{
+			Name: "request.+parameter",
+			Config: jsonflag.JSONConfig{
+				Kind:     jsonflag.Body,
+				Path:     "request.parameters.-1",
+				SetValue: map[string]interface{}{},
+			},
+			Value: map[string]interface{}{},
 		},
-		&cli.StringFlag{
-			Name:   "request.path",
-			Action: getAPIFlagAction[string]("body", "request.path"),
+		&jsonflag.JSONStringFlag{
+			Name: "request.path",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "request.path",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "request.body.fileParam",
-			Action: getAPIFlagAction[string]("body", "request.body.fileParam"),
+		&jsonflag.JSONStringFlag{
+			Name: "request.body.fileParam",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "request.body.fileParam",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "request.body.filePath",
-			Action: getAPIFlagAction[string]("body", "request.body.filePath"),
+		&jsonflag.JSONStringFlag{
+			Name: "request.body.filePath",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "request.body.filePath",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "request.queryString.name",
-			Action: getAPIFlagAction[string]("body", "request.queryString.#.name"),
+		&jsonflag.JSONStringFlag{
+			Name: "request.queryString.name",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "request.queryString.#.name",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "request.queryString.value",
-			Action: getAPIFlagAction[string]("body", "request.queryString.#.value"),
+		&jsonflag.JSONStringFlag{
+			Name: "request.queryString.value",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "request.queryString.#.value",
+			},
 		},
-		&cli.BoolFlag{
-			Name:   "request.+query_string",
-			Action: getAPIFlagActionWithValue[bool]("body", "request.queryString.-1", map[string]interface{}{}),
+		&jsonflag.JSONAnyFlag{
+			Name: "request.+query_string",
+			Config: jsonflag.JSONConfig{
+				Kind:     jsonflag.Body,
+				Path:     "request.queryString.-1",
+				SetValue: map[string]interface{}{},
+			},
+			Value: map[string]interface{}{},
 		},
-		&cli.StringFlag{
-			Name:   "request.url",
-			Action: getAPIFlagAction[string]("body", "request.url"),
+		&jsonflag.JSONStringFlag{
+			Name: "request.url",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "request.url",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "request.postData.mimeType",
-			Action: getAPIFlagAction[string]("body", "request.postData.mimeType"),
+		&jsonflag.JSONStringFlag{
+			Name: "request.postData.mimeType",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "request.postData.mimeType",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "request.postData.text",
-			Action: getAPIFlagAction[string]("body", "request.postData.text"),
+		&jsonflag.JSONStringFlag{
+			Name: "request.postData.text",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "request.postData.text",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "version",
-			Action: getAPIFlagAction[string]("body", "version"),
+		&jsonflag.JSONStringFlag{
+			Name: "version",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "version",
+			},
 		},
 	},
-	Before:          initAPICommand,
 	Action:          handleProjectsSnippetsCreateRequest,
 	HideHelpCommand: true,
 }
 
 func handleProjectsSnippetsCreateRequest(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	params := stainlessv0.ProjectSnippetNewRequestParams{}
 	res, err := cc.client.Projects.Snippets.NewRequest(
 		context.TODO(),

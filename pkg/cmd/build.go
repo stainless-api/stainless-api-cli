@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/urfave/cli/v3"
@@ -96,27 +97,35 @@ var buildsCreate = cli.Command{
 	Name:  "create",
 	Usage: "Create a new build",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:   "project",
-			Action: getAPIFlagAction[string]("body", "project"),
+		&jsonflag.JSONStringFlag{
+			Name: "project",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "project",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "revision",
-			Action: getAPIFlagAction[string]("body", "revision"),
+		&jsonflag.JSONStringFlag{
+			Name: "revision",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "revision",
+			},
 		},
-		&cli.StringFlag{
+		&jsonflag.JSONFileFlag{
 			Name:    "openapi-spec",
 			Aliases: []string{"oas"},
-			Action:  getAPIFlagFileAction("body", "revision.openapi\\.yml.content"),
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "revision.openapi\\.yml.content",
+			},
 		},
-		&cli.StringFlag{
+		&jsonflag.JSONFileFlag{
 			Name:    "stainless-config",
 			Aliases: []string{"config"},
-			Action:  getAPIFlagFileAction("body", "revision.openapi\\.stainless\\.yml.content"),
-		},
-		&cli.BoolFlag{
-			Name:   "allow-empty",
-			Action: getAPIFlagAction[bool]("body", "allow_empty"),
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "revision.openapi\\.stainless\\.yml.content",
+			},
 		},
 		&cli.BoolFlag{
 			Name:  "wait",
@@ -126,24 +135,42 @@ var buildsCreate = cli.Command{
 			Name:  "pull",
 			Usage: "Pull the build outputs after completion (only works with --wait)",
 		},
-		&cli.StringFlag{
-			Name:   "branch",
-			Action: getAPIFlagAction[string]("body", "branch"),
+		&jsonflag.JSONBoolFlag{
+			Name: "allow-empty",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "allow_empty",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "commit-message",
-			Action: getAPIFlagAction[string]("body", "commit_message"),
+		&jsonflag.JSONStringFlag{
+			Name: "branch",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "branch",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "targets",
-			Action: getAPIFlagAction[string]("body", "targets.#"),
+		&jsonflag.JSONStringFlag{
+			Name: "commit-message",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "commit_message",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "+target",
-			Action: getAPIFlagAction[string]("body", "targets.-1"),
+		&jsonflag.JSONStringFlag{
+			Name: "targets",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "targets.#",
+			},
+		},
+		&jsonflag.JSONStringFlag{
+			Name: "+target",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "targets.-1",
+			},
 		},
 	},
-	Before:          initAPICommandWithWorkspaceDefaults,
 	Action:          handleBuildsCreate,
 	HideHelpCommand: true,
 }
@@ -156,7 +183,6 @@ var buildsRetrieve = cli.Command{
 			Name: "build-id",
 		},
 	},
-	Before:          initAPICommand,
 	Action:          handleBuildsRetrieve,
 	HideHelpCommand: true,
 }
@@ -165,28 +191,42 @@ var buildsList = cli.Command{
 	Name:  "list",
 	Usage: "List builds for a project",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:   "project",
-			Action: getAPIFlagAction[string]("query", "project"),
+		&jsonflag.JSONStringFlag{
+			Name: "project",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "project",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "branch",
-			Action: getAPIFlagAction[string]("query", "branch"),
+		&jsonflag.JSONStringFlag{
+			Name: "branch",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "branch",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "cursor",
-			Action: getAPIFlagAction[string]("query", "cursor"),
+		&jsonflag.JSONStringFlag{
+			Name: "cursor",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "cursor",
+			},
 		},
-		&cli.FloatFlag{
-			Name:   "limit",
-			Action: getAPIFlagAction[float64]("query", "limit"),
+		&jsonflag.JSONFloatFlag{
+			Name: "limit",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "limit",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "revision",
-			Action: getAPIFlagAction[string]("query", "revision"),
+		&jsonflag.JSONStringFlag{
+			Name: "revision",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "revision",
+			},
 		},
 	},
-	Before:          initAPICommand,
 	Action:          handleBuildsList,
 	HideHelpCommand: true,
 }
@@ -195,51 +235,76 @@ var buildsCompare = cli.Command{
 	Name:  "compare",
 	Usage: "Creates two builds whose outputs can be compared directly",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:   "base.revision",
-			Action: getAPIFlagAction[string]("body", "base.revision"),
+		&jsonflag.JSONStringFlag{
+			Name: "base.revision",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "base.revision",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "base.branch",
-			Action: getAPIFlagAction[string]("body", "base.branch"),
+		&jsonflag.JSONStringFlag{
+			Name: "base.branch",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "base.branch",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "base.commit_message",
-			Action: getAPIFlagAction[string]("body", "base.commit_message"),
+		&jsonflag.JSONStringFlag{
+			Name: "base.commit_message",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "base.commit_message",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "head.revision",
-			Action: getAPIFlagAction[string]("body", "head.revision"),
+		&jsonflag.JSONStringFlag{
+			Name: "head.revision",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "head.revision",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "head.branch",
-			Action: getAPIFlagAction[string]("body", "head.branch"),
+		&jsonflag.JSONStringFlag{
+			Name: "head.branch",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "head.branch",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "head.commit_message",
-			Action: getAPIFlagAction[string]("body", "head.commit_message"),
+		&jsonflag.JSONStringFlag{
+			Name: "head.commit_message",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "head.commit_message",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "project",
-			Action: getAPIFlagAction[string]("body", "project"),
+		&jsonflag.JSONStringFlag{
+			Name: "project",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "project",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "targets",
-			Action: getAPIFlagAction[string]("body", "targets.#"),
+		&jsonflag.JSONStringFlag{
+			Name: "targets",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "targets.#",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "+target",
-			Action: getAPIFlagAction[string]("body", "targets.-1"),
+		&jsonflag.JSONStringFlag{
+			Name: "+target",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "targets.-1",
+			},
 		},
 	},
-	Before:          initAPICommand,
 	Action:          handleBuildsCompare,
 	HideHelpCommand: true,
 }
 
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
-	// Log to stderr that we're creating a build
+	cc := getAPICommandContext(cmd)
 	fmt.Fprintf(os.Stderr, "%s Creating build...\n", au.BrightCyan("✱"))
 	params := stainlessv0.BuildNewParams{}
 	res, err := cc.client.Builds.New(
@@ -339,7 +404,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	res, err := cc.client.Builds.Get(
 		context.TODO(),
 		cmd.Value("build-id").(string),
@@ -497,7 +562,7 @@ func pullOutput(output, url, ref, targetDir, target string) error {
 }
 
 func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	params := stainlessv0.BuildListParams{}
 	res, err := cc.client.Builds.List(
 		context.TODO(),
@@ -513,7 +578,7 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	params := stainlessv0.BuildCompareParams{}
 	res, err := cc.client.Builds.Compare(
 		context.TODO(),
@@ -528,12 +593,9 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 	return nil
 }
 
-// initAPICommandWithWorkspaceDefaults applies workspace defaults before initializing API command
-func initAPICommandWithWorkspaceDefaults(ctx context.Context, cmd *cli.Command) (context.Context, error) {
-	cc, err := initAPICommand(ctx, cmd)
-	if err != nil {
-		return nil, err
-	}
+// getAPICommandWithWorkspaceDefaults applies workspace defaults before initializing API command
+func getAPICommandContextWithWorkspaceDefaults(cmd *cli.Command) (*apiCommandContext, error) {
+	cc := getAPICommandContext(cmd)
 	config, configPath, err := FindWorkspaceConfig()
 	if err == nil && config != nil {
 		// Get the directory containing the workspace config file
@@ -542,19 +604,21 @@ func initAPICommandWithWorkspaceDefaults(ctx context.Context, cmd *cli.Command) 
 		if !cmd.IsSet("openapi-spec") && !cmd.IsSet("oas") && config.OpenAPISpec != "" {
 			// Resolve OpenAPI spec path relative to workspace config directory
 			openAPIPath := filepath.Join(configDir, config.OpenAPISpec)
-			fileAction := getAPIFlagFileAction("body", "revision.openapi\\.yml.content")
-			if err := fileAction(cc, cmd, openAPIPath); err != nil {
+			content, err := os.ReadFile(openAPIPath)
+			if err != nil {
 				return nil, fmt.Errorf("failed to load OpenAPI spec from workspace config: %v", err)
 			}
+			jsonflag.Register(jsonflag.Body, "revision.openapi\\.yml.content", string(content))
 		}
 
 		if !cmd.IsSet("stainless-config") && !cmd.IsSet("config") && config.StainlessConfig != "" {
 			// Resolve Stainless config path relative to workspace config directory
 			stainlessConfigPath := filepath.Join(configDir, config.StainlessConfig)
-			fileAction := getAPIFlagFileAction("body", "revision.openapi\\.stainless\\.yml.content")
-			if err := fileAction(cc, cmd, stainlessConfigPath); err != nil {
+			content, err := os.ReadFile(stainlessConfigPath)
+			if err != nil {
 				return nil, fmt.Errorf("failed to load Stainless config from workspace config: %v", err)
 			}
+			jsonflag.Register(jsonflag.Body, "revision.openapi\\.stainless\\.yml.content", string(content))
 		}
 	}
 	return cc, err

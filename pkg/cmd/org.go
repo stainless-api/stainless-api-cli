@@ -19,7 +19,6 @@ var orgsRetrieve = cli.Command{
 			Name: "org",
 		},
 	},
-	Before:          initAPICommand,
 	Action:          handleOrgsRetrieve,
 	HideHelpCommand: true,
 }
@@ -28,13 +27,12 @@ var orgsList = cli.Command{
 	Name:            "list",
 	Usage:           "List organizations the user has access to",
 	Flags:           []cli.Flag{},
-	Before:          initAPICommand,
 	Action:          handleOrgsList,
 	HideHelpCommand: true,
 }
 
 func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	res, err := cc.client.Orgs.Get(
 		context.TODO(),
 		cmd.Value("org").(string),
@@ -49,7 +47,7 @@ func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleOrgsList(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	res, err := cc.client.Orgs.List(context.TODO(), option.WithMiddleware(cc.AsMiddleware()))
 	if err != nil {
 		return err
