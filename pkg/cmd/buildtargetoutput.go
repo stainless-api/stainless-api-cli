@@ -67,8 +67,12 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
 
 	if cmd.Bool("pull") {
-		targetDir := fmt.Sprintf("%s-%s", "tmp", "target")
-		return pullOutput(res.Output, res.URL, res.Ref, targetDir, "target")
+		build, err := cc.client.Builds.Get(ctx, cmd.String("build-id"))
+		if err != nil {
+			return err
+		}
+		targetDir := fmt.Sprintf("%s-%s", build.Project, cmd.String("target"))
+		return pullOutput(res.Output, res.URL, res.Ref, targetDir)
 	}
 	return nil
 }

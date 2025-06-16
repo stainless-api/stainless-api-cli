@@ -443,7 +443,7 @@ func pullBuildOutputs(ctx context.Context, client stainlessv0.Client, res stainl
 			au.BrightCyan("✱"), i+1, len(targets), au.Bold(target), au.Cyan(targetDir))
 
 		// Get the output details
-		outputRes, err := client.BuildTargetOutputs.Get(
+		outputRes, err := client.Builds.TargetOutputs.Get(
 			ctx,
 			stainlessv0.BuildTargetOutputGetParams{
 				BuildID: res.ID,
@@ -459,7 +459,7 @@ func pullBuildOutputs(ctx context.Context, client stainlessv0.Client, res stainl
 		}
 
 		// Handle based on output type
-		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, targetDir, target)
+		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, targetDir)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s Failed to pull %s: %v\n",
 				au.BrightRed("✱"), target, err)
@@ -478,7 +478,7 @@ func pullBuildOutputs(ctx context.Context, client stainlessv0.Client, res stainl
 }
 
 // pullOutput handles downloading or cloning a build target output
-func pullOutput(output, url, ref, targetDir, target string) error {
+func pullOutput(output, url, ref, targetDir string) error {
 	// Remove existing directory if it exists
 	if _, err := os.Stat(targetDir); err == nil {
 		fmt.Fprintf(os.Stderr, "  %s Removing existing directory %s\n", au.BrightBlack("•"), targetDir)
