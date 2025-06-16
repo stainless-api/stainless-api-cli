@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.1.0-alpha.12 (2025-06-16)
+
+Full Changelog: [v0.1.0-alpha.11...v0.1.0-alpha.12](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.11...v0.1.0-alpha.12)
+
+### Features
+
+* add build/upload steps to builds api ([4573934](https://github.com/stainless-api/stainless-api-cli/commit/45739343a28e9615e62e0c5126d1d66715212df9))
+* add platform headers ([ca381b4](https://github.com/stainless-api/stainless-api-cli/commit/ca381b436607c3a7801b74e91a9147a2b59378bc))
+* **api:** add v0 project create api ([a40eca6](https://github.com/stainless-api/stainless-api-cli/commit/a40eca6419d7ab8159491e861cde86d3e779b0a0))
+* **api:** manual updates ([ef33c30](https://github.com/stainless-api/stainless-api-cli/commit/ef33c30512ca63d63380eb3f7c118e315696b2bc))
+* **api:** manual updates ([80a6fb5](https://github.com/stainless-api/stainless-api-cli/commit/80a6fb50820cd4766359bcf74daccf72f44fad59))
+
+
+### Bug Fixes
+
+* changes har request format for snippets API some more ([4b2a898](https://github.com/stainless-api/stainless-api-cli/commit/4b2a898f947b7a4e000e758eb28cea5c00950687))
+* fix type errors ([d5e1ae3](https://github.com/stainless-api/stainless-api-cli/commit/d5e1ae3f6c2566a42400a0a18394266a700f7463))
+
+
+### Chores
+
+* bump go package to 0.6.0 ([36a231d](https://github.com/stainless-api/stainless-api-cli/commit/36a231d0c7cb28e4111e9cbc3ac3c78833a340be))
+* **internal:** codegen related update ([a108d1a](https://github.com/stainless-api/stainless-api-cli/commit/a108d1ad99e6bfd3469a8cecf48b4b299b199796))
+* **internal:** codegen related update ([894c558](https://github.com/stainless-api/stainless-api-cli/commit/894c558dac1b497c69e1696453b9672bb923a0d9))
+
+
+### Refactors
+
+* move build_target_outputs to builds.target_outputs ([a085509](https://github.com/stainless-api/stainless-api-cli/commit/a08550995142a7f45786b9e33b3d20360068f2ec))
+
 ## 0.1.0-alpha.11 (2025-06-02)
 
 Full Changelog: [v0.1.0-alpha.10...v0.1.0-alpha.11](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.10...v0.1.0-alpha.11)
