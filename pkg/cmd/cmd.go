@@ -53,13 +53,6 @@ var Command = cli.Command{
 		},
 
 		{
-			Name: "projects:snippets",
-			Commands: []*cli.Command{
-				&projectsSnippetsCreateRequest,
-			},
-		},
-
-		{
 			Name: "builds",
 			Commands: []*cli.Command{
 				&buildsCreate,
