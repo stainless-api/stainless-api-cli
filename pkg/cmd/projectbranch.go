@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/urfave/cli/v3"
@@ -19,20 +20,28 @@ var projectsBranchesCreate = cli.Command{
 		&cli.StringFlag{
 			Name: "project",
 		},
-		&cli.StringFlag{
-			Name:   "branch",
-			Action: getAPIFlagAction[string]("body", "branch"),
+		&jsonflag.JSONStringFlag{
+			Name: "branch",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "branch",
+			},
 		},
-		&cli.StringFlag{
-			Name:   "branch-from",
-			Action: getAPIFlagAction[string]("body", "branch_from"),
+		&jsonflag.JSONStringFlag{
+			Name: "branch-from",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "branch_from",
+			},
 		},
-		&cli.BoolFlag{
-			Name:   "force",
-			Action: getAPIFlagAction[bool]("body", "force"),
+		&jsonflag.JSONBoolFlag{
+			Name: "force",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "force",
+			},
 		},
 	},
-	Before:          initAPICommand,
 	Action:          handleProjectsBranchesCreate,
 	HideHelpCommand: true,
 }
@@ -48,13 +57,12 @@ var projectsBranchesRetrieve = cli.Command{
 			Name: "branch",
 		},
 	},
-	Before:          initAPICommand,
 	Action:          handleProjectsBranchesRetrieve,
 	HideHelpCommand: true,
 }
 
 func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	params := stainlessv0.ProjectBranchNewParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainlessv0.String(cmd.Value("project").(string))
@@ -74,7 +82,7 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(ctx, cmd)
+	cc := getAPICommandContext(cmd)
 	params := stainlessv0.ProjectBranchGetParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainlessv0.String(cmd.Value("project").(string))
