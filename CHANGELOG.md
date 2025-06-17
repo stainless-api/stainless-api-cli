@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0-alpha.13 (2025-06-17)
+
+Full Changelog: [v0.1.0-alpha.12...v0.1.0-alpha.13](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.12...v0.1.0-alpha.13)
+
+### Chores
+
+* **ci:** enable for pull requests ([3539b82](https://github.com/stainless-api/stainless-api-cli/commit/3539b82e2606cc2252ed808bf4feff883cab21c8))
+* **internal:** codegen related update ([567a6e6](https://github.com/stainless-api/stainless-api-cli/commit/567a6e653a6ca70db50cf9cc80ac6deaa64be97a))
+
 ## 0.1.0-alpha.12 (2025-06-16)
 
 Full Changelog: [v0.1.0-alpha.11...v0.1.0-alpha.12](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.11...v0.1.0-alpha.12)
