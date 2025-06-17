@@ -66,13 +66,6 @@ var Command = cli.Command{
 				&orgsList,
 			},
 		},
-
-		{
-			Name: "generate",
-			Commands: []*cli.Command{
-				&generateCreateSpec,
-			},
-		},
 	},
 	EnableShellCompletion: true,
 	HideHelpCommand:       true,
