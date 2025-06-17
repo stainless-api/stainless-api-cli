@@ -12,9 +12,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/logrusorgru/aurora/v4"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/urfave/cli/v3"
@@ -30,10 +28,12 @@ var initWorkspaceCommand = cli.Command{
 		},
 		&cli.StringFlag{
 			Name:  "openapi-spec",
+			Aliases: []string{"oas"},
 			Usage: "Path to OpenAPI spec file",
 		},
 		&cli.StringFlag{
 			Name:  "stainless-config",
+			Aliases: []string{"config"},
 			Usage: "Path to Stainless config file",
 		},
 	},
@@ -55,28 +55,7 @@ func handleInitWorkspace(ctx context.Context, cmd *cli.Command) error {
 	}
 	configPath := filepath.Join(dir, "stainless-workspace.json")
 	fmt.Printf("Writing workspace config to: %s\n", aurora.Bold(configPath))
-
 	fmt.Println()
-
-	// Set up form theme and keymap for use in multiple forms
-	keyMap := huh.NewDefaultKeyMap()
-	keyMap.Input.AcceptSuggestion = key.NewBinding(
-		key.WithKeys("tab"),
-		key.WithHelp("tab", "complete"),
-	)
-	keyMap.Input.Next = key.NewBinding(
-		key.WithKeys("tab", "down", "enter"),
-		key.WithHelp("tab/↓/enter", "next"),
-	)
-	keyMap.Input.Prev = key.NewBinding(
-		key.WithKeys("shift+tab", "up"),
-		key.WithHelp("shift+tab/↑", "previous"),
-	)
-
-	// Create custom theme with bullet point cursor and no borders
-	theme := huh.ThemeBase()
-	theme.Focused.Base = theme.Focused.Base.BorderStyle(lipgloss.NormalBorder())
-	theme.Focused.Title = theme.Focused.Title.Bold(true)
 
 	// Get values from flags or prepare for interactive prompt
 	projectName := cmd.String("project")
@@ -93,10 +72,10 @@ func handleInitWorkspace(ctx context.Context, cmd *cli.Command) error {
 
 	// Skip interactive form if all values are provided via flags or auto-detected
 	// Project name is required, but openAPISpec and stainlessConfig are optional
-	allValuesProvided := projectName != "" && 
-		(cmd.IsSet("openapi-spec") || openAPISpec != "") && 
+	allValuesProvided := projectName != "" &&
+		(cmd.IsSet("openapi-spec") || openAPISpec != "") &&
 		(cmd.IsSet("stainless-config") || stainlessConfig != "")
-	
+
 	if !allValuesProvided {
 		projectInfoMap := fetchUserProjects(ctx)
 
@@ -119,7 +98,7 @@ func handleInitWorkspace(ctx context.Context, cmd *cli.Command) error {
 					Placeholder("openapi.stainless.yml").
 					Value(&stainlessConfig),
 			),
-		).WithTheme(theme).WithKeyMap(keyMap)
+		).WithTheme(GetFormTheme()).WithKeyMap(GetFormKeyMap())
 
 		if err := form.Run(); err != nil {
 			return fmt.Errorf("failed to get workspace configuration: %v", err)

@@ -6,7 +6,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/charmbracelet/huh"
+	"github.com/logrusorgru/aurora/v4"
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
@@ -51,6 +54,21 @@ var projectsCreate = cli.Command{
 				Kind: jsonflag.Body,
 				Path: "targets.-1",
 			},
+		},
+		&cli.StringFlag{
+			Name:    "openapi-spec",
+			Aliases: []string{"oas"},
+			Usage:   "Path to OpenAPI spec file",
+		},
+		&cli.StringFlag{
+			Name:    "stainless-config",
+			Aliases: []string{"config"},
+			Usage:   "Path to Stainless config file",
+		},
+		&cli.BoolFlag{
+			Name:  "init-workspace",
+			Usage: "Initialize workspace configuration after creating project",
+			Value: true, // Default to true
 		},
 	},
 	Action:          handleProjectsCreate,
@@ -119,6 +137,190 @@ var projectsList = cli.Command{
 }
 
 func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
+	// Define available target languages
+	availableTargets := []huh.Option[string]{
+		huh.NewOption("TypeScript", "typescript").Selected(true),
+		huh.NewOption("Python", "python").Selected(true),
+		huh.NewOption("Go", "go"),
+		huh.NewOption("Java", "java"),
+		huh.NewOption("Kotlin", "kotlin"),
+		huh.NewOption("Ruby", "ruby"),
+		huh.NewOption("Terraform", "terraform"),
+		huh.NewOption("C#", "csharp"),
+		huh.NewOption("PHP", "php"),
+	}
+
+	// Get values from flags
+	org := cmd.String("org")
+	projectName := cmd.String("display-name") // Keep display-name flag for compatibility
+	if projectName == "" {
+		projectName = cmd.String("slug") // Also check slug flag for compatibility
+	}
+	targetsFlag := cmd.String("targets")
+	openAPISpec := cmd.String("openapi-spec")
+	stainlessConfig := cmd.String("stainless-config")
+	initWorkspace := cmd.Bool("init-workspace")
+
+	// Convert comma-separated targets flag to slice for multi-select
+	var selectedTargets []string
+	if targetsFlag != "" {
+		for _, target := range strings.Split(targetsFlag, ",") {
+			selectedTargets = append(selectedTargets, strings.TrimSpace(target))
+		}
+	}
+
+	// Pre-fill OpenAPI spec and Stainless config if found and not provided via flags
+	if openAPISpec == "" {
+		openAPISpec = findOpenAPISpec()
+	}
+	if stainlessConfig == "" {
+		stainlessConfig = findStainlessConfig()
+	}
+
+	// Check if all required values are provided via flags
+	// OpenAPI spec and Stainless config are optional
+	allValuesProvided := org != "" && projectName != ""
+
+	if !allValuesProvided {
+		fmt.Println("Creating a new project...")
+		fmt.Println()
+
+		// Fetch available organizations for suggestions
+		orgs := fetchUserOrgs(ctx)
+
+		// Auto-fill with first organization if org is empty and orgs are available
+		if org == "" && len(orgs) > 0 {
+			org = orgs[0]
+		}
+
+		form := huh.NewForm(
+			huh.NewGroup(
+				huh.NewInput().
+					Title("organization").
+					Value(&org).
+					Suggestions(orgs).
+					Description("Enter the organization for this project").
+					Validate(func(s string) error {
+						if strings.TrimSpace(s) == "" {
+							return fmt.Errorf("organization is required")
+						}
+						return nil
+					}),
+				huh.NewInput().
+					Title("project name").
+					Value(&projectName).
+					DescriptionFunc(func() string {
+						if projectName == "" {
+							return "Project name, slug will be 'my-project'."
+						}
+						slug := nameToSlug(projectName)
+						return fmt.Sprintf("Project name, slug will be '%s'.", slug)
+					}, &projectName).
+					Placeholder("My Project").
+					Validate(func(s string) error {
+						if strings.TrimSpace(s) == "" {
+							return fmt.Errorf("project name is required")
+						}
+						return nil
+					}),
+			).Title("Page (1/2)"),
+			huh.NewGroup(
+				huh.NewMultiSelect[string]().
+					Title("targets").
+					Description("Select target languages for code generation").
+					Options(availableTargets...).
+					Value(&selectedTargets),
+				huh.NewInput().
+					Title("OpenAPI spec path").
+					Description("Relative path to your OpenAPI spec file").
+					Placeholder("openapi.yml").
+					Validate(func(s string) error {
+						s = strings.TrimSpace(s)
+						if s == "" {
+							return fmt.Errorf("openapi spec is required")
+						}
+						if _, err := os.Stat(s); os.IsNotExist(err) {
+							return fmt.Errorf("file '%s' does not exist", s)
+						}
+						return nil
+					}).
+					Value(&openAPISpec),
+				huh.NewInput().
+					Title("Stainless config path (optional)").
+					Description("Relative path to your Stainless config file").
+					Placeholder("openapi.stainless.yml").
+					Validate(func(s string) error {
+						s = strings.TrimSpace(s)
+						if s == "" {
+							return nil
+						}
+						if _, err := os.Stat(s); os.IsNotExist(err) {
+							return fmt.Errorf("file '%s' does not exist", s)
+						}
+						return nil
+					}).
+					Value(&stainlessConfig),
+			).Title("Page (2/2)"),
+		).WithTheme(GetFormTheme()).WithKeyMap(GetFormKeyMap())
+
+		if err := form.Run(); err != nil {
+			return fmt.Errorf("failed to get project configuration: %v", err)
+		}
+
+		// Generate slug from project name
+		slug := nameToSlug(projectName)
+
+		fmt.Printf("%s organization: %s\n", aurora.Bold("✱"), org)
+		fmt.Printf("%s project name: %s\n", aurora.Bold("✱"), projectName)
+		fmt.Printf("%s slug: %s\n", aurora.Bold("✱"), slug)
+		if len(selectedTargets) > 0 {
+			fmt.Printf("%s targets: %s\n", aurora.Bold("✱"), strings.Join(selectedTargets, ", "))
+		}
+		if openAPISpec != "" {
+			fmt.Printf("%s openapi spec: %s\n", aurora.Bold("✱"), openAPISpec)
+		}
+		if stainlessConfig != "" {
+			fmt.Printf("%s stainless config: %s\n", aurora.Bold("✱"), stainlessConfig)
+		}
+		fmt.Println()
+
+		// Set the flag values so the JSONFlag middleware can pick them up
+		cmd.Set("org", org)
+		cmd.Set("display-name", projectName)
+		cmd.Set("slug", slug)
+		if len(selectedTargets) > 0 {
+			cmd.Set("targets", strings.Join(selectedTargets, ","))
+		}
+		if openAPISpec != "" {
+			cmd.Set("openapi-spec", openAPISpec)
+		}
+		if stainlessConfig != "" {
+			cmd.Set("stainless-config", stainlessConfig)
+		}
+	} else {
+		// Generate slug from project name for non-interactive mode too
+		slug := nameToSlug(projectName)
+		cmd.Set("slug", slug)
+	}
+
+	// Inject file contents into the API payload if files are provided or found
+	if openAPISpec != "" {
+		content, err := os.ReadFile(openAPISpec)
+		if err == nil {
+			// Inject the actual file content into the project creation payload
+			jsonflag.Register(jsonflag.Body, "revision.openapi\\.yml.content", string(content))
+		}
+	}
+
+	if stainlessConfig != "" {
+		content, err := os.ReadFile(stainlessConfig)
+		if err == nil {
+			// Inject the actual file content into the project creation payload
+			jsonflag.Register(jsonflag.Body, "revision.openapi\\.stainless\\.yml.content", string(content))
+		}
+	}
+
+	// Use the original logic - let the JSONFlag middleware handle parameter construction
 	cc := getAPICommandContext(cmd)
 	params := stainlessv0.ProjectNewParams{}
 	res, err := cc.client.Projects.New(
@@ -130,7 +332,27 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	if !allValuesProvided {
+		fmt.Printf("%s %s\n", aurora.BrightGreen("✱"), fmt.Sprintf("Project created successfully"))
+	}
 	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
+
+	// Initialize workspace if requested
+	if initWorkspace {
+		fmt.Println()
+		fmt.Printf("Initializing workspace configuration...\n")
+
+		// Use the same project name (slug) for workspace initialization
+		slug := nameToSlug(projectName)
+		err := InitWorkspaceConfig(slug, openAPISpec, stainlessConfig)
+		if err != nil {
+			fmt.Printf("%s Failed to initialize workspace: %v\n", aurora.BrightRed("✱"), err)
+			return fmt.Errorf("project created but workspace initialization failed: %v", err)
+		}
+
+		fmt.Printf("%s %s\n", aurora.BrightGreen("✱"), fmt.Sprintf("Workspace initialized"))
+	}
+
 	return nil
 }
 
@@ -186,4 +408,56 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 
 	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
 	return nil
+}
+
+// fetchUserOrgs retrieves the list of organizations the user has access to
+func fetchUserOrgs(ctx context.Context) []string {
+	client := stainlessv0.NewClient(getClientOptions()...)
+
+	res, err := client.Orgs.List(ctx)
+	if err != nil {
+		// Return empty slice if we can't fetch orgs
+		return []string{}
+	}
+
+	var orgs []string
+	for _, org := range res.Data {
+		if org.Slug != "" {
+			orgs = append(orgs, org.Slug)
+		}
+	}
+
+	return orgs
+}
+
+// nameToSlug converts a project name to a URL-friendly slug
+func nameToSlug(name string) string {
+	// Convert to lowercase
+	slug := strings.ToLower(name)
+
+	// Replace spaces and common punctuation with hyphens
+	slug = strings.ReplaceAll(slug, " ", "-")
+	slug = strings.ReplaceAll(slug, "_", "-")
+	slug = strings.ReplaceAll(slug, ".", "-")
+	slug = strings.ReplaceAll(slug, "/", "-")
+	slug = strings.ReplaceAll(slug, "\\", "-")
+
+	// Remove any characters that aren't alphanumeric or hyphens
+	var result strings.Builder
+	for _, r := range slug {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
+			result.WriteRune(r)
+		}
+	}
+	slug = result.String()
+
+	// Remove multiple consecutive hyphens
+	for strings.Contains(slug, "--") {
+		slug = strings.ReplaceAll(slug, "--", "-")
+	}
+
+	// Trim hyphens from start and end
+	slug = strings.Trim(slug, "-")
+
+	return slug
 }
