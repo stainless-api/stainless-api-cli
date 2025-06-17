@@ -304,7 +304,10 @@ var buildsCompare = cli.Command{
 }
 
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	cc, err := getAPICommandContextWithWorkspaceDefaults(cmd)
+	if err != nil {
+		return err
+	}
 	fmt.Fprintf(os.Stderr, "%s Creating build...\n", au.BrightCyan("✱"))
 	params := stainlessv0.BuildNewParams{}
 	res, err := cc.client.Builds.New(
