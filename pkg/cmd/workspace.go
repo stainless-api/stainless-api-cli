@@ -256,6 +256,7 @@ func GetProjectNameFromConfig() string {
 // findOpenAPISpec searches for common OpenAPI spec files in the current directory
 func findOpenAPISpec() string {
 	commonOpenAPIFiles := []string{
+		"openapi.json",
 		"openapi.yml",
 		"openapi.yaml",
 		"api.yml",
