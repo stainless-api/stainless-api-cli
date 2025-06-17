@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.0-alpha.14 (2025-06-17)
+
+Full Changelog: [v0.1.0-alpha.13...v0.1.0-alpha.14](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.13...v0.1.0-alpha.14)
+
+### Features
+
+* add --openapi-spec and --stainless-config flags to workspace init ([530581e](https://github.com/stainless-api/stainless-api-cli/commit/530581e8ee3bd6d52b4a3745d229de40f87e4167))
+* also automatically find openapi.json ([14eeeb4](https://github.com/stainless-api/stainless-api-cli/commit/14eeeb4c3635645059243d80509e4da7e05db28a))
+* **api:** manual updates ([f4e6172](https://github.com/stainless-api/stainless-api-cli/commit/f4e61722f341bb7248e40dc22473408e7eef5b05))
+* flesh out project create form ([c773199](https://github.com/stainless-api/stainless-api-cli/commit/c77319958ee6b285bd74191e1535a91bc77fbfce))
+* sdkjson generation API ([9f908f1](https://github.com/stainless-api/stainless-api-cli/commit/9f908f1ff8be1c8455c533f0e494a5b6cc5cf4b2))
+
 ## 0.1.0-alpha.13 (2025-06-17)
 
 Full Changelog: [v0.1.0-alpha.12...v0.1.0-alpha.13](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.12...v0.1.0-alpha.13)
