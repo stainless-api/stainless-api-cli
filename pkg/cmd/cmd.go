@@ -9,6 +9,12 @@ import (
 var Command = cli.Command{
 	Name:  "stl",
 	Usage: "CLI for the stainless API",
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "debug",
+			Usage: "Enable debug logging",
+		},
+	},
 	Commands: []*cli.Command{
 		{
 			Name: "auth",

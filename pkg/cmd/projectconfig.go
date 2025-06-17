@@ -75,7 +75,7 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 		return err
 	}
 
-	fmt.Printf("%s\n", colorizeJSON(string(res), os.Stdout))
+	fmt.Printf("%s\n", ColorizeJSON(string(res), os.Stdout))
 	return nil
 }
 
@@ -90,13 +90,12 @@ func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
-		option.WithRequestBody("application/json", cc.body),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("%s\n", colorizeJSON(string(res), os.Stdout))
+	fmt.Printf("%s\n", ColorizeJSON(string(res), os.Stdout))
 	return nil
 }
