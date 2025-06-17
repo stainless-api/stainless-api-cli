@@ -4,15 +4,23 @@ package main
 
 import (
 	"context"
-	"log"
+	"errors"
+	"fmt"
 	"os"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/cmd"
+	"github.com/stainless-api/stainless-api-go"
 )
 
 func main() {
 	app := cmd.Command
 	if err := app.Run(context.Background(), os.Args); err != nil {
-		log.Fatal(err)
+		var apierr *stainlessv0.Error
+		if errors.As(err, &apierr) {
+			fmt.Printf("%s\n", cmd.ColorizeJSON(apierr.RawJSON(), os.Stderr))
+		} else {
+			fmt.Printf("%s\n", err.Error())
+		}
+		os.Exit(1)
 	}
 }

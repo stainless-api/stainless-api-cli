@@ -305,7 +305,7 @@ func pollForToken(clientID, deviceCode string, interval, expiresIn int) (*AuthCo
 }
 
 // GetClientOptions returns the request options for API calls
-func getClientOptions(ctx context.Context, cmd *cli.Command) []option.RequestOption {
+func getClientOptions() []option.RequestOption {
 	options := []option.RequestOption{}
 
 	if apiKey := os.Getenv("STAINLESS_API_KEY"); apiKey != "" {

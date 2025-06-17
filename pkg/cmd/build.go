@@ -398,8 +398,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	// Print the actual JSON response to stdout for piping
-	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
 	return nil
 }
 
@@ -414,7 +413,7 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
 	return nil
 }
 
@@ -573,7 +572,7 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
 	return nil
 }
 
@@ -589,7 +588,7 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", colorizeJSON(res.RawJSON(), os.Stdout))
+	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
 	return nil
 }
 

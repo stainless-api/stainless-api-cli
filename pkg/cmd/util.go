@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"strings"
@@ -14,45 +16,61 @@ import (
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 
-	"github.com/tidwall/sjson"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/pretty"
+	"github.com/tidwall/sjson"
 	"github.com/urfave/cli/v3"
 	"golang.org/x/term"
 )
 
 func getDefaultRequestOptions() []option.RequestOption {
-	return []option.RequestOption{
-		option.WithHeader("X-Stainless-Lang", "cli"),
-		option.WithHeader("X-Stainless-Runtime", "cli"),
-	}
+	return append(
+		[]option.RequestOption{
+			option.WithHeader("X-Stainless-Lang", "cli"),
+			option.WithHeader("X-Stainless-Runtime", "cli"),
+		},
+		getClientOptions()...,
+	)
 }
 
 type apiCommandContext struct {
 	client stainlessv0.Client
-	body   []byte
-	query  []byte
-	header []byte
+	cmd    *cli.Command
 }
 
 func (c apiCommandContext) AsMiddleware() option.Middleware {
+	body := getStdInput()
+	if body == nil {
+		body = []byte("{}")
+	}
+	var query = []byte("{}")
+	var header = []byte("{}")
+
+	// Apply JSON flag mutations
+	body, query, header, err := jsonflag.Apply(body, query, header)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	debug := c.cmd.Bool("debug")
+
 	return func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
 		q := r.URL.Query()
-		for key, values := range serializeQuery(c.query) {
+		for key, values := range serializeQuery(query) {
 			for _, value := range values {
 				q.Set(key, value)
 			}
 		}
 		r.URL.RawQuery = q.Encode()
 
-		for key, values := range serializeHeader(c.header) {
+		for key, values := range serializeHeader(header) {
 			for _, value := range values {
-				r.Header.Add(key, value)
+				r.Header.Set(key, value)
 			}
 		}
 
 		// Handle request body merging if there's a body to process
-		if r.Body != nil && len(c.body) > 2 { // More than just "{}"
+		if r.Body != nil || len(body) > 2 { // More than just "{}"
 			// Read the existing request body
 			existingBody, err := io.ReadAll(r.Body)
 			r.Body.Close()
@@ -67,7 +85,7 @@ func (c apiCommandContext) AsMiddleware() option.Middleware {
 			}
 
 			// Parse command body and merge top-level keys
-			commandResult := gjson.ParseBytes(c.body)
+			commandResult := gjson.ParseBytes(body)
 			if commandResult.IsObject() {
 				commandResult.ForEach(func(key, value gjson.Result) bool {
 					// Set each top-level key from command body, overwriting existing values
@@ -82,9 +100,29 @@ func (c apiCommandContext) AsMiddleware() option.Middleware {
 			}
 
 			// Set the new body
-			r.Body = io.NopCloser(strings.NewReader(string(mergedBody)))
+			r.Body = io.NopCloser(bytes.NewBuffer(mergedBody))
 			r.ContentLength = int64(len(mergedBody))
 			r.Header.Set("Content-Type", "application/json")
+		}
+
+		// Add debug logging if the --debug flag is set
+		if debug {
+			logger := log.Default()
+
+			if reqBytes, err := httputil.DumpRequest(r, true); err == nil {
+				logger.Printf("Request Content:\n%s\n", reqBytes)
+			}
+
+			resp, err := mn(r)
+			if err != nil {
+				return resp, err
+			}
+
+			if respBytes, err := httputil.DumpResponse(resp, true); err == nil {
+				logger.Printf("Response Content:\n%s\n", respBytes)
+			}
+
+			return resp, err
 		}
 
 		return mn(r)
@@ -93,20 +131,7 @@ func (c apiCommandContext) AsMiddleware() option.Middleware {
 
 func getAPICommandContext(cmd *cli.Command) *apiCommandContext {
 	client := stainlessv0.NewClient(getDefaultRequestOptions()...)
-	body := getStdInput()
-	if body == nil {
-		body = []byte("{}")
-	}
-	var query = []byte("{}")
-	var header = []byte("{}")
-
-	// Apply JSON flag mutations
-	body, query, header, err := jsonflag.Apply(body, query, header)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return &apiCommandContext{client, body, query, header}
+	return &apiCommandContext{client, cmd}
 }
 
 func serializeQuery(params []byte) url.Values {
@@ -224,7 +249,7 @@ func shouldUseColors(w io.Writer) bool {
 	return false
 }
 
-func colorizeJSON(input string, w io.Writer) string {
+func ColorizeJSON(input string, w io.Writer) string {
 	if !shouldUseColors(w) {
 		return input
 	}

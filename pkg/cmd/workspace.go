@@ -131,10 +131,10 @@ type projectInfo struct {
 
 // fetchUserProjects retrieves the list of projects the user has access to
 func fetchUserProjects(ctx context.Context) map[string]projectInfo {
-	client := stainlessv0.NewClient(getClientOptions(ctx, nil)...)
+	client := stainlessv0.NewClient(getClientOptions()...)
 	params := stainlessv0.ProjectListParams{}
 
-	res, err := client.Projects.List(context.TODO(), params)
+	res, err := client.Projects.List(ctx, params)
 	if err != nil {
 		// Return empty map if we can't fetch projects
 		return map[string]projectInfo{}
