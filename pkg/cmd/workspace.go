@@ -28,6 +28,14 @@ var initWorkspaceCommand = cli.Command{
 			Name:  "project",
 			Usage: "Project name to use for this workspace",
 		},
+		&cli.StringFlag{
+			Name:  "openapi-spec",
+			Usage: "Path to OpenAPI spec file",
+		},
+		&cli.StringFlag{
+			Name:  "stainless-config",
+			Usage: "Path to Stainless config file",
+		},
 	},
 	Action:          handleInitWorkspace,
 	HideHelpCommand: true,
@@ -70,16 +78,26 @@ func handleInitWorkspace(ctx context.Context, cmd *cli.Command) error {
 	theme.Focused.Base = theme.Focused.Base.BorderStyle(lipgloss.NormalBorder())
 	theme.Focused.Title = theme.Focused.Title.Bold(true)
 
-	// Get project name from flag or prepare for interactive prompt
+	// Get values from flags or prepare for interactive prompt
 	projectName := cmd.String("project")
-	var openAPISpec, stainlessConfig string
+	openAPISpec := cmd.String("openapi-spec")
+	stainlessConfig := cmd.String("stainless-config")
 
-	// Pre-fill OpenAPI spec and Stainless config if found
-	openAPISpec = findOpenAPISpec()
-	stainlessConfig = findStainlessConfig()
+	// Pre-fill OpenAPI spec and Stainless config if found and not provided via flags
+	if openAPISpec == "" {
+		openAPISpec = findOpenAPISpec()
+	}
+	if stainlessConfig == "" {
+		stainlessConfig = findStainlessConfig()
+	}
 
-	// If project name wasn't provided via flag, prompt for all fields interactively
-	if projectName == "" {
+	// Skip interactive form if all values are provided via flags or auto-detected
+	// Project name is required, but openAPISpec and stainlessConfig are optional
+	allValuesProvided := projectName != "" && 
+		(cmd.IsSet("openapi-spec") || openAPISpec != "") && 
+		(cmd.IsSet("stainless-config") || stainlessConfig != "")
+	
+	if !allValuesProvided {
 		projectInfoMap := fetchUserProjects(ctx)
 
 		form := huh.NewForm(
