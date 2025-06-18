@@ -274,8 +274,8 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		cmd.Set("org", org)
 		cmd.Set("display-name", projectName)
 		cmd.Set("slug", slug)
-		if len(selectedTargets) > 0 {
-			cmd.Set("targets", strings.Join(selectedTargets, ","))
+		for _, target := range selectedTargets {
+			cmd.Set("+target", target)
 		}
 		if openAPISpec != "" {
 			cmd.Set("openapi-spec", openAPISpec)
