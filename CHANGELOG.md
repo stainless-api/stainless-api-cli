@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.0-alpha.15 (2025-06-18)
+
+Full Changelog: [v0.1.0-alpha.14...v0.1.0-alpha.15](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.14...v0.1.0-alpha.15)
+
+### Features
+
+* add workspace status command ([adbc44f](https://github.com/stainless-api/stainless-api-cli/commit/adbc44f0539114437690008d87f16fa4a3ce0a4d))
+* make branch parameter required for builds create ([0735363](https://github.com/stainless-api/stainless-api-cli/commit/07353638344ae98aaeff14e107730945ea3ff6ab))
+* polish around logging ([e969a2d](https://github.com/stainless-api/stainless-api-cli/commit/e969a2dc7356dd4b9b0864f963a582dfbed43344))
+* polish around logging ([a3fbc71](https://github.com/stainless-api/stainless-api-cli/commit/a3fbc71f38a195885b405aad8bec0c423694d692))
+
+
+### Chores
+
+* **internal:** codegen related update ([2dd834f](https://github.com/stainless-api/stainless-api-cli/commit/2dd834fed74e180a2ea70a4b8edf0bbb84a76d25))
+
 ## 0.1.0-alpha.14 (2025-06-17)
 
 Full Changelog: [v0.1.0-alpha.13...v0.1.0-alpha.14](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.13...v0.1.0-alpha.14)
