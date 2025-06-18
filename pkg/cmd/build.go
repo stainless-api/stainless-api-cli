@@ -148,6 +148,7 @@ var buildsCreate = cli.Command{
 				Kind: jsonflag.Body,
 				Path: "branch",
 			},
+			Required: true,
 		},
 		&jsonflag.JSONStringFlag{
 			Name: "commit-message",
