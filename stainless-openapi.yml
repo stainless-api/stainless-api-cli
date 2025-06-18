@@ -1,0 +1,2273 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "My API"
+  },
+  "servers": [
+    {
+      "url": "v1"
+    }
+  ],
+  "paths": {
+    "/v0/openapi": {
+      "get": {
+        "requestBody": {
+          "content": {
+            "application/json": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/orgs": {
+      "get": {
+        "summary": "List organizations the user has access to",
+        "requestBody": {
+          "content": {
+            "application/json": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "object": {
+                            "type": "string",
+                            "enum": [
+                              "org"
+                            ]
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "display_name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "object",
+                          "slug",
+                          "display_name"
+                        ]
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "has_more"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/orgs/{org}": {
+      "get": {
+        "summary": "Retrieve an organization by name",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "org",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "enum": [
+                        "org"
+                      ]
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "display_name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "slug",
+                    "display_name"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/projects": {
+      "get": {
+        "summary": "List projects in an organization",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "org",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "description": "Pagination cursor from a previous response"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "default": 10,
+              "description": "Maximum number of projects to return, defaults to 10 (maximum: 100)"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "object": {
+                            "type": "string",
+                            "enum": [
+                              "project"
+                            ]
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "display_name": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "org": {
+                            "type": "string"
+                          },
+                          "config_repo": {
+                            "type": "string"
+                          },
+                          "targets": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "object",
+                          "slug",
+                          "display_name",
+                          "org",
+                          "config_repo",
+                          "targets"
+                        ]
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "has_more"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new project",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "slug": {
+                    "type": "string",
+                    "description": "Project name/slug"
+                  },
+                  "org": {
+                    "type": "string",
+                    "description": "Organization name"
+                  },
+                  "display_name": {
+                    "type": "string",
+                    "description": "Human-readable project name"
+                  },
+                  "targets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "description": "Targets to generate for"
+                  },
+                  "revision": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "description": "File path"
+                    },
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "content": {
+                          "type": "string",
+                          "description": "File content"
+                        }
+                      },
+                      "required": [
+                        "content"
+                      ]
+                    },
+                    "description": "File contents to commit"
+                  }
+                },
+                "required": [
+                  "slug",
+                  "org",
+                  "display_name",
+                  "targets",
+                  "revision"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "enum": [
+                        "project"
+                      ]
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "display_name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "org": {
+                      "type": "string"
+                    },
+                    "config_repo": {
+                      "type": "string"
+                    },
+                    "targets": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "slug",
+                    "display_name",
+                    "org",
+                    "config_repo",
+                    "targets"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/projects/{project}": {
+      "get": {
+        "summary": "Retrieve a project by name",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "enum": [
+                        "project"
+                      ]
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "display_name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "org": {
+                      "type": "string"
+                    },
+                    "config_repo": {
+                      "type": "string"
+                    },
+                    "targets": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "slug",
+                    "display_name",
+                    "org",
+                    "config_repo",
+                    "targets"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update a project's properties",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "display_name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "enum": [
+                        "project"
+                      ]
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "display_name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "org": {
+                      "type": "string"
+                    },
+                    "config_repo": {
+                      "type": "string"
+                    },
+                    "targets": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "object",
+                    "slug",
+                    "display_name",
+                    "org",
+                    "config_repo",
+                    "targets"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/projects/{project}/branches": {
+      "post": {
+        "summary": "Create a new branch for a project",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "branch": {
+                    "type": "string",
+                    "description": "Name of the new project branch."
+                  },
+                  "branch_from": {
+                    "type": "string",
+                    "description": "Branch or commit SHA to branch from."
+                  },
+                  "force": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to throw an error if the branch already exists. Defaults to false."
+                  }
+                },
+                "required": [
+                  "branch",
+                  "branch_from"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectBranch"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/projects/{project}/branches/{branch}": {
+      "get": {
+        "summary": "Retrieve a project branch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "branch",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectBranch"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/projects/{project}/configs": {
+      "get": {
+        "summary": "Retrieve configuration files for a project",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "branch",
+            "schema": {
+              "type": "string",
+              "default": "main",
+              "description": "Branch name, defaults to \"main\""
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string",
+                    "description": "File path"
+                  },
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "content": {
+                        "type": "string",
+                        "description": "The file content"
+                      }
+                    },
+                    "required": [
+                      "content"
+                    ]
+                  },
+                  "description": "Config files contents"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/projects/{project}/configs/guess": {
+      "post": {
+        "summary": "Generate configuration suggestions based on an OpenAPI spec",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "branch": {
+                    "type": "string",
+                    "default": "main",
+                    "description": "Branch name"
+                  },
+                  "spec": {
+                    "type": "string",
+                    "description": "OpenAPI spec"
+                  }
+                },
+                "required": [
+                  "spec"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string",
+                    "description": "File path"
+                  },
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "content": {
+                        "type": "string",
+                        "description": "The file content"
+                      }
+                    },
+                    "required": [
+                      "content"
+                    ]
+                  },
+                  "description": "Config files contents"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/builds": {
+      "get": {
+        "summary": "List builds for a project",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "project",
+            "schema": {
+              "type": "string",
+              "description": "Project name"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "branch",
+            "schema": {
+              "type": "string",
+              "description": "Branch name"
+            }
+          },
+          {
+            "in": "query",
+            "name": "revision",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "description": "A config commit SHA used for the build"
+                },
+                {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string",
+                    "description": "File path"
+                  },
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "hash": {
+                        "type": "string",
+                        "description": "File content hash"
+                      }
+                    },
+                    "required": [
+                      "hash"
+                    ]
+                  },
+                  "description": "Hash of the files used for the build"
+                }
+              ],
+              "default": {}
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "schema": {
+              "type": "string",
+              "description": "Pagination cursor from a previous response"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "default": 10,
+              "description": "Maximum number of builds to return, defaults to 10 (maximum: 100)"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/BuildObject"
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "has_more"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new build",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "project": {
+                    "type": "string",
+                    "description": "Project name"
+                  },
+                  "revision": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "description": "A branch name, commit SHA, or merge command in the format \"base..head\""
+                      },
+                      {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "description": "File path"
+                        },
+                        "additionalProperties": {
+                          "type": "object",
+                          "properties": {
+                            "content": {
+                              "type": "string",
+                              "description": "File content"
+                            }
+                          },
+                          "required": [
+                            "content"
+                          ]
+                        },
+                        "description": "File contents to commit directly"
+                      }
+                    ],
+                    "description": "Specifies what to build: a branch name, commit SHA, merge command (\"base..head\"), or file contents"
+                  },
+                  "branch": {
+                    "type": "string",
+                    "description": "Optional branch to use. If not specified, defaults to \"main\". When using a branch name or merge command as revision, this must match or be omitted."
+                  },
+                  "targets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "node",
+                        "typescript",
+                        "python",
+                        "go",
+                        "java",
+                        "kotlin",
+                        "ruby",
+                        "terraform",
+                        "cli",
+                        "php",
+                        "csharp"
+                      ]
+                    },
+                    "description": "Optional list of SDK targets to build. If not specified, all configured targets will be built."
+                  },
+                  "commit_message": {
+                    "type": "string",
+                    "description": "Optional commit message to use when creating a new commit."
+                  },
+                  "allow_empty": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to allow empty commits (no changes). Defaults to false."
+                  }
+                },
+                "required": [
+                  "project",
+                  "revision"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/builds/{buildId}": {
+      "get": {
+        "summary": "Retrieve a build by ID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "buildId",
+            "schema": {
+              "type": "string",
+              "description": "Build ID"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuildObject"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/build_target_outputs": {
+      "get": {
+        "summary": "Download the output of a build target",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "build_id",
+            "schema": {
+              "type": "string",
+              "description": "Build ID"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "target",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "node",
+                "typescript",
+                "python",
+                "go",
+                "java",
+                "kotlin",
+                "ruby",
+                "terraform",
+                "cli",
+                "php",
+                "csharp"
+              ],
+              "description": "SDK language target name"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "source"
+              ],
+              "description": "Type of output to download: source code"
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "output",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "url",
+                "git"
+              ],
+              "default": "url",
+              "description": "Output format: url (download URL) or git (temporary access token)"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {}
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "output": {
+                          "type": "string",
+                          "enum": [
+                            "url"
+                          ]
+                        },
+                        "url": {
+                          "type": "string",
+                          "description": "URL for direct download"
+                        }
+                      },
+                      "required": [
+                        "output",
+                        "url"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "output": {
+                          "type": "string",
+                          "enum": [
+                            "git"
+                          ]
+                        },
+                        "token": {
+                          "type": "string",
+                          "description": "Temporary GitHub access token"
+                        },
+                        "url": {
+                          "type": "string",
+                          "description": "URL to git remote"
+                        },
+                        "ref": {
+                          "type": "string",
+                          "description": "Git reference (commit SHA, branch, or tag)"
+                        }
+                      },
+                      "required": [
+                        "output",
+                        "token",
+                        "url",
+                        "ref"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/builds/compare": {
+      "post": {
+        "summary": "Creates two builds whose outputs can be compared directly",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "project": {
+                    "type": "string",
+                    "description": "Project name"
+                  },
+                  "base": {
+                    "type": "object",
+                    "properties": {
+                      "revision": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "description": "A branch name, commit SHA, or merge command in the format \"base..head\""
+                          },
+                          {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string",
+                              "description": "File path"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "content": {
+                                  "type": "string",
+                                  "description": "File content"
+                                }
+                              },
+                              "required": [
+                                "content"
+                              ]
+                            },
+                            "description": "File contents to commit directly"
+                          }
+                        ],
+                        "description": "Specifies what to build: a branch name, a commit SHA, or file contents"
+                      },
+                      "branch": {
+                        "type": "string",
+                        "description": "Optional branch to use. If not specified, defaults to \"main\". When using a branch name as revision, this must match or be omitted."
+                      },
+                      "commit_message": {
+                        "type": "string",
+                        "description": "Optional commit message to use when creating a new commit."
+                      }
+                    },
+                    "required": [
+                      "revision"
+                    ],
+                    "description": "Parameters for the base build"
+                  },
+                  "head": {
+                    "type": "object",
+                    "properties": {
+                      "revision": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "description": "A branch name, commit SHA, or merge command in the format \"base..head\""
+                          },
+                          {
+                            "type": "object",
+                            "propertyNames": {
+                              "type": "string",
+                              "description": "File path"
+                            },
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "content": {
+                                  "type": "string",
+                                  "description": "File content"
+                                }
+                              },
+                              "required": [
+                                "content"
+                              ]
+                            },
+                            "description": "File contents to commit directly"
+                          }
+                        ],
+                        "description": "Specifies what to build: a branch name, a commit SHA, or file contents"
+                      },
+                      "branch": {
+                        "type": "string",
+                        "description": "Optional branch to use. If not specified, defaults to \"main\". When using a branch name as revision, this must match or be omitted."
+                      },
+                      "commit_message": {
+                        "type": "string",
+                        "description": "Optional commit message to use when creating a new commit."
+                      }
+                    },
+                    "required": [
+                      "revision"
+                    ],
+                    "description": "Parameters for the head build"
+                  },
+                  "targets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "node",
+                        "typescript",
+                        "python",
+                        "go",
+                        "java",
+                        "kotlin",
+                        "ruby",
+                        "terraform",
+                        "cli",
+                        "php",
+                        "csharp"
+                      ]
+                    },
+                    "description": "Optional list of SDK targets to build. If not specified, all configured targets will be built."
+                  }
+                },
+                "required": [
+                  "project",
+                  "base",
+                  "head"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "base": {
+                      "$ref": "#/components/schemas/BuildObject"
+                    },
+                    "head": {
+                      "$ref": "#/components/schemas/BuildObject"
+                    }
+                  },
+                  "required": [
+                    "base",
+                    "head"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/projects/{projectName}/snippets/request": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "projectName",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "language": {
+                    "type": "string",
+                    "enum": [
+                      "node",
+                      "typescript",
+                      "python",
+                      "go",
+                      "java",
+                      "kotlin",
+                      "ruby",
+                      "terraform",
+                      "cli",
+                      "php",
+                      "csharp"
+                    ]
+                  },
+                  "version": {
+                    "type": "string",
+                    "enum": [
+                      "next",
+                      "latest_released"
+                    ]
+                  },
+                  "request": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "method": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          },
+                          "parameters": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "in": {
+                                  "type": "string",
+                                  "enum": [
+                                    "path",
+                                    "query",
+                                    "header",
+                                    "cookie"
+                                  ]
+                                },
+                                "value": {}
+                              },
+                              "required": [
+                                "name",
+                                "in"
+                              ]
+                            }
+                          },
+                          "body": {
+                            "type": "object",
+                            "properties": {
+                              "fileParam": {
+                                "type": "string"
+                              },
+                              "filePath": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "required": [
+                          "method",
+                          "path",
+                          "parameters"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "method": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          },
+                          "postData": {
+                            "type": "object",
+                            "properties": {
+                              "mimeType": {
+                                "type": "string"
+                              },
+                              "text": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "mimeType",
+                              "text"
+                            ]
+                          },
+                          "queryString": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "value"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "method",
+                          "url",
+                          "queryString"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "language",
+                  "version",
+                  "request"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "snippet": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "snippet"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/webhooks/postman/notifications": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "eventId": {
+                    "type": "string"
+                  },
+                  "eventKey": {
+                    "type": "string"
+                  },
+                  "payload": {
+                    "type": "object",
+                    "properties": {
+                      "collectionId": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "languages": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "node",
+                            "typescript",
+                            "python",
+                            "go",
+                            "java",
+                            "kotlin",
+                            "ruby",
+                            "terraform",
+                            "cli",
+                            "php",
+                            "csharp"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "collectionId",
+                      "name",
+                      "languages"
+                    ]
+                  }
+                },
+                "required": [
+                  "eventId",
+                  "eventKey",
+                  "payload"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ProjectBranch": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "enum": [
+              "project_branch"
+            ]
+          },
+          "branch": {
+            "type": "string"
+          },
+          "org": {
+            "type": "string"
+          },
+          "project": {
+            "type": "string"
+          },
+          "config_commit": {
+            "type": "object",
+            "properties": {
+              "sha": {
+                "type": "string"
+              },
+              "repo": {
+                "type": "object",
+                "properties": {
+                  "owner": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "branch": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "owner",
+                  "name",
+                  "branch"
+                ]
+              }
+            },
+            "required": [
+              "sha",
+              "repo"
+            ]
+          },
+          "latest_build": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/BuildObject"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "object",
+          "branch",
+          "org",
+          "project",
+          "config_commit",
+          "latest_build"
+        ]
+      },
+      "ProjectBranchMinimal": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "enum": [
+              "project_branch"
+            ]
+          },
+          "branch": {
+            "type": "string"
+          },
+          "org": {
+            "type": "string"
+          },
+          "project": {
+            "type": "string"
+          },
+          "config_commit": {
+            "type": "object",
+            "properties": {
+              "sha": {
+                "type": "string"
+              },
+              "repo": {
+                "type": "object",
+                "properties": {
+                  "owner": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "branch": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "owner",
+                  "name",
+                  "branch"
+                ]
+              }
+            },
+            "required": [
+              "sha",
+              "repo"
+            ]
+          },
+          "latest_build_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "object",
+          "branch",
+          "org",
+          "project",
+          "config_commit",
+          "latest_build_id"
+        ]
+      },
+      "BuildObject": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "enum": [
+              "build"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "project": {
+            "type": "string"
+          },
+          "org": {
+            "type": "string"
+          },
+          "config_commit": {
+            "type": "string"
+          },
+          "documented_spec": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "content"
+                    ]
+                  },
+                  "content": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "content"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "url"
+                    ]
+                  },
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "type",
+                  "url"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "targets": {
+            "type": "object",
+            "properties": {
+              "node": {
+                "$ref": "#/components/schemas/BuildTarget"
+              },
+              "typescript": {
+                "$ref": "#/components/schemas/BuildTarget"
+              },
+              "python": {
+                "$ref": "#/components/schemas/BuildTarget"
+              },
+              "go": {
+                "$ref": "#/components/schemas/BuildTarget"
+              },
+              "java": {
+                "$ref": "#/components/schemas/BuildTarget"
+              },
+              "kotlin": {
+                "$ref": "#/components/schemas/BuildTarget"
+              },
+              "ruby": {
+                "$ref": "#/components/schemas/BuildTarget"
+              },
+              "terraform": {
+                "$ref": "#/components/schemas/BuildTarget"
+              },
+              "cli": {
+                "$ref": "#/components/schemas/BuildTarget"
+              },
+              "php": {
+                "$ref": "#/components/schemas/BuildTarget"
+              },
+              "csharp": {
+                "$ref": "#/components/schemas/BuildTarget"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "object",
+          "id",
+          "project",
+          "org",
+          "config_commit",
+          "documented_spec",
+          "targets"
+        ]
+      },
+      "BuildTarget": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "enum": [
+              "build_target"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_started",
+              "codegen",
+              "postgen",
+              "completed"
+            ]
+          },
+          "commit": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "not_started"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "queued"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "in_progress"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "completed"
+                    ]
+                  },
+                  "completed": {
+                    "type": "object",
+                    "properties": {
+                      "conclusion": {
+                        "type": "string",
+                        "enum": [
+                          "error",
+                          "warning",
+                          "note",
+                          "success",
+                          "merge_conflict",
+                          "upstream_merge_conflict",
+                          "fatal",
+                          "payment_required",
+                          "cancelled",
+                          "timed_out",
+                          "noop",
+                          "version_bump"
+                        ]
+                      },
+                      "merge_conflict_pr": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "number": {
+                            "type": "number"
+                          },
+                          "repo": {
+                            "type": "object",
+                            "properties": {
+                              "owner": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "owner",
+                              "name"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "number",
+                          "repo"
+                        ]
+                      },
+                      "commit": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "sha": {
+                            "type": "string"
+                          },
+                          "repo": {
+                            "type": "object",
+                            "properties": {
+                              "owner": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "branch": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "owner",
+                              "name",
+                              "branch"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "sha",
+                          "repo"
+                        ]
+                      },
+                      "diagnostics": {
+                        "type": "array",
+                        "items": {}
+                      }
+                    },
+                    "required": [
+                      "conclusion",
+                      "merge_conflict_pr",
+                      "commit"
+                    ]
+                  }
+                },
+                "required": [
+                  "status",
+                  "completed"
+                ]
+              }
+            ]
+          },
+          "lint": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "not_started"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "queued"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "in_progress"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "completed"
+                    ]
+                  },
+                  "completed": {
+                    "type": "object",
+                    "properties": {
+                      "conclusion": {
+                        "type": "string",
+                        "enum": [
+                          "success",
+                          "failure",
+                          "skipped",
+                          "cancelled",
+                          "action_required",
+                          "neutral",
+                          "timed_out"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "conclusion"
+                    ]
+                  }
+                },
+                "required": [
+                  "status",
+                  "completed"
+                ]
+              }
+            ]
+          },
+          "test": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "not_started"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "queued"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "in_progress"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "completed"
+                    ]
+                  },
+                  "completed": {
+                    "type": "object",
+                    "properties": {
+                      "conclusion": {
+                        "type": "string",
+                        "enum": [
+                          "success",
+                          "failure",
+                          "skipped",
+                          "cancelled",
+                          "action_required",
+                          "neutral",
+                          "timed_out"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "conclusion"
+                    ]
+                  }
+                },
+                "required": [
+                  "status",
+                  "completed"
+                ]
+              }
+            ]
+          },
+          "build": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "not_started"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "queued"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "in_progress"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "completed"
+                    ]
+                  },
+                  "completed": {
+                    "type": "object",
+                    "properties": {
+                      "conclusion": {
+                        "type": "string",
+                        "enum": [
+                          "success",
+                          "failure",
+                          "skipped",
+                          "cancelled",
+                          "action_required",
+                          "neutral",
+                          "timed_out"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "conclusion"
+                    ]
+                  }
+                },
+                "required": [
+                  "status",
+                  "completed"
+                ]
+              }
+            ]
+          },
+          "upload": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "not_started"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "queued"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "in_progress"
+                    ]
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "completed"
+                    ]
+                  },
+                  "completed": {
+                    "type": "object",
+                    "properties": {
+                      "conclusion": {
+                        "type": "string",
+                        "enum": [
+                          "success",
+                          "failure",
+                          "skipped",
+                          "cancelled",
+                          "action_required",
+                          "neutral",
+                          "timed_out"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "conclusion"
+                    ]
+                  }
+                },
+                "required": [
+                  "status",
+                  "completed"
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "object",
+          "status",
+          "commit",
+          "lint",
+          "test"
+        ]
+      }
+    }
+  }
+}
