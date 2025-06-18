@@ -599,10 +599,11 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 // getAPICommandWithWorkspaceDefaults applies workspace defaults before initializing API command
 func getAPICommandContextWithWorkspaceDefaults(cmd *cli.Command) (*apiCommandContext, error) {
 	cc := getAPICommandContext(cmd)
-	config, configPath, err := FindWorkspaceConfig()
-	if err == nil && config != nil {
+	var config WorkspaceConfig
+	found, err := config.Find()
+	if err == nil && found {
 		// Get the directory containing the workspace config file
-		configDir := filepath.Dir(configPath)
+		configDir := filepath.Dir(config.ConfigPath)
 
 		if !cmd.IsSet("openapi-spec") && !cmd.IsSet("oas") && config.OpenAPISpec != "" {
 			// Resolve OpenAPI spec path relative to workspace config directory

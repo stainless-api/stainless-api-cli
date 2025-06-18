@@ -319,9 +319,10 @@ func getClientOptions() []option.RequestOption {
 	}
 
 	// Add default project from workspace config if available
-	projectName := GetProjectNameFromConfig()
-	if projectName != "" {
-		options = append(options, option.WithProject(projectName))
+	var workspaceConfig WorkspaceConfig
+	found, err := workspaceConfig.Find()
+	if err == nil && found && workspaceConfig.Project != "" {
+		options = append(options, option.WithProject(workspaceConfig.Project))
 	}
 
 	return options

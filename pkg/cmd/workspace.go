@@ -4,7 +4,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"maps"
 	"os"
@@ -18,7 +17,7 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var initWorkspaceCommand = cli.Command{
+var workspaceInit = cli.Command{
 	Name:  "init",
 	Usage: "Initialize stainless workspace configuration in current directory",
 	Flags: []cli.Flag{
@@ -27,25 +26,33 @@ var initWorkspaceCommand = cli.Command{
 			Usage: "Project name to use for this workspace",
 		},
 		&cli.StringFlag{
-			Name:  "openapi-spec",
+			Name:    "openapi-spec",
 			Aliases: []string{"oas"},
-			Usage: "Path to OpenAPI spec file",
+			Usage:   "Path to OpenAPI spec file",
 		},
 		&cli.StringFlag{
-			Name:  "stainless-config",
+			Name:    "stainless-config",
 			Aliases: []string{"config"},
-			Usage: "Path to Stainless config file",
+			Usage:   "Path to Stainless config file",
 		},
 	},
-	Action:          handleInitWorkspace,
+	Action:          handleWorkspaceInit,
 	HideHelpCommand: true,
 }
 
-func handleInitWorkspace(ctx context.Context, cmd *cli.Command) error {
+var workspaceStatus = cli.Command{
+	Name:            "status",
+	Usage:           "Show workspace configuration status",
+	Action:          handleWorkspaceStatus,
+	HideHelpCommand: true,
+}
+
+func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 	// Check for existing workspace configuration
-	existingConfig, existingPath, err := FindWorkspaceConfig()
-	if err == nil && existingConfig != nil {
-		fmt.Printf("Existing workspace detected: %s (project: %s)\n", aurora.Bold(existingPath), existingConfig.Project)
+	var existingConfig WorkspaceConfig
+	found, err := existingConfig.Find()
+	if err == nil && found {
+		fmt.Printf("Existing workspace detected: %s (project: %s)\n", aurora.Bold(existingConfig.ConfigPath), existingConfig.Project)
 	}
 
 	// Get current directory and show where the file will be written
@@ -82,18 +89,18 @@ func handleInitWorkspace(ctx context.Context, cmd *cli.Command) error {
 		form := huh.NewForm(
 			huh.NewGroup(
 				huh.NewInput().
-					Title("project name").
+					Title("project").
 					Value(&projectName).
 					Suggestions(slices.Collect(maps.Keys(projectInfoMap))).
 					Description("Enter the stainless project for this workspace").
 					Validate(createProjectValidator(projectInfoMap)),
 				huh.NewInput().
-					Title("OpenAPI spec path (optional)").
+					Title("openapi_spec (optional)").
 					Description("Relative path to your OpenAPI spec file").
 					Placeholder("openapi.yml").
 					Value(&openAPISpec),
 				huh.NewInput().
-					Title("Stainless config path (optional)").
+					Title("stainless_config (optional)").
 					Description("Relative path to your Stainless config file").
 					Placeholder("openapi.stainless.yml").
 					Value(&stainlessConfig),
@@ -113,8 +120,13 @@ func handleInitWorkspace(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	if err := InitWorkspaceConfig(projectName, openAPISpec, stainlessConfig); err != nil {
-		return fmt.Errorf("failed to initialize workspace: %v", err)
+	config, err := NewWorkspaceConfig(projectName, openAPISpec, stainlessConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create workspace config: %v", err)
+	}
+
+	if err := config.Save(); err != nil {
+		return fmt.Errorf("failed to save workspace config: %v", err)
 	}
 
 	fmt.Printf("%s %s\n", aurora.BrightGreen("✱"), fmt.Sprintf("Workspace initialized"))
@@ -175,81 +187,6 @@ func createProjectValidator(projectInfoMap map[string]projectInfo) func(string) 
 	}
 }
 
-// WorkspaceConfig stores workspace-level configuration
-type WorkspaceConfig struct {
-	Project         string `json:"project"`
-	OpenAPISpec     string `json:"openapi_spec,omitempty"`
-	StainlessConfig string `json:"stainless_config,omitempty"`
-}
-
-// FindWorkspaceConfig searches for a stainless-workspace.json file starting from the current directory
-// and moving up to parent directories until found or root is reached
-func FindWorkspaceConfig() (*WorkspaceConfig, string, error) {
-	// Start from current working directory
-	dir, err := os.Getwd()
-	if err != nil {
-		return nil, "", err
-	}
-
-	for {
-		configPath := filepath.Join(dir, "stainless-workspace.json")
-		if _, err := os.Stat(configPath); err == nil {
-			// Found config file
-			config, err := LoadWorkspaceConfig(configPath)
-			return config, configPath, err
-		}
-
-		// Move up to parent directory
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			// Reached root directory
-			return nil, "", nil
-		}
-		dir = parent
-	}
-}
-
-// LoadWorkspaceConfig loads the workspace config from the specified path
-func LoadWorkspaceConfig(configPath string) (*WorkspaceConfig, error) {
-	file, err := os.Open(configPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	defer file.Close()
-
-	var config WorkspaceConfig
-	if err := json.NewDecoder(file).Decode(&config); err != nil {
-		return nil, err
-	}
-
-	return &config, nil
-}
-
-// SaveWorkspaceConfig saves the workspace config to the specified path
-func SaveWorkspaceConfig(configPath string, config *WorkspaceConfig) error {
-	file, err := os.Create(configPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ")
-	return encoder.Encode(config)
-}
-
-// GetProjectNameFromConfig returns the project name from workspace config if available
-func GetProjectNameFromConfig() string {
-	config, _, err := FindWorkspaceConfig()
-	if err != nil || config == nil || config.Project == "" {
-		return ""
-	}
-	return config.Project
-}
-
 // findOpenAPISpec searches for common OpenAPI spec files in the current directory
 func findOpenAPISpec() string {
 	commonOpenAPIFiles := []string{
@@ -287,20 +224,61 @@ func findStainlessConfig() string {
 	return ""
 }
 
-// InitWorkspaceConfig initializes a new workspace config in the current directory
-func InitWorkspaceConfig(projectName, openAPISpec, stainlessConfig string) error {
-	// Get current working directory
-	dir, err := os.Getwd()
+func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {
+	// Look for workspace configuration
+	var config WorkspaceConfig
+	found, err := config.Find()
 	if err != nil {
-		return err
+		return fmt.Errorf("error searching for workspace config: %v", err)
 	}
 
-	configPath := filepath.Join(dir, "stainless-workspace.json")
-	config := WorkspaceConfig{
-		Project:         projectName,
-		OpenAPISpec:     openAPISpec,
-		StainlessConfig: stainlessConfig,
+	if !found {
+		fmt.Printf("%s No workspace configuration found\n", aurora.Yellow("!"))
+		fmt.Printf("Run 'stl workspace init' to initialize a workspace in this directory.\n")
+		return nil
 	}
 
-	return SaveWorkspaceConfig(configPath, &config)
+	// Get current working directory
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %v", err)
+	}
+
+	// Get relative path from cwd to config file
+	relPath, err := filepath.Rel(cwd, config.ConfigPath)
+	if err != nil {
+		relPath = config.ConfigPath // fallback to absolute path
+	}
+
+	fmt.Printf("%s Workspace configuration found\n", aurora.BrightGreen("✓"))
+	fmt.Printf("  Config file: %s\n", aurora.Bold(relPath))
+	fmt.Printf("  Project: %s\n", aurora.Bold(config.Project))
+
+	if config.OpenAPISpec != "" {
+		// Check if OpenAPI spec file exists
+		configDir := filepath.Dir(config.ConfigPath)
+		specPath := filepath.Join(configDir, config.OpenAPISpec)
+		if _, err := os.Stat(specPath); err == nil {
+			fmt.Printf("  OpenAPI spec: %s %s\n", aurora.Bold(config.OpenAPISpec), aurora.BrightGreen("✓"))
+		} else {
+			fmt.Printf("  OpenAPI spec: %s %s\n", aurora.Bold(config.OpenAPISpec), aurora.BrightRed("✗ (not found)"))
+		}
+	} else {
+		fmt.Printf("  OpenAPI spec: %s\n", aurora.Faint("(not configured)"))
+	}
+
+	if config.StainlessConfig != "" {
+		// Check if Stainless config file exists
+		configDir := filepath.Dir(config.ConfigPath)
+		stainlessPath := filepath.Join(configDir, config.StainlessConfig)
+		if _, err := os.Stat(stainlessPath); err == nil {
+			fmt.Printf("  Stainless config: %s %s\n", aurora.Bold(config.StainlessConfig), aurora.BrightGreen("✓"))
+		} else {
+			fmt.Printf("  Stainless config: %s %s\n", aurora.Bold(config.StainlessConfig), aurora.BrightRed("✗ (not found)"))
+		}
+	} else {
+		fmt.Printf("  Stainless config: %s\n", aurora.Faint("(not configured)"))
+	}
+
+	return nil
 }

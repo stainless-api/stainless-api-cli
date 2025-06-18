@@ -265,15 +265,17 @@ func GetProjectName(cmd *cli.Command, flagName string) string {
 	}
 
 	// Otherwise, try to get from workspace config
-	configProjectName := GetProjectNameFromConfig()
-	if configProjectName != "" {
+	var config WorkspaceConfig
+	found, err := config.Find()
+	if err == nil && found && config.Project != "" {
 		// Log that we're using the workspace config if in interactive mode
 		if isTerminal(os.Stdout) {
-			fmt.Printf("%s %s\n", au.BrightBlue("i"), fmt.Sprintf("Using project '%s' from workspace config", configProjectName))
+			fmt.Printf("%s %s\n", au.BrightBlue("i"), fmt.Sprintf("Using project '%s' from workspace config", config.Project))
 		}
+		return config.Project
 	}
 
-	return configProjectName
+	return ""
 }
 
 // CheckInteractiveAndInitWorkspace checks if running in interactive mode and prompts to init workspace if needed
@@ -284,8 +286,9 @@ func CheckInteractiveAndInitWorkspace(cmd *cli.Command, projectName string) {
 	}
 
 	// Check if workspace config exists
-	config, _, _ := FindWorkspaceConfig()
-	if config != nil {
+	var config WorkspaceConfig
+	found, _ := config.Find()
+	if found {
 		return
 	}
 
@@ -295,8 +298,13 @@ func CheckInteractiveAndInitWorkspace(cmd *cli.Command, projectName string) {
 	fmt.Scanln(&answer)
 
 	if strings.ToLower(answer) == "y" || strings.ToLower(answer) == "yes" {
-		if err := InitWorkspaceConfig(projectName, "", ""); err != nil {
-			fmt.Printf("%s %s\n", au.BrightRed("✱"), fmt.Sprintf("Failed to initialize workspace: %v", err))
+		config, err := NewWorkspaceConfig(projectName, "", "")
+		if err != nil {
+			fmt.Printf("%s %s\n", au.BrightRed("✱"), fmt.Sprintf("Failed to create workspace config: %v", err))
+			return
+		}
+		if err := config.Save(); err != nil {
+			fmt.Printf("%s %s\n", au.BrightRed("✱"), fmt.Sprintf("Failed to save workspace config: %v", err))
 			return
 		}
 		fmt.Printf("%s %s\n", au.BrightGreen("✱"), fmt.Sprintf("Workspace initialized with project: %s", projectName))

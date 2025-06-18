@@ -196,7 +196,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		form := huh.NewForm(
 			huh.NewGroup(
 				huh.NewInput().
-					Title("organization").
+					Title("org").
 					Value(&org).
 					Suggestions(orgs).
 					Description("Enter the organization for this project").
@@ -207,7 +207,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 						return nil
 					}),
 				huh.NewInput().
-					Title("project name").
+					Title("project").
 					Value(&projectName).
 					DescriptionFunc(func() string {
 						if projectName == "" {
@@ -231,7 +231,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 					Options(availableTargets...).
 					Value(&selectedTargets),
 				huh.NewInput().
-					Title("OpenAPI spec path").
+					Title("openapi_spec").
 					Description("Relative path to your OpenAPI spec file").
 					Placeholder("openapi.yml").
 					Validate(func(s string) error {
@@ -246,7 +246,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 					}).
 					Value(&openAPISpec),
 				huh.NewInput().
-					Title("Stainless config path (optional)").
+					Title("stainless_config (optional)").
 					Description("Relative path to your Stainless config file").
 					Placeholder("openapi.stainless.yml").
 					Validate(func(s string) error {
@@ -344,9 +344,15 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 
 		// Use the same project name (slug) for workspace initialization
 		slug := nameToSlug(projectName)
-		err := InitWorkspaceConfig(slug, openAPISpec, stainlessConfig)
+		config, err := NewWorkspaceConfig(slug, openAPISpec, stainlessConfig)
 		if err != nil {
-			fmt.Printf("%s Failed to initialize workspace: %v\n", aurora.BrightRed("✱"), err)
+			fmt.Printf("%s Failed to create workspace config: %v\n", aurora.BrightRed("✱"), err)
+			return fmt.Errorf("project created but workspace initialization failed: %v", err)
+		}
+
+		err = config.Save()
+		if err != nil {
+			fmt.Printf("%s Failed to save workspace config: %v\n", aurora.BrightRed("✱"), err)
 			return fmt.Errorf("project created but workspace initialization failed: %v", err)
 		}
 
