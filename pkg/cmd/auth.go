@@ -56,9 +56,10 @@ func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 	if err := SaveAuthConfig(config); err != nil {
-		return fmt.Errorf("%s", au.Red(fmt.Sprintf("Failed to save authentication: %v", err)))
+		Error("Failed to save authentication: %v", err)
+		return fmt.Errorf("authentication failed")
 	}
-	fmt.Printf("%s %s\n", au.BrightGreen("✱"), "Authentication successful! Your credentials have been saved.")
+	Success("Authentication successful! Your credentials have been saved.")
 	return nil
 }
 
@@ -134,7 +135,7 @@ func handleAuthLogout(ctx context.Context, cmd *cli.Command) error {
 
 	configPath := filepath.Join(configDir, "auth.json")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		fmt.Println(au.BrightYellow("No active session found."))
+		Warn("No active session found.")
 		return nil
 	}
 
@@ -142,14 +143,14 @@ func handleAuthLogout(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("failed to remove auth file: %v", err)
 	}
 
-	fmt.Printf("%s %s\n", au.BrightGreen("✱"), "Successfully logged out.")
+	Success("Successfully logged out.")
 	return nil
 }
 
 func handleAuthStatus(ctx context.Context, cmd *cli.Command) error {
 	// Check for API key in environment variables first
 	if apiKey := os.Getenv("STAINLESS_API_KEY"); apiKey != "" {
-		fmt.Printf("%s %s\n", au.BrightGreen("✱"), "Authenticated via STAINLESS_API_KEY environment variable")
+		Success("Authenticated via STAINLESS_API_KEY environment variable")
 		return nil
 	}
 
@@ -160,17 +161,17 @@ func handleAuthStatus(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if config == nil {
-		fmt.Printf("%s %s\n", au.BrightYellow("✱"), "Not logged in.")
+		Warn("Not logged in.")
 		return nil
 	}
 
 	// If we have a config file with a token
-	fmt.Printf("%s %s\n", au.BrightGreen("✱"), "Authenticated via saved credentials")
+	group := Success("Authenticated via saved credentials")
 
 	// Show a truncated version of the token for verification
 	if len(config.AccessToken) > 10 {
 		truncatedToken := config.AccessToken[:5] + "..." + config.AccessToken[len(config.AccessToken)-5:]
-		fmt.Printf("Token: %s\n", truncatedToken)
+		group.Property("token", truncatedToken)
 	}
 
 	return nil
@@ -217,13 +218,13 @@ func StartDeviceFlow(clientID, scope string) (*AuthConfig, error) {
 	}
 
 	if err := browser.OpenURL(deviceResponse.VerificationURIComplete); err != nil {
-		fmt.Println()
-		fmt.Printf("To authenticate, visit %s\n", au.Hyperlink(deviceResponse.VerificationURI, deviceResponse.VerificationURI))
-		fmt.Printf("and enter this code %s\n", au.Bold(deviceResponse.UserCode))
-		fmt.Println()
-		fmt.Printf("Or navigate to this URL %s\n", au.Hyperlink(deviceResponse.VerificationURIComplete, deviceResponse.VerificationURIComplete))
+		group := Info("To authenticate, visit the verification URL")
+		group.Property("url", deviceResponse.VerificationURI)
+		group.Property("code", deviceResponse.UserCode)
+		group.Property("direct_url", deviceResponse.VerificationURIComplete)
 	} else {
-		fmt.Printf("Browser opened to %s\n", au.Hyperlink(deviceResponse.VerificationURIComplete, deviceResponse.VerificationURIComplete))
+		group := Info("Browser opened")
+		group.Property("url", deviceResponse.VerificationURIComplete)
 	}
 
 	return pollForToken(
@@ -242,7 +243,7 @@ func pollForToken(clientID, deviceCode string, interval, expiresIn int) (*AuthCo
 	deadline := time.Now().Add(time.Duration(expiresIn) * time.Second)
 	pollInterval := time.Duration(interval) * time.Second
 
-	fmt.Println(au.BrightBlack("Waiting for authentication to complete..."))
+	Progress("Waiting for authentication to complete...")
 
 	for time.Now().Before(deadline) {
 		time.Sleep(pollInterval)

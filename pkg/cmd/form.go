@@ -4,7 +4,6 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/logrusorgru/aurora/v4"
 )
 
 // GetFormTheme returns the standard huh theme used across all forms
@@ -17,10 +16,13 @@ func GetFormTheme() *huh.Theme {
 	primaryBright := lipgloss.Color("14")
 	error := lipgloss.Color("1")
 
-	t.Group.Title = t.Group.Title.Foreground(primary).PaddingBottom(1)
+	t.Group.Title = t.Group.Title.Foreground(gray).PaddingBottom(1)
 
 	t.Focused.Title = t.Focused.Title.Foreground(primaryBright).Bold(true)
-	t.Focused.Base = t.Focused.Base.BorderLeft(false).SetString("\b\b" + aurora.BrightCyan("✱").String()).PaddingLeft(2)
+	t.Focused.Base = t.Focused.Base.
+		BorderLeft(false).
+		SetString("\b\b" + lipgloss.NewStyle().Foreground(primaryBright).Render("✱")).
+		PaddingLeft(2)
 	t.Focused.Description = t.Focused.Description.Foreground(gray)
 	t.Focused.TextInput.Placeholder = t.Focused.TextInput.Placeholder.Foreground(gray)
 
@@ -28,7 +30,11 @@ func GetFormTheme() *huh.Theme {
 	t.Focused.ErrorMessage = t.Focused.ErrorMessage.Foreground(error)
 
 	t.Blurred.Title = t.Blurred.Title.Foreground(primary).Bold(true)
-	t.Blurred.Base = t.Blurred.Base.Foreground(grayBright).BorderLeft(false).SetString("\b\b" + aurora.Cyan("✱").String()).PaddingLeft(2)
+	t.Blurred.Base = t.Blurred.Base.
+		Foreground(grayBright).
+		BorderLeft(false).
+		SetString("\b\b" + lipgloss.NewStyle().Foreground(primary).Render("✱")).
+		PaddingLeft(2)
 	t.Blurred.Description = t.Blurred.Description.Foreground(gray)
 	t.Blurred.TextInput.Placeholder = t.Blurred.TextInput.Placeholder.Foreground(gray)
 
@@ -39,8 +45,8 @@ func GetFormTheme() *huh.Theme {
 func GetFormKeyMap() *huh.KeyMap {
 	keyMap := huh.NewDefaultKeyMap()
 	keyMap.Input.AcceptSuggestion = key.NewBinding(
-		key.WithKeys("right"),
-		key.WithHelp("→", "complete"),
+		key.WithKeys("tab"),
+		key.WithHelp("tab", "complete"),
 	)
 	keyMap.Input.Next = key.NewBinding(
 		key.WithKeys("tab", "down", "enter"),

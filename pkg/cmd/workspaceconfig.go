@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -31,7 +32,11 @@ func (config *WorkspaceConfig) Find() (bool, error) {
 			if err != nil {
 				return false, err
 			}
-			return true, nil
+			// Check if the config was actually loaded (not empty)
+			if config.ConfigPath != "" {
+				return true, nil
+			}
+			// File exists but is empty, continue searching
 		}
 
 		parent := filepath.Dir(dir)
@@ -49,11 +54,22 @@ func (config *WorkspaceConfig) Load(configPath string) error {
 		if os.IsNotExist(err) {
 			return nil
 		}
-		return err
+		return fmt.Errorf("failed to open workspace config file %s: %w", configPath, err)
 	}
 	defer file.Close()
+	
+	// Check if file is empty
+	info, err := file.Stat()
+	if err != nil {
+		return fmt.Errorf("failed to get file info for %s: %w", configPath, err)
+	}
+	if info.Size() == 0 {
+		// File is empty, treat as if no config exists
+		return nil
+	}
+	
 	if err := json.NewDecoder(file).Decode(config); err != nil {
-		return err
+		return fmt.Errorf("failed to parse workspace config file %s: %w", configPath, err)
 	}
 	config.ConfigPath = configPath
 	return nil

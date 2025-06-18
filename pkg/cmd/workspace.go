@@ -9,10 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"strings"
 
 	"github.com/charmbracelet/huh"
-	"github.com/logrusorgru/aurora/v4"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/urfave/cli/v3"
 )
@@ -52,7 +50,7 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 	var existingConfig WorkspaceConfig
 	found, err := existingConfig.Find()
 	if err == nil && found {
-		fmt.Printf("Existing workspace detected: %s (project: %s)\n", aurora.Bold(existingConfig.ConfigPath), existingConfig.Project)
+		Info("Existing workspace detected: %s (project: %s)", existingConfig.ConfigPath, existingConfig.Project)
 	}
 
 	// Get current directory and show where the file will be written
@@ -61,8 +59,8 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("failed to get current directory: %v", err)
 	}
 	configPath := filepath.Join(dir, "stainless-workspace.json")
-	fmt.Printf("Writing workspace config to: %s\n", aurora.Bold(configPath))
-	fmt.Println()
+	Info("Writing workspace config to: %s", configPath)
+	Spacer()
 
 	// Get values from flags or prepare for interactive prompt
 	projectName := cmd.String("project")
@@ -92,8 +90,7 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 					Title("project").
 					Value(&projectName).
 					Suggestions(slices.Collect(maps.Keys(projectInfoMap))).
-					Description("Enter the stainless project for this workspace").
-					Validate(createProjectValidator(projectInfoMap)),
+					Description("Enter the stainless project for this workspace"),
 				huh.NewInput().
 					Title("openapi_spec (optional)").
 					Description("Relative path to your OpenAPI spec file").
@@ -111,12 +108,13 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 			return fmt.Errorf("failed to get workspace configuration: %v", err)
 		}
 
-		fmt.Printf("%s project name: %s\n", aurora.Bold("✱"), projectName)
+		group := Success("Configuration summary:")
+		group.Property("project_name", projectName)
 		if openAPISpec != "" {
-			fmt.Printf("%s openapi spec: %s\n", aurora.Bold("✱"), openAPISpec)
+			group.Property("openapi_spec", openAPISpec)
 		}
 		if stainlessConfig != "" {
-			fmt.Printf("%s stainless config: %s\n", aurora.Bold("✱"), stainlessConfig)
+			group.Property("stainless_config", stainlessConfig)
 		}
 	}
 
@@ -129,7 +127,7 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("failed to save workspace config: %v", err)
 	}
 
-	fmt.Printf("%s %s\n", aurora.BrightGreen("✱"), fmt.Sprintf("Workspace initialized"))
+	Success("Workspace initialized")
 	return nil
 }
 
@@ -160,31 +158,6 @@ func fetchUserProjects(ctx context.Context) map[string]projectInfo {
 	}
 
 	return projectInfoMap
-}
-
-func createProjectValidator(projectInfoMap map[string]projectInfo) func(string) error {
-	attemptCount := 0
-	lastProjectName := ""
-
-	return func(projectName string) error {
-		if projectName != lastProjectName {
-			attemptCount = 0
-			lastProjectName = projectName
-		}
-		if strings.TrimSpace(projectName) == "" {
-			return fmt.Errorf("project name is required")
-		}
-		if _, exists := projectInfoMap[projectName]; exists {
-			return nil
-		}
-
-		attemptCount++
-		if attemptCount == 1 {
-			return fmt.Errorf("project '%s' not found in accessible projects (press Enter again to proceed anyway)", projectName)
-		}
-		// Allow bypass on second attempt
-		return nil
-	}
 }
 
 // findOpenAPISpec searches for common OpenAPI spec files in the current directory
@@ -233,8 +206,8 @@ func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if !found {
-		fmt.Printf("%s No workspace configuration found\n", aurora.Yellow("!"))
-		fmt.Printf("Run 'stl workspace init' to initialize a workspace in this directory.\n")
+		group := Warn("No workspace configuration found")
+		group.Info("Run 'stl workspace init' to initialize a workspace in this directory.")
 		return nil
 	}
 
@@ -250,21 +223,21 @@ func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {
 		relPath = config.ConfigPath // fallback to absolute path
 	}
 
-	fmt.Printf("%s Workspace configuration found\n", aurora.BrightGreen("✓"))
-	fmt.Printf("  Config file: %s\n", aurora.Bold(relPath))
-	fmt.Printf("  Project: %s\n", aurora.Bold(config.Project))
+	group := Success("Workspace configuration found")
+	group.Property("path", relPath)
+	group.Property("project", config.Project)
 
 	if config.OpenAPISpec != "" {
 		// Check if OpenAPI spec file exists
 		configDir := filepath.Dir(config.ConfigPath)
 		specPath := filepath.Join(configDir, config.OpenAPISpec)
 		if _, err := os.Stat(specPath); err == nil {
-			fmt.Printf("  OpenAPI spec: %s %s\n", aurora.Bold(config.OpenAPISpec), aurora.BrightGreen("✓"))
+			group.Property("openapi_spec", config.OpenAPISpec)
 		} else {
-			fmt.Printf("  OpenAPI spec: %s %s\n", aurora.Bold(config.OpenAPISpec), aurora.BrightRed("✗ (not found)"))
+			group.Property("openapi_spec", config.OpenAPISpec+" (not found)")
 		}
 	} else {
-		fmt.Printf("  OpenAPI spec: %s\n", aurora.Faint("(not configured)"))
+		group.Property("openapi_spec", "(not configured)")
 	}
 
 	if config.StainlessConfig != "" {
@@ -272,12 +245,12 @@ func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {
 		configDir := filepath.Dir(config.ConfigPath)
 		stainlessPath := filepath.Join(configDir, config.StainlessConfig)
 		if _, err := os.Stat(stainlessPath); err == nil {
-			fmt.Printf("  Stainless config: %s %s\n", aurora.Bold(config.StainlessConfig), aurora.BrightGreen("✓"))
+			group.Property("stainless_config", config.StainlessConfig)
 		} else {
-			fmt.Printf("  Stainless config: %s %s\n", aurora.Bold(config.StainlessConfig), aurora.BrightRed("✗ (not found)"))
+			group.Property("stainless_config", config.StainlessConfig+" (not found)")
 		}
 	} else {
-		fmt.Printf("  Stainless config: %s\n", aurora.Faint("(not configured)"))
+		group.Property("stainless_config", "(not configured)")
 	}
 
 	return nil
