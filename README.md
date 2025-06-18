@@ -37,6 +37,11 @@ stl builds create [--allow-empty] [--project <name>]
 
 For details about specific commands, use the `--help` flag.
 
+## Global Flags
+
+- `--debug` - Enable debug logging (includes HTTP request/response details)
+- `--version`, `-v` - Show the CLI version
+
 ## Workspace Configuration
 
 The CLI supports workspace configuration to avoid repeatedly specifying the project name. When you run a command, the CLI will:
