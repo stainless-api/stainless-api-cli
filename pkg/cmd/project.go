@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
-	"github.com/logrusorgru/aurora/v4"
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
@@ -182,8 +181,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	allValuesProvided := org != "" && projectName != ""
 
 	if !allValuesProvided {
-		fmt.Println("Creating a new project...")
-		fmt.Println()
+		Info("Creating a new project...")
 
 		// Fetch available organizations for suggestions
 		orgs := fetchUserOrgs(ctx)
@@ -230,20 +228,9 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 					Description("Select target languages for code generation").
 					Options(availableTargets...).
 					Value(&selectedTargets),
-				huh.NewInput().
+				huh.NewFilePicker().
 					Title("openapi_spec").
 					Description("Relative path to your OpenAPI spec file").
-					Placeholder("openapi.yml").
-					Validate(func(s string) error {
-						s = strings.TrimSpace(s)
-						if s == "" {
-							return fmt.Errorf("openapi spec is required")
-						}
-						if _, err := os.Stat(s); os.IsNotExist(err) {
-							return fmt.Errorf("file '%s' does not exist", s)
-						}
-						return nil
-					}).
 					Value(&openAPISpec),
 				huh.NewInput().
 					Title("stainless_config (optional)").
@@ -270,19 +257,18 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		// Generate slug from project name
 		slug := nameToSlug(projectName)
 
-		fmt.Printf("%s organization: %s\n", aurora.Bold("✱"), org)
-		fmt.Printf("%s project name: %s\n", aurora.Bold("✱"), projectName)
-		fmt.Printf("%s slug: %s\n", aurora.Bold("✱"), slug)
+		Property("organization", org)
+		Property("project_name", projectName)
+		Property("slug", slug)
 		if len(selectedTargets) > 0 {
-			fmt.Printf("%s targets: %s\n", aurora.Bold("✱"), strings.Join(selectedTargets, ", "))
+			Property("targets", strings.Join(selectedTargets, ", "))
 		}
 		if openAPISpec != "" {
-			fmt.Printf("%s openapi spec: %s\n", aurora.Bold("✱"), openAPISpec)
+			Property("openapi_spec", openAPISpec)
 		}
 		if stainlessConfig != "" {
-			fmt.Printf("%s stainless config: %s\n", aurora.Bold("✱"), stainlessConfig)
+			Property("stainless_config", stainlessConfig)
 		}
-		fmt.Println()
 
 		// Set the flag values so the JSONFlag middleware can pick them up
 		cmd.Set("org", org)
@@ -333,30 +319,29 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if !allValuesProvided {
-		fmt.Printf("%s %s\n", aurora.BrightGreen("✱"), fmt.Sprintf("Project created successfully"))
+		Success("Project created successfully")
 	}
 	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
 
 	// Initialize workspace if requested
 	if initWorkspace {
-		fmt.Println()
-		fmt.Printf("Initializing workspace configuration...\n")
+		Info("Initializing workspace configuration...")
 
 		// Use the same project name (slug) for workspace initialization
 		slug := nameToSlug(projectName)
 		config, err := NewWorkspaceConfig(slug, openAPISpec, stainlessConfig)
 		if err != nil {
-			fmt.Printf("%s Failed to create workspace config: %v\n", aurora.BrightRed("✱"), err)
+			Error("Failed to create workspace config: %v", err)
 			return fmt.Errorf("project created but workspace initialization failed: %v", err)
 		}
 
 		err = config.Save()
 		if err != nil {
-			fmt.Printf("%s Failed to save workspace config: %v\n", aurora.BrightRed("✱"), err)
+			Error("Failed to save workspace config: %v", err)
 			return fmt.Errorf("project created but workspace initialization failed: %v", err)
 		}
 
-		fmt.Printf("%s %s\n", aurora.BrightGreen("✱"), fmt.Sprintf("Workspace initialized"))
+		Success("Workspace initialized")
 	}
 
 	return nil
