@@ -28,7 +28,8 @@ var Command = cli.Command{
 		{
 			Name: "workspace",
 			Commands: []*cli.Command{
-				&initWorkspaceCommand,
+				&workspaceInit,
+				&workspaceStatus,
 			},
 		},
 
