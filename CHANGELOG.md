@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-alpha.17 (2025-06-19)
+
+Full Changelog: [v0.1.0-alpha.16...v0.1.0-alpha.17](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.16...v0.1.0-alpha.17)
+
+### Features
+
+* **api:** make project nullable ([d51a660](https://github.com/stainless-api/stainless-api-cli/commit/d51a660892fa1b5196f37c8a4c297788c2ad7683))
+
+
+### Chores
+
+* bump go sdk version ([3865229](https://github.com/stainless-api/stainless-api-cli/commit/38652297409fbc08d4990fd631d0ee9d828f0005))
+* **internal:** codegen related update ([5c194ff](https://github.com/stainless-api/stainless-api-cli/commit/5c194ff980c215b29ff16acef55cc0655d710537))
+
 ## 0.1.0-alpha.16 (2025-06-19)
 
 Full Changelog: [v0.1.0-alpha.15...v0.1.0-alpha.16](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.15...v0.1.0-alpha.16)
