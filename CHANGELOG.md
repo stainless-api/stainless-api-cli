@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.16 (2025-06-19)
+
+Full Changelog: [v0.1.0-alpha.15...v0.1.0-alpha.16](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.15...v0.1.0-alpha.16)
+
+### Features
+
+* polish around logging ([38fec48](https://github.com/stainless-api/stainless-api-cli/commit/38fec484c830ae09ee32fd3f26ef19e6cf020eca))
+
 ## 0.1.0-alpha.15 (2025-06-18)
 
 Full Changelog: [v0.1.0-alpha.14...v0.1.0-alpha.15](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.14...v0.1.0-alpha.15)
