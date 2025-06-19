@@ -10,7 +10,6 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/logrusorgru/aurora/v4 v4.0.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
-	github.com/stainless-api/stainless-api-go v0.7.0
 	github.com/stainless-api/stainless-api-go v0.8.0
 	github.com/tidwall/gjson v1.17.0
 	github.com/tidwall/pretty v1.2.1
