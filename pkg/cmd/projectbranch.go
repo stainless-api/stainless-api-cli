@@ -37,8 +37,9 @@ var projectsBranchesCreate = cli.Command{
 		&jsonflag.JSONBoolFlag{
 			Name: "force",
 			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "force",
+				Kind:     jsonflag.Body,
+				Path:     "force",
+				SetValue: true,
 			},
 		},
 	},
