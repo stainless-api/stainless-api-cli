@@ -34,8 +34,9 @@ var buildsCreate = cli.Command{
 		&jsonflag.JSONBoolFlag{
 			Name: "allow-empty",
 			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "allow_empty",
+				Kind:     jsonflag.Body,
+				Path:     "allow_empty",
+				SetValue: true,
 			},
 		},
 		&jsonflag.JSONStringFlag{
