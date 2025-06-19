@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.18 (2025-06-19)
+
+Full Changelog: [v0.1.0-alpha.17...v0.1.0-alpha.18](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.17...v0.1.0-alpha.18)
+
+### Chores
+
+* run go mod tidy ([014b38b](https://github.com/stainless-api/stainless-api-cli/commit/014b38b3c5d50367a74eba773b8eb9c786325d5d))
+
 ## 0.1.0-alpha.17 (2025-06-19)
 
 Full Changelog: [v0.1.0-alpha.16...v0.1.0-alpha.17](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.16...v0.1.0-alpha.17)
