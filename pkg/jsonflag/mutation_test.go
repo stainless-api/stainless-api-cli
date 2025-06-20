@@ -2,18 +2,16 @@ package jsonflag
 
 import (
 	"testing"
-
-	"github.com/urfave/cli/v3"
 )
 
 func TestApply(t *testing.T) {
-	Clear()
+	ClearMutations()
 
-	globalRegistry.Register(Body, "name", "test")
-	globalRegistry.Register(Query, "page", 1)
-	globalRegistry.Register(Header, "authorization", "Bearer token")
+	Mutate(Body, "name", "test")
+	Mutate(Query, "page", 1)
+	Mutate(Header, "authorization", "Bearer token")
 
-	body, query, header, err := globalRegistry.ApplyMutations(
+	body, query, header, err := ApplyMutations(
 		[]byte(`{}`),
 		[]byte(`{}`),
 		[]byte(`{}`),

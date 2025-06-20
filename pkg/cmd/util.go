@@ -23,14 +23,20 @@ import (
 	"golang.org/x/term"
 )
 
-func getDefaultRequestOptions() []option.RequestOption {
-	return append(
-		[]option.RequestOption{
-			option.WithHeader("X-Stainless-Lang", "cli"),
-			option.WithHeader("X-Stainless-Runtime", "cli"),
-		},
-		getClientOptions()...,
-	)
+func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
+	opts := []option.RequestOption{
+		option.WithHeader("X-Stainless-Lang", "cli"),
+		option.WithHeader("X-Stainless-Runtime", "cli"),
+	}
+
+	// Override base URL if the --base-url flag is provided
+	if baseURL := cmd.String("base-url"); baseURL != "" {
+		opts = append(opts, option.WithBaseURL(baseURL))
+	}
+
+	opts = append(opts, getClientOptions()...)
+
+	return opts
 }
 
 type apiCommandContext struct {
@@ -47,7 +53,7 @@ func (c apiCommandContext) AsMiddleware() option.Middleware {
 	var header = []byte("{}")
 
 	// Apply JSON flag mutations
-	body, query, header, err := jsonflag.Apply(body, query, header)
+	body, query, header, err := jsonflag.ApplyMutations(body, query, header)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -130,7 +136,7 @@ func (c apiCommandContext) AsMiddleware() option.Middleware {
 }
 
 func getAPICommandContext(cmd *cli.Command) *apiCommandContext {
-	client := stainlessv0.NewClient(getDefaultRequestOptions()...)
+	client := stainlessv0.NewClient(getDefaultRequestOptions(cmd)...)
 	return &apiCommandContext{client, cmd}
 }
 

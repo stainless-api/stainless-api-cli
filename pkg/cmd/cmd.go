@@ -15,6 +15,10 @@ var Command = cli.Command{
 			Name:  "debug",
 			Usage: "Enable debug logging",
 		},
+		&cli.StringFlag{
+			Name:  "base-url",
+			Usage: "Override the base URL for API requests",
+		},
 	},
 	Commands: []*cli.Command{
 		{
