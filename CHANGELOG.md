@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.20 (2025-06-20)
+
+Full Changelog: [v0.1.0-alpha.19...v0.1.0-alpha.20](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.19...v0.1.0-alpha.20)
+
+### Chores
+
+* remove openapi spec ([f4b0c0b](https://github.com/stainless-api/stainless-api-cli/commit/f4b0c0b892990d82f432c5c43ce7459bdda3febd))
+
 ## 0.1.0-alpha.19 (2025-06-20)
 
 Full Changelog: [v0.1.0-alpha.18...v0.1.0-alpha.19](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.18...v0.1.0-alpha.19)
