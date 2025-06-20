@@ -605,7 +605,7 @@ func getAPICommandContextWithWorkspaceDefaults(cmd *cli.Command) (*apiCommandCon
 			if err != nil {
 				return nil, fmt.Errorf("failed to load OpenAPI spec from workspace config: %v", err)
 			}
-			jsonflag.Register(jsonflag.Body, "revision.openapi\\.yml.content", string(content))
+			jsonflag.Mutate(jsonflag.Body, "revision.openapi\\.yml.content", string(content))
 		}
 
 		if !cmd.IsSet("stainless-config") && !cmd.IsSet("config") && config.StainlessConfig != "" {
@@ -615,7 +615,7 @@ func getAPICommandContextWithWorkspaceDefaults(cmd *cli.Command) (*apiCommandCon
 			if err != nil {
 				return nil, fmt.Errorf("failed to load Stainless config from workspace config: %v", err)
 			}
-			jsonflag.Register(jsonflag.Body, "revision.openapi\\.stainless\\.yml.content", string(content))
+			jsonflag.Mutate(jsonflag.Body, "revision.openapi\\.stainless\\.yml.content", string(content))
 		}
 	}
 	return cc, err

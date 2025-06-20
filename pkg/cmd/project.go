@@ -136,6 +136,8 @@ var projectsList = cli.Command{
 }
 
 func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(cmd)
+
 	// Define available target languages
 	availableTargets := []huh.Option[string]{
 		huh.NewOption("TypeScript", "typescript").Selected(true),
@@ -184,7 +186,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		Info("Creating a new project...")
 
 		// Fetch available organizations for suggestions
-		orgs := fetchUserOrgs(ctx)
+		orgs := fetchUserOrgs(cc.client, ctx)
 
 		// Auto-fill with first organization if org is empty and orgs are available
 		if org == "" && len(orgs) > 0 {
@@ -294,7 +296,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		content, err := os.ReadFile(openAPISpec)
 		if err == nil {
 			// Inject the actual file content into the project creation payload
-			jsonflag.Register(jsonflag.Body, "revision.openapi\\.yml.content", string(content))
+			jsonflag.Mutate(jsonflag.Body, "revision.openapi\\.yml.content", string(content))
 		}
 	}
 
@@ -302,12 +304,10 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		content, err := os.ReadFile(stainlessConfig)
 		if err == nil {
 			// Inject the actual file content into the project creation payload
-			jsonflag.Register(jsonflag.Body, "revision.openapi\\.stainless\\.yml.content", string(content))
+			jsonflag.Mutate(jsonflag.Body, "revision.openapi\\.stainless\\.yml.content", string(content))
 		}
 	}
 
-	// Use the original logic - let the JSONFlag middleware handle parameter construction
-	cc := getAPICommandContext(cmd)
 	params := stainlessv0.ProjectNewParams{}
 	res, err := cc.client.Projects.New(
 		context.TODO(),
@@ -402,9 +402,7 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 }
 
 // fetchUserOrgs retrieves the list of organizations the user has access to
-func fetchUserOrgs(ctx context.Context) []string {
-	client := stainlessv0.NewClient(getClientOptions()...)
-
+func fetchUserOrgs(client stainlessv0.Client, ctx context.Context) []string {
 	res, err := client.Orgs.List(ctx)
 	if err != nil {
 		// Return empty slice if we can't fetch orgs
