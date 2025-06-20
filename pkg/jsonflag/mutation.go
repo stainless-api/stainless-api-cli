@@ -29,7 +29,7 @@ type registry struct {
 
 var globalRegistry = &registry{}
 
-func (r *registry) Register(kind MutationKind, path string, value interface{}) {
+func (r *registry) Mutate(kind MutationKind, path string, value interface{}) {
 	r.mutations = append(r.mutations, Mutation{
 		Kind:  kind,
 		Path:  path,
@@ -37,7 +37,7 @@ func (r *registry) Register(kind MutationKind, path string, value interface{}) {
 	})
 }
 
-func (r *registry) ApplyMutations(body, query, header []byte) ([]byte, []byte, []byte, error) {
+func (r *registry) Apply(body, query, header []byte) ([]byte, []byte, []byte, error) {
 	var err error
 
 	for _, mutation := range r.mutations {
@@ -67,14 +67,24 @@ func (r *registry) List() []Mutation {
 	return result
 }
 
-func Apply(body, query, header []byte) ([]byte, []byte, []byte, error) {
-	body, query, header, err := globalRegistry.ApplyMutations(body, query, header)
-	globalRegistry.Clear()
-	return body, query, header, err
+// Mutate adds a mutation that will be applied to the specified kind of data
+func Mutate(kind MutationKind, path string, value interface{}) {
+	globalRegistry.Mutate(kind, path, value)
 }
 
-func Clear() {
+// ApplyMutations applies all registered mutations to the provided JSON data
+func ApplyMutations(body, query, header []byte) ([]byte, []byte, []byte, error) {
+	return globalRegistry.Apply(body, query, header)
+}
+
+// ClearMutations removes all registered mutations from the global registry
+func ClearMutations() {
 	globalRegistry.Clear()
+}
+
+// ListMutations returns a copy of all currently registered mutations
+func ListMutations() []Mutation {
+	return globalRegistry.List()
 }
 
 func jsonSet(json []byte, path string, value interface{}) ([]byte, error) {

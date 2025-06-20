@@ -15,9 +15,9 @@ type JSONConfig struct {
 	SetValue interface{}
 }
 
-type JsonValueCreator[T any] struct{}
+type JSONValueCreator[T any] struct{}
 
-func (c JsonValueCreator[T]) Create(val T, dest *T, config JSONConfig) cli.Value {
+func (c JSONValueCreator[T]) Create(val T, dest *T, config JSONConfig) cli.Value {
 	*dest = val
 	return &jsonValue[T]{
 		destination: dest,
@@ -25,7 +25,7 @@ func (c JsonValueCreator[T]) Create(val T, dest *T, config JSONConfig) cli.Value
 	}
 }
 
-func (c JsonValueCreator[T]) ToString(val T) string {
+func (c JSONValueCreator[T]) ToString(val T) string {
 	switch v := any(val).(type) {
 	case string:
 		if v == "" {
@@ -58,13 +58,13 @@ func (v *jsonValue[T]) Set(val string) error {
 	if v.config.SetValue != nil {
 		// For boolean flags with SetValue, register the configured value
 		if _, isBool := any(parsed).(bool); isBool {
-			globalRegistry.Register(v.config.Kind, v.config.Path, v.config.SetValue)
+			globalRegistry.Mutate(v.config.Kind, v.config.Path, v.config.SetValue)
 			*v.destination = any(true).(T) // Set the flag itself to true
 			return nil
 		}
 		// For any flags with SetValue, register the configured value
 		if _, isAny := any(parsed).(interface{}); isAny {
-			globalRegistry.Register(v.config.Kind, v.config.Path, v.config.SetValue)
+			globalRegistry.Mutate(v.config.Kind, v.config.Path, v.config.SetValue)
 			*v.destination = any(v.config.SetValue).(T)
 			return nil
 		}
@@ -122,7 +122,7 @@ func (v *jsonValue[T]) Set(val string) error {
 	}
 
 	*v.destination = parsed
-	globalRegistry.Register(v.config.Kind, v.config.Path, parsed)
+	globalRegistry.Mutate(v.config.Kind, v.config.Path, parsed)
 	return err
 }
 
@@ -172,10 +172,10 @@ func (v *jsonValue[T]) IsBoolFlag() bool {
 	return v.config.SetValue != nil
 }
 
-// JsonDateValueCreator is a specialized creator for date-only values
-type JsonDateValueCreator struct{}
+// JSONDateValueCreator is a specialized creator for date-only values
+type JSONDateValueCreator struct{}
 
-func (c JsonDateValueCreator) Create(val time.Time, dest *time.Time, config JSONConfig) cli.Value {
+func (c JSONDateValueCreator) Create(val time.Time, dest *time.Time, config JSONConfig) cli.Value {
 	*dest = val
 	return &jsonDateValue{
 		destination: dest,
@@ -183,7 +183,7 @@ func (c JsonDateValueCreator) Create(val time.Time, dest *time.Time, config JSON
 	}
 }
 
-func (c JsonDateValueCreator) ToString(val time.Time) string {
+func (c JSONDateValueCreator) ToString(val time.Time) string {
 	return val.Format("2006-01-02")
 }
 
@@ -219,7 +219,7 @@ func (v *jsonDateValue) Set(val string) error {
 	}
 
 	*v.destination = timeVal
-	globalRegistry.Register(v.config.Kind, v.config.Path, timeVal.Format("2006-01-02"))
+	globalRegistry.Mutate(v.config.Kind, v.config.Path, timeVal.Format("2006-01-02"))
 	return nil
 }
 
@@ -241,10 +241,10 @@ func (v *jsonDateValue) IsBoolFlag() bool {
 	return false
 }
 
-type JSONStringFlag = cli.FlagBase[string, JSONConfig, JsonValueCreator[string]]
-type JSONBoolFlag = cli.FlagBase[bool, JSONConfig, JsonValueCreator[bool]]
-type JSONIntFlag = cli.FlagBase[int, JSONConfig, JsonValueCreator[int]]
-type JSONFloatFlag = cli.FlagBase[float64, JSONConfig, JsonValueCreator[float64]]
-type JSONDatetimeFlag = cli.FlagBase[time.Time, JSONConfig, JsonValueCreator[time.Time]]
-type JSONDateFlag = cli.FlagBase[time.Time, JSONConfig, JsonDateValueCreator]
-type JSONAnyFlag = cli.FlagBase[interface{}, JSONConfig, JsonValueCreator[interface{}]]
+type JSONStringFlag = cli.FlagBase[string, JSONConfig, JSONValueCreator[string]]
+type JSONBoolFlag = cli.FlagBase[bool, JSONConfig, JSONValueCreator[bool]]
+type JSONIntFlag = cli.FlagBase[int, JSONConfig, JSONValueCreator[int]]
+type JSONFloatFlag = cli.FlagBase[float64, JSONConfig, JSONValueCreator[float64]]
+type JSONDatetimeFlag = cli.FlagBase[time.Time, JSONConfig, JSONValueCreator[time.Time]]
+type JSONDateFlag = cli.FlagBase[time.Time, JSONConfig, JSONDateValueCreator]
+type JSONAnyFlag = cli.FlagBase[interface{}, JSONConfig, JSONValueCreator[interface{}]]
