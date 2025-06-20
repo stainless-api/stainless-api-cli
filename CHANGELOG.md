@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0-alpha.19 (2025-06-20)
+
+Full Changelog: [v0.1.0-alpha.18...v0.1.0-alpha.19](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.18...v0.1.0-alpha.19)
+
+### Chores
+
+* bump go package version ([abc91cb](https://github.com/stainless-api/stainless-api-cli/commit/abc91cb66f1e668c1e55f867ef2fbe4e22d6b61c))
+* **internal:** codegen related update ([e84af71](https://github.com/stainless-api/stainless-api-cli/commit/e84af710aeaec0674afcef3d4eba4e5d3bbe5e71))
+
 ## 0.1.0-alpha.18 (2025-06-19)
 
 Full Changelog: [v0.1.0-alpha.17...v0.1.0-alpha.18](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.17...v0.1.0-alpha.18)
