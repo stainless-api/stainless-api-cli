@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.0-alpha.21 (2025-06-23)
+
+Full Changelog: [v0.1.0-alpha.20...v0.1.0-alpha.21](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.20...v0.1.0-alpha.21)
+
+### Features
+
+* **api:** add diagnostics endpoint ([5bb2beb](https://github.com/stainless-api/stainless-api-cli/commit/5bb2beb07061e9699818db4858c1634223bcaf3d))
+
+
+### Chores
+
+* bump go sdk version ([a72a797](https://github.com/stainless-api/stainless-api-cli/commit/a72a79734aa7afd8fe25ae80ff963e688a55ede0))
+
 ## 0.1.0-alpha.20 (2025-06-23)
 
 Full Changelog: [v0.1.0-alpha.19...v0.1.0-alpha.20](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.19...v0.1.0-alpha.20)
