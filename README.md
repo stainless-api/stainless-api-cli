@@ -18,7 +18,7 @@ brew install stl
 <!-- x-release-please-start-version -->
 
 ```sh
-go install 'github.com/stainless-api/stainless-api-cli'
+go install 'github.com/stainless-api/stainless-api-cli/cmd/stl@latest'
 ```
 
 <!-- x-release-please-end -->
