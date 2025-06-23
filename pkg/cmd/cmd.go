@@ -75,6 +75,13 @@ var Command = cli.Command{
 		},
 
 		{
+			Name: "builds:diagnostics",
+			Commands: []*cli.Command{
+				&buildsDiagnosticsList,
+			},
+		},
+
+		{
 			Name: "builds:target_outputs",
 			Commands: []*cli.Command{
 				&buildsTargetOutputsRetrieve,
