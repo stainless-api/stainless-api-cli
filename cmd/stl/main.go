@@ -15,7 +15,7 @@ import (
 func main() {
 	app := cmd.Command
 	if err := app.Run(context.Background(), os.Args); err != nil {
-		var apierr *stainlessv0.Error
+		var apierr *stainless.Error
 		if errors.As(err, &apierr) {
 			fmt.Printf("%s\n", cmd.ColorizeJSON(apierr.RawJSON(), os.Stderr))
 		} else {

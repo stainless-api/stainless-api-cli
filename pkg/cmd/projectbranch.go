@@ -64,9 +64,9 @@ var projectsBranchesRetrieve = cli.Command{
 
 func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	params := stainlessv0.ProjectBranchNewParams{}
+	params := stainless.ProjectBranchNewParams{}
 	if cmd.IsSet("project") {
-		params.Project = stainlessv0.String(cmd.Value("project").(string))
+		params.Project = stainless.String(cmd.Value("project").(string))
 	}
 	res, err := cc.client.Projects.Branches.New(
 		context.TODO(),
@@ -83,9 +83,9 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 
 func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	params := stainlessv0.ProjectBranchGetParams{}
+	params := stainless.ProjectBranchGetParams{}
 	if cmd.IsSet("project") {
-		params.Project = stainlessv0.String(cmd.Value("project").(string))
+		params.Project = stainless.String(cmd.Value("project").(string))
 	}
 	res, err := cc.client.Projects.Branches.Get(
 		context.TODO(),
