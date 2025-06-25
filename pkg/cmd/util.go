@@ -35,7 +35,7 @@ func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 }
 
 type apiCommandContext struct {
-	client stainlessv0.Client
+	client stainless.Client
 	cmd    *cli.Command
 }
 
@@ -101,7 +101,7 @@ func (c apiCommandContext) AsMiddleware() option.Middleware {
 }
 
 func getAPICommandContext(cmd *cli.Command) *apiCommandContext {
-	client := stainlessv0.NewClient(getDefaultRequestOptions(cmd)...)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	return &apiCommandContext{client, cmd}
 }
 
