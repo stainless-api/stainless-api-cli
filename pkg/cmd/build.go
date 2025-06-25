@@ -311,7 +311,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 	Progress("Creating build...")
-	params := stainlessv0.BuildNewParams{}
+	params := stainless.BuildNewParams{}
 	res, err := cc.client.Builds.New(
 		context.TODO(),
 		params,
@@ -559,7 +559,7 @@ func pullOutput(output, url, ref, targetDir string) error {
 
 func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	params := stainlessv0.BuildListParams{}
+	params := stainless.BuildListParams{}
 	res, err := cc.client.Builds.List(
 		context.TODO(),
 		params,
@@ -575,7 +575,7 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 
 func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	params := stainlessv0.BuildCompareParams{}
+	params := stainless.BuildCompareParams{}
 	res, err := cc.client.Builds.Compare(
 		context.TODO(),
 		params,

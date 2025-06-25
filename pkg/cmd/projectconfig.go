@@ -60,9 +60,9 @@ var projectsConfigsGuess = cli.Command{
 
 func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	params := stainlessv0.ProjectConfigGetParams{}
+	params := stainless.ProjectConfigGetParams{}
 	if cmd.IsSet("project") {
-		params.Project = stainlessv0.String(cmd.Value("project").(string))
+		params.Project = stainless.String(cmd.Value("project").(string))
 	}
 	res := []byte{}
 	_, err := cc.client.Projects.Configs.Get(
@@ -81,9 +81,9 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 
 func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	params := stainlessv0.ProjectConfigGuessParams{}
+	params := stainless.ProjectConfigGuessParams{}
 	if cmd.IsSet("project") {
-		params.Project = stainlessv0.String(cmd.Value("project").(string))
+		params.Project = stainless.String(cmd.Value("project").(string))
 	}
 	res := []byte{}
 	_, err := cc.client.Projects.Configs.Guess(

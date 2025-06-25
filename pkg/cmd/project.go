@@ -308,7 +308,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	params := stainlessv0.ProjectNewParams{}
+	params := stainless.ProjectNewParams{}
 	res, err := cc.client.Projects.New(
 		context.TODO(),
 		params,
@@ -349,9 +349,9 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 
 func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	params := stainlessv0.ProjectGetParams{}
+	params := stainless.ProjectGetParams{}
 	if cmd.IsSet("project") {
-		params.Project = stainlessv0.String(cmd.Value("project").(string))
+		params.Project = stainless.String(cmd.Value("project").(string))
 	}
 	res, err := cc.client.Projects.Get(
 		context.TODO(),
@@ -368,9 +368,9 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	params := stainlessv0.ProjectUpdateParams{}
+	params := stainless.ProjectUpdateParams{}
 	if cmd.IsSet("project") {
-		params.Project = stainlessv0.String(cmd.Value("project").(string))
+		params.Project = stainless.String(cmd.Value("project").(string))
 	}
 	res, err := cc.client.Projects.Update(
 		context.TODO(),
@@ -387,7 +387,7 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 
 func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	params := stainlessv0.ProjectListParams{}
+	params := stainless.ProjectListParams{}
 	res, err := cc.client.Projects.List(
 		context.TODO(),
 		params,

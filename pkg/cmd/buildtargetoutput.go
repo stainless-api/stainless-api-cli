@@ -54,7 +54,7 @@ var buildsTargetOutputsRetrieve = cli.Command{
 
 func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	params := stainlessv0.BuildTargetOutputGetParams{}
+	params := stainless.BuildTargetOutputGetParams{}
 	res, err := cc.client.Builds.TargetOutputs.Get(
 		context.TODO(),
 		params,

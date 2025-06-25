@@ -62,7 +62,7 @@ var buildsDiagnosticsList = cli.Command{
 
 func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	params := stainlessv0.BuildDiagnosticListParams{}
+	params := stainless.BuildDiagnosticListParams{}
 	res, err := cc.client.Builds.Diagnostics.List(
 		context.TODO(),
 		cmd.Value("build-id").(string),
