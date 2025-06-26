@@ -138,8 +138,8 @@ type projectInfo struct {
 
 // fetchUserProjects retrieves the list of projects the user has access to
 func fetchUserProjects(ctx context.Context) map[string]projectInfo {
-	client := stainlessv0.NewClient(getClientOptions()...)
-	params := stainlessv0.ProjectListParams{}
+	client := stainless.NewClient(getClientOptions()...)
+	params := stainless.ProjectListParams{}
 
 	res, err := client.Projects.List(ctx, params)
 	if err != nil {
