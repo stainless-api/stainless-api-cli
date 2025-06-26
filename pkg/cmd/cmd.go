@@ -95,6 +95,8 @@ var Command = cli.Command{
 				&orgsList,
 			},
 		},
+
+		&mcpCommand,
 	},
 	EnableShellCompletion: true,
 	HideHelpCommand:       true,
