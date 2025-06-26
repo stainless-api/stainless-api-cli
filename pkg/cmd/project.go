@@ -402,7 +402,7 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 }
 
 // fetchUserOrgs retrieves the list of organizations the user has access to
-func fetchUserOrgs(client stainlessv0.Client, ctx context.Context) []string {
+func fetchUserOrgs(client stainless.Client, ctx context.Context) []string {
 	res, err := client.Orgs.List(ctx)
 	if err != nil {
 		// Return empty slice if we can't fetch orgs

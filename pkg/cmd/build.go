@@ -22,11 +22,11 @@ import (
 // targetInfo holds information about a build target
 type targetInfo struct {
 	name   string
-	status stainlessv0.BuildTargetStatus
+	status stainless.BuildTargetStatus
 }
 
 // getCompletedTargets extracts completed targets from a build response
-func getCompletedTargets(buildRes stainlessv0.BuildObject) []targetInfo {
+func getCompletedTargets(buildRes stainless.BuildObject) []targetInfo {
 	targets := []targetInfo{}
 
 	// Check each target and add it to the list if it's completed or in postgen
@@ -89,7 +89,7 @@ func getCompletedTargets(buildRes stainlessv0.BuildObject) []targetInfo {
 }
 
 // isTargetCompleted checks if a target is in a completed state
-func isTargetCompleted(status stainlessv0.BuildTargetStatus) bool {
+func isTargetCompleted(status stainless.BuildTargetStatus) bool {
 	return status == "completed" || status == "postgen"
 }
 
@@ -418,7 +418,7 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 }
 
 // pullBuildOutputs pulls the outputs for a completed build
-func pullBuildOutputs(ctx context.Context, client stainlessv0.Client, res stainlessv0.BuildObject) error {
+func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainless.BuildObject) error {
 	// Get all targets
 	allTargets := getCompletedTargets(res)
 
@@ -443,9 +443,9 @@ func pullBuildOutputs(ctx context.Context, client stainlessv0.Client, res stainl
 		// Get the output details
 		outputRes, err := client.Builds.TargetOutputs.Get(
 			ctx,
-			stainlessv0.BuildTargetOutputGetParams{
+			stainless.BuildTargetOutputGetParams{
 				BuildID: res.ID,
-				Target:  stainlessv0.BuildTargetOutputGetParamsTarget(target),
+				Target:  stainless.BuildTargetOutputGetParamsTarget(target),
 				Type:    "source",
 				Output:  "git",
 			},
