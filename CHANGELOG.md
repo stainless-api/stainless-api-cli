@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.0-alpha.22 (2025-06-26)
+
+Full Changelog: [v0.1.0-alpha.21...v0.1.0-alpha.22](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.21...v0.1.0-alpha.22)
+
+### Features
+
+* add mcp command ([82f9ac7](https://github.com/stainless-api/stainless-api-cli/commit/82f9ac79d3025e10cab1f91f790d72ed75b30cb1))
+* **api:** manual updates ([8809e1c](https://github.com/stainless-api/stainless-api-cli/commit/8809e1c1b087b2f87e57f20d341b0f19786e1d31))
+
+
+### Bug Fixes
+
+* change stainlessv0 import to stainless ([bb69895](https://github.com/stainless-api/stainless-api-cli/commit/bb698955e7a0107b45d4eef6d9fcdbcf820899dc))
+
+
+### Chores
+
+* update go sdk ([18af766](https://github.com/stainless-api/stainless-api-cli/commit/18af766bf7046273ff3e4d7ae0194962d7b6a8e2))
+
 ## 0.1.0-alpha.21 (2025-06-23)
 
 Full Changelog: [v0.1.0-alpha.20...v0.1.0-alpha.21](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.20...v0.1.0-alpha.21)
