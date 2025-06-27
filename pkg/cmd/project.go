@@ -69,6 +69,11 @@ var projectsCreate = cli.Command{
 			Usage: "Initialize workspace configuration after creating project",
 			Value: true, // Default to true
 		},
+		&cli.BoolFlag{
+			Name:  "download-config",
+			Usage: "Download the project configuration after creation",
+			Value: true,
+		},
 	},
 	Action:          handleProjectsCreate,
 	HideHelpCommand: true,
@@ -161,6 +166,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	openAPISpec := cmd.String("openapi-spec")
 	stainlessConfig := cmd.String("stainless-config")
 	initWorkspace := cmd.Bool("init-workspace")
+	downloadConfig := cmd.Bool("download-config")
 
 	// Convert comma-separated targets flag to slice for multi-select
 	var selectedTargets []string
@@ -179,8 +185,8 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	// Check if all required values are provided via flags
-	// OpenAPI spec and Stainless config are optional
-	allValuesProvided := org != "" && projectName != ""
+	// Stainless config is optional, but OpenAPI spec is required
+	allValuesProvided := org != "" && projectName != "" && openAPISpec != ""
 
 	if !allValuesProvided {
 		Info("Creating a new project...")
@@ -230,25 +236,28 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 					Description("Select target languages for code generation").
 					Options(availableTargets...).
 					Value(&selectedTargets),
-				huh.NewFilePicker().
+				huh.NewInput().
 					Title("openapi_spec").
 					Description("Relative path to your OpenAPI spec file").
-					Value(&openAPISpec),
-				huh.NewInput().
-					Title("stainless_config (optional)").
-					Description("Relative path to your Stainless config file").
-					Placeholder("openapi.stainless.yml").
+					Value(&openAPISpec).
 					Validate(func(s string) error {
-						s = strings.TrimSpace(s)
-						if s == "" {
-							return nil
+						if strings.TrimSpace(s) == "" {
+							return fmt.Errorf("OpenAPI spec file is required")
 						}
 						if _, err := os.Stat(s); os.IsNotExist(err) {
 							return fmt.Errorf("file '%s' does not exist", s)
 						}
 						return nil
-					}).
+					}),
+				huh.NewInput().
+					Title("stainless_config (optional)").
+					Description("Path where the Stainless config will be saved. If file exists, it will be used for project creation; otherwise, the auto-generated config will be saved here").
+					Placeholder("stainless.yml").
 					Value(&stainlessConfig),
+				huh.NewConfirm().
+					Title("download_config").
+					Description("Download project configuration after creation").
+					Value(&downloadConfig),
 			).Title("Page (2/2)"),
 		).WithTheme(GetFormTheme()).WithKeyMap(GetFormKeyMap())
 
@@ -342,6 +351,49 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		Success("Workspace initialized")
+	}
+
+	// Download project configuration if requested
+	if downloadConfig {
+		Info("Downloading project configuration...")
+
+		// Use the same project name (slug) for config download
+		slug := nameToSlug(projectName)
+
+		params := stainless.ProjectConfigGetParams{
+			Project: stainless.String(slug),
+		}
+
+		configData := []byte{}
+		_, err := cc.client.Projects.Configs.Get(
+			ctx,
+			params,
+			option.WithMiddleware(cc.AsMiddleware()),
+			option.WithResponseBodyInto(&configData),
+		)
+		if err != nil {
+			Error("Failed to download project config: %v", err)
+			return fmt.Errorf("project created but config download failed: %v", err)
+		}
+
+		// Determine where to save the config file
+		var configPath string
+
+		if stainlessConfig != "" {
+			configPath = stainlessConfig
+		}
+		if configPath == "" {
+			configPath = "stainless.yml"
+		}
+
+		// Write the config to file
+		err = os.WriteFile(configPath, configData, 0644)
+		if err != nil {
+			Error("Failed to save project config to %s: %v", configPath, err)
+			return fmt.Errorf("project created but config save failed: %v", err)
+		}
+
+		Success("Project configuration downloaded to %s", configPath)
 	}
 
 	return nil
