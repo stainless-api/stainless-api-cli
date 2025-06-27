@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.23 (2025-06-27)
+
+Full Changelog: [v0.1.0-alpha.22...v0.1.0-alpha.23](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.22...v0.1.0-alpha.23)
+
+### Features
+
+* improve project creation with config download and OpenAPI validation ([70f48ec](https://github.com/stainless-api/stainless-api-cli/commit/70f48ec8b2376826205c0d3fc631e819d5561ea7))
+
 ## 0.1.0-alpha.22 (2025-06-26)
 
 Full Changelog: [v0.1.0-alpha.21...v0.1.0-alpha.22](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.21...v0.1.0-alpha.22)
