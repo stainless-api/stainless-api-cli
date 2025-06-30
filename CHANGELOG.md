@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-alpha.23 (2025-06-30)
+
+Full Changelog: [v0.1.0-alpha.22...v0.1.0-alpha.23](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.22...v0.1.0-alpha.23)
+
+### Features
+
+* improve project creation with config download and OpenAPI validation ([70f48ec](https://github.com/stainless-api/stainless-api-cli/commit/70f48ec8b2376826205c0d3fc631e819d5561ea7))
+
+
+### Chores
+
+* bump go sdk version ([fd6ea6a](https://github.com/stainless-api/stainless-api-cli/commit/fd6ea6a0d98f6e10232a44fa021c3cc5e0a77369))
+* **ci:** only run for pushes and fork pull requests ([bd18456](https://github.com/stainless-api/stainless-api-cli/commit/bd184563ba5daade90637ccf945436f015e58d69))
+
 ## 0.1.0-alpha.22 (2025-06-26)
 
 Full Changelog: [v0.1.0-alpha.21...v0.1.0-alpha.22](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.21...v0.1.0-alpha.22)
