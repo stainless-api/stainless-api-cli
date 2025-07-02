@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.0-alpha.24 (2025-07-02)
+
+Full Changelog: [v0.1.0-alpha.23...v0.1.0-alpha.24](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.23...v0.1.0-alpha.24)
+
+### Features
+
+* **api:** manual updates ([1f158e2](https://github.com/stainless-api/stainless-api-cli/commit/1f158e21673453f97f17ca4935f5a1dad3f7ec0f))
+
+
+### Chores
+
+* bump version ([38b149b](https://github.com/stainless-api/stainless-api-cli/commit/38b149bd2a66c6604410c0924f710caa9866fb81))
+* **internal:** version bump ([aef7105](https://github.com/stainless-api/stainless-api-cli/commit/aef7105c94e71f8c56c770be02c3b5f010904389))
+* **internal:** version bump ([8d128be](https://github.com/stainless-api/stainless-api-cli/commit/8d128be1d6ef72eb019d80d165427f7f34d5e8d1))
+
 ## 0.1.0-alpha.23 (2025-06-30)
 
 Full Changelog: [v0.1.0-alpha.22...v0.1.0-alpha.23](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.22...v0.1.0-alpha.23)
