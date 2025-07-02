@@ -3,12 +3,10 @@
 package cmd
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -16,6 +14,9 @@ import (
 	"time"
 
 	"github.com/pkg/browser"
+	"github.com/stainless-api/stainless-api-go"
+	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
 
@@ -48,9 +49,10 @@ var authStatus = cli.Command{
 }
 
 func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(cmd)
 	clientID := cmd.String("client-id")
 	scope := "openapi:read project:write project:read"
-	config, err := StartDeviceFlow(clientID, scope)
+	config, err := startDeviceFlow(ctx, cc.client, clientID, scope)
 	if err != nil {
 		return err
 	}
@@ -176,33 +178,8 @@ func handleAuthStatus(ctx context.Context, cmd *cli.Command) error {
 	return nil
 }
 
-// StartDeviceFlow initiates the OAuth 2.0 device flow
-func StartDeviceFlow(clientID, scope string) (*AuthConfig, error) {
-	deviceEndpoint := "https://api.stainless.com/api/oauth/device"
-	payload := map[string]string{
-		"client_id": clientID,
-		"scope":     scope,
-	}
-	jsonData, err := json.Marshal(payload)
-	if err != nil {
-		return nil, fmt.Errorf("auth: failed to create JSON payload: %v", err)
-	}
-	req, err := http.NewRequest("POST", deviceEndpoint, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("auth: failed to initiate device flow: %v", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("auth: device flow initiation failed with status %d: %s", resp.StatusCode, body)
-	}
-
+// startDeviceFlow initiates the OAuth 2.0 device flow
+func startDeviceFlow(ctx context.Context, client stainless.Client, clientID, scope string) (*AuthConfig, error) {
 	var deviceResponse struct {
 		DeviceCode              string `json:"device_code"`
 		UserCode                string `json:"user_code"`
@@ -212,8 +189,13 @@ func StartDeviceFlow(clientID, scope string) (*AuthConfig, error) {
 		Interval                int    `json:"interval"`
 	}
 
-	if err := json.NewDecoder(resp.Body).Decode(&deviceResponse); err != nil {
-		return nil, fmt.Errorf("failed to parse device response: %v", err)
+	err := client.Post(ctx, "api/oauth/device", map[string]string{
+		"client_id": clientID,
+		"scope":     scope,
+	}, &deviceResponse)
+
+	if err != nil {
+		return nil, err
 	}
 
 	if err := browser.OpenURL(deviceResponse.VerificationURIComplete); err != nil {
@@ -227,6 +209,8 @@ func StartDeviceFlow(clientID, scope string) (*AuthConfig, error) {
 	}
 
 	return pollForToken(
+		ctx,
+		client,
 		clientID,
 		deviceResponse.DeviceCode,
 		// Hard-code to 1 second for now, instead of using deviceResponse.Interval
@@ -236,9 +220,7 @@ func StartDeviceFlow(clientID, scope string) (*AuthConfig, error) {
 }
 
 // pollForToken polls the token endpoint until the user completes authentication
-func pollForToken(clientID, deviceCode string, interval, expiresIn int) (*AuthConfig, error) {
-	tokenEndpoint := "https://api.stainless.com/v0/oauth/token"
-
+func pollForToken(ctx context.Context, client stainless.Client, clientID, deviceCode string, interval, expiresIn int) (*AuthConfig, error) {
 	deadline := time.Now().Add(time.Duration(expiresIn) * time.Second)
 	pollInterval := time.Duration(interval) * time.Second
 
@@ -252,54 +234,36 @@ func pollForToken(clientID, deviceCode string, interval, expiresIn int) (*AuthCo
 		data.Set("device_code", deviceCode)
 		data.Set("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
 
-		req, err := http.NewRequest("POST", tokenEndpoint, strings.NewReader(data.Encode()))
-		if err != nil {
-			return nil, err
+		var tokenResponse struct {
+			AccessToken  string `json:"access_token"`
+			RefreshToken string `json:"refresh_token"`
+			TokenType    string `json:"token_type"`
 		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		err := client.Post(ctx, "v0/oauth/token",
+			strings.NewReader(data.Encode()),
+			&tokenResponse,
+			option.WithHeader("Content-Type", "application/x-www-form-urlencoded"),
+		)
 
-		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
-			return nil, fmt.Errorf("auth: failed to poll for token: %v", err)
-		}
-
-		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
-
-		// If we got a successful response, parse the token
-		if resp.StatusCode == http.StatusOK {
-			var tokenResponse struct {
-				AccessToken  string `json:"access_token"`
-				RefreshToken string `json:"refresh_token"`
-				TokenType    string `json:"token_type"`
+			var apierr *stainless.Error
+			if errors.As(err, &apierr) {
+				// If we got an error, check if it's "authorization_pending" and continue polling
+				errorStr := gjson.Get(apierr.RawJSON(), "error.error").String()
+				// This is expected, continue polling
+				if errorStr == "authorization_pending" {
+					continue
+				}
 			}
 
-			if err := json.Unmarshal(body, &tokenResponse); err != nil {
-				return nil, fmt.Errorf("auth: failed to parse token response: %v", err)
-			}
-
-			return &AuthConfig{
-				AccessToken:  tokenResponse.AccessToken,
-				RefreshToken: tokenResponse.RefreshToken,
-				TokenType:    tokenResponse.TokenType,
-			}, nil
+			return nil, fmt.Errorf("auth: %w", err)
 		}
 
-		// If we got an error, check if it's "authorization_pending" and continue polling
-		var errorResponse struct {
-			Error struct {
-				Error string `json:"error"`
-			} `json:"error"`
-		}
-		err = json.Unmarshal(body, &errorResponse)
-		if err != nil {
-			return nil, fmt.Errorf("%s", fmt.Sprintf("could not parse authentication error %d: %s", resp.StatusCode, err.Error()))
-		}
-		if errorResponse.Error.Error == "authorization_pending" {
-			// This is expected, continue polling
-			continue
-		}
-		return nil, fmt.Errorf("auth: %s", errorResponse.Error.Error)
+		return &AuthConfig{
+			AccessToken:  tokenResponse.AccessToken,
+			RefreshToken: tokenResponse.RefreshToken,
+			TokenType:    tokenResponse.TokenType,
+		}, nil
 	}
 	return nil, fmt.Errorf("auth: timed out")
 }
