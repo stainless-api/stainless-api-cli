@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.0-alpha.25 (2025-07-02)
+
+Full Changelog: [v0.1.0-alpha.24...v0.1.0-alpha.25](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.24...v0.1.0-alpha.25)
+
+### Features
+
+* **api:** add proper pagination ([7d84abe](https://github.com/stainless-api/stainless-api-cli/commit/7d84abebb7861899f466dba7a8fbeee22d9e6755))
+* **api:** sort org projects by creation time ([6e704c7](https://github.com/stainless-api/stainless-api-cli/commit/6e704c7812120cb9b968f24c254e4539e74ec639))
+
+
+### Refactors
+
+* remove getClientOptions ([6d024a4](https://github.com/stainless-api/stainless-api-cli/commit/6d024a41fd3f760a3b8c715a4775cfb2593146bd))
+* support staging in auth ([aa3f74f](https://github.com/stainless-api/stainless-api-cli/commit/aa3f74f7603658e675d598cf78f08caa90575523))
+
 ## 0.1.0-alpha.24 (2025-07-02)
 
 Full Changelog: [v0.1.0-alpha.23...v0.1.0-alpha.24](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.23...v0.1.0-alpha.24)
