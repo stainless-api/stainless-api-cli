@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/pkg/browser"
-	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/urfave/cli/v3"
 )
 
@@ -303,28 +302,4 @@ func pollForToken(clientID, deviceCode string, interval, expiresIn int) (*AuthCo
 		return nil, fmt.Errorf("auth: %s", errorResponse.Error.Error)
 	}
 	return nil, fmt.Errorf("auth: timed out")
-}
-
-// GetClientOptions returns the request options for API calls
-func getClientOptions() []option.RequestOption {
-	options := []option.RequestOption{}
-
-	if apiKey := os.Getenv("STAINLESS_API_KEY"); apiKey != "" {
-		return options
-	}
-
-	// Add authentication if available
-	config, err := LoadAuthConfig()
-	if err == nil && config != nil {
-		options = append(options, option.WithAPIKey(config.AccessToken))
-	}
-
-	// Add default project from workspace config if available
-	var workspaceConfig WorkspaceConfig
-	found, err := workspaceConfig.Find()
-	if err == nil && found && workspaceConfig.Project != "" {
-		options = append(options, option.WithProject(workspaceConfig.Project))
-	}
-
-	return options
 }
