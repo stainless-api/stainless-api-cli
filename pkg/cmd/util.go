@@ -46,7 +46,20 @@ func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 		}
 	}
 
-	opts = append(opts, getClientOptions()...)
+	if apiKey := os.Getenv("STAINLESS_API_KEY"); apiKey == "" {
+		config, err := LoadAuthConfig()
+		if err == nil && config != nil {
+			opts = append(opts, option.WithAPIKey(config.AccessToken))
+		}
+	}
+
+	if project := os.Getenv("STAINLESS_PROJECT"); project == "" {
+		workspaceConfig := WorkspaceConfig{}
+		found, err := workspaceConfig.Find()
+		if err == nil && found && workspaceConfig.Project != "" {
+			opts = append(opts, option.WithProject(workspaceConfig.Project))
+		}
+	}
 
 	return opts
 }
