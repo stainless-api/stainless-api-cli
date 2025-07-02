@@ -34,6 +34,18 @@ func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 		opts = append(opts, option.WithBaseURL(baseURL))
 	}
 
+	// Set environment if the --environment flag is provided
+	if environment := cmd.String("environment"); environment != "" {
+		switch environment {
+		case "production":
+			opts = append(opts, option.WithEnvironmentProduction())
+		case "staging":
+			opts = append(opts, option.WithEnvironmentStaging())
+		default:
+			log.Fatalf("Unknown environment: %s. Valid environments are: production, staging", environment)
+		}
+	}
+
 	opts = append(opts, getClientOptions()...)
 
 	return opts
