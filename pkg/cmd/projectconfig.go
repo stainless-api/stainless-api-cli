@@ -27,6 +27,13 @@ var projectsConfigsRetrieve = cli.Command{
 				Path: "branch",
 			},
 		},
+		&jsonflag.JSONStringFlag{
+			Name: "include",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "include",
+			},
+		},
 	},
 	Action:          handleProjectsConfigsRetrieve,
 	HideHelpCommand: true,
