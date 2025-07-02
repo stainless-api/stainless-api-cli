@@ -46,6 +46,8 @@ var workspaceStatus = cli.Command{
 }
 
 func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(cmd)
+
 	// Check for existing workspace configuration
 	var existingConfig WorkspaceConfig
 	found, err := existingConfig.Find()
@@ -82,7 +84,7 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 		(cmd.IsSet("stainless-config") || stainlessConfig != "")
 
 	if !allValuesProvided {
-		projectInfoMap := fetchUserProjects(ctx)
+		projectInfoMap := fetchUserProjects(ctx, cc.client)
 
 		form := huh.NewForm(
 			huh.NewGroup(
@@ -137,8 +139,7 @@ type projectInfo struct {
 }
 
 // fetchUserProjects retrieves the list of projects the user has access to
-func fetchUserProjects(ctx context.Context) map[string]projectInfo {
-	client := stainless.NewClient(getClientOptions()...)
+func fetchUserProjects(ctx context.Context, client stainless.Client) map[string]projectInfo {
 	params := stainless.ProjectListParams{}
 
 	res, err := client.Projects.List(ctx, params)
