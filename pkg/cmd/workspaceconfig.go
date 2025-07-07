@@ -57,7 +57,7 @@ func (config *WorkspaceConfig) Load(configPath string) error {
 		return fmt.Errorf("failed to open workspace config file %s: %w", configPath, err)
 	}
 	defer file.Close()
-	
+
 	// Check if file is empty
 	info, err := file.Stat()
 	if err != nil {
@@ -67,7 +67,7 @@ func (config *WorkspaceConfig) Load(configPath string) error {
 		// File is empty, treat as if no config exists
 		return nil
 	}
-	
+
 	if err := json.NewDecoder(file).Decode(config); err != nil {
 		return fmt.Errorf("failed to parse workspace config file %s: %w", configPath, err)
 	}

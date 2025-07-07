@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
@@ -436,9 +438,7 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 
 	// Pull each target
 	for i, target := range targets {
-		targetDir := fmt.Sprintf("%s-%s", res.Project, target)
-
-		targetGroup := Progress("[%d/%d] Pulling %s → %s", i+1, len(targets), target, targetDir)
+		targetGroup := Progress("[%d/%d] Pulling %s", i+1, len(targets), target)
 
 		// Get the output details
 		outputRes, err := client.Builds.TargetOutputs.Get(
@@ -456,13 +456,27 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 		}
 
 		// Handle based on output type
-		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, targetDir)
+		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref)
 		if err != nil {
 			targetGroup.Error("Failed to pull %s: %v", target, err)
 			continue
 		}
 
-		targetGroup.Success("Successfully pulled to %s", targetDir)
+		// Get the appropriate success message based on output type
+		if outputRes.Output == "git" {
+			// Extract repository name from git URL for success message
+			repoName := filepath.Base(outputRes.URL)
+			if strings.HasSuffix(repoName, ".git") {
+				repoName = strings.TrimSuffix(repoName, ".git")
+			}
+			if repoName == "" || repoName == "." || repoName == "/" {
+				repoName = "repository"
+			}
+			targetGroup.Success("Successfully pulled to %s", repoName)
+		} else {
+			filename := extractFilenameFromURL(outputRes.URL)
+			targetGroup.Success("Successfully downloaded %s", filename)
+		}
 
 		if i < len(targets)-1 {
 			fmt.Fprintf(os.Stderr, "\n")
@@ -472,23 +486,89 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 	return nil
 }
 
-// pullOutput handles downloading or cloning a build target output
-func pullOutput(output, url, ref, targetDir string) error {
-	// Remove existing directory if it exists
-	if _, err := os.Stat(targetDir); err == nil {
-		Info("Removing existing directory %s", targetDir)
-		if err := os.RemoveAll(targetDir); err != nil {
-			return fmt.Errorf("failed to remove existing directory %s: %v", targetDir, err)
+// extractFilenameFromURL extracts the filename from just the URL path (without query parameters)
+func extractFilenameFromURL(urlStr string) string {
+	// Parse URL to remove query parameters
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		// If URL parsing fails, use the original approach
+		filename := filepath.Base(urlStr)
+		if filename == "." || filename == "/" || filename == "" {
+			return "download"
+		}
+		return filename
+	}
+
+	// Extract filename from URL path (without query parameters)
+	filename := filepath.Base(parsedURL.Path)
+	if filename == "." || filename == "/" || filename == "" {
+		return "download"
+	}
+
+	return filename
+}
+
+// extractFilename extracts the filename from a URL and HTTP response headers
+func extractFilename(urlStr string, resp *http.Response) string {
+	// First, try to get filename from Content-Disposition header
+	if contentDisp := resp.Header.Get("Content-Disposition"); contentDisp != "" {
+		// Parse Content-Disposition header for filename
+		// Format: attachment; filename="example.txt" or attachment; filename=example.txt
+		if strings.Contains(contentDisp, "filename=") {
+			parts := strings.Split(contentDisp, "filename=")
+			if len(parts) > 1 {
+				filename := strings.TrimSpace(parts[1])
+				// Remove quotes if present
+				filename = strings.Trim(filename, `"`)
+				// Remove any additional parameters after semicolon
+				if idx := strings.Index(filename, ";"); idx != -1 {
+					filename = filename[:idx]
+				}
+				filename = strings.TrimSpace(filename)
+				if filename != "" {
+					return filename
+				}
+			}
 		}
 	}
 
-	// Create a fresh directory for the output
-	if err := os.MkdirAll(targetDir, 0755); err != nil {
-		return fmt.Errorf("failed to create directory %s: %v", targetDir, err)
-	}
+	// Fallback to URL path parsing
+	return extractFilenameFromURL(urlStr)
+}
 
+// pullOutput handles downloading or cloning a build target output
+func pullOutput(output, url, ref string) error {
 	switch output {
 	case "git":
+		// Extract repository name from git URL for directory name
+		// Handle formats like:
+		// - https://github.com/owner/repo.git
+		// - https://github.com/owner/repo
+		// - git@github.com:owner/repo.git
+		targetDir := filepath.Base(url)
+
+		// Remove .git suffix if present
+		if strings.HasSuffix(targetDir, ".git") {
+			targetDir = strings.TrimSuffix(targetDir, ".git")
+		}
+
+		// Handle empty or invalid names
+		if targetDir == "" || targetDir == "." || targetDir == "/" {
+			targetDir = "repository"
+		}
+
+		// Remove existing directory if it exists
+		if _, err := os.Stat(targetDir); err == nil {
+			Info("Removing existing directory %s", targetDir)
+			if err := os.RemoveAll(targetDir); err != nil {
+				return fmt.Errorf("failed to remove existing directory %s: %v", targetDir, err)
+			}
+		}
+
+		// Create a fresh directory for the output
+		if err := os.MkdirAll(targetDir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %v", targetDir, err)
+		}
 		// Clone the repository
 		gitGroup := Info("Cloning repository")
 		gitGroup.Property("ref", ref)
@@ -511,18 +591,9 @@ func pullOutput(output, url, ref, targetDir string) error {
 		}
 
 	case "url":
-		// Download the tar file
-		downloadGroup := Info("Downloading archive")
+		// Download the file directly to current directory
+		downloadGroup := Info("Downloading file")
 		downloadGroup.Property("url", url)
-		downloadGroup.Property("target", targetDir)
-
-		// Create a temporary file for the tar download
-		tmpFile, err := os.CreateTemp("", "stainless-*.tar.gz")
-		if err != nil {
-			return fmt.Errorf("failed to create temporary file: %v", err)
-		}
-		defer os.Remove(tmpFile.Name())
-		defer tmpFile.Close()
 
 		// Download the file
 		resp, err := http.Get(url)
@@ -535,19 +606,21 @@ func pullOutput(output, url, ref, targetDir string) error {
 			return fmt.Errorf("download failed with status: %s", resp.Status)
 		}
 
-		// Copy the response body to the temporary file
-		_, err = io.Copy(tmpFile, resp.Body)
+		// Extract filename from URL and Content-Disposition header
+		filename := extractFilename(url, resp)
+		downloadGroup.Property("filename", filename)
+
+		// Create the output file in current directory
+		outFile, err := os.Create(filename)
+		if err != nil {
+			return fmt.Errorf("failed to create output file: %v", err)
+		}
+		defer outFile.Close()
+
+		// Copy the response body to the output file
+		_, err = io.Copy(outFile, resp.Body)
 		if err != nil {
 			return fmt.Errorf("failed to save downloaded file: %v", err)
-		}
-		tmpFile.Close()
-
-		// Extract the tar file
-		cmd := exec.Command("tar", "-xzf", tmpFile.Name(), "-C", targetDir)
-		cmd.Stdout = nil // Suppress tar output
-		cmd.Stderr = nil
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("tar extraction failed: %v", err)
 		}
 
 	default:
