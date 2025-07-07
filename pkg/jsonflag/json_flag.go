@@ -268,10 +268,10 @@ func (v *jsonFileValue) Set(filePath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read file %q: %w", filePath, err)
 	}
-	
+
 	// Store the file path in the destination
 	*v.destination = filePath
-	
+
 	// Register the file content with the global registry
 	globalRegistry.Mutate(v.config.Kind, v.config.Path, string(content))
 	return nil
