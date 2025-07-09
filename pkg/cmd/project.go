@@ -90,7 +90,7 @@ var projectsUpdate = cli.Command{
 
 var projectsList = cli.Command{
 	Name:  "list",
-	Usage: "List projects in an organization",
+	Usage: "List projects in an organization, from oldest to newest",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
 			Name: "cursor",
