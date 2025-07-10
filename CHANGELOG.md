@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.0-alpha.25 (2025-07-10)
+
+Full Changelog: [v0.1.0-alpha.24...v0.1.0-alpha.25](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.24...v0.1.0-alpha.25)
+
+### Features
+
+* add multipart form support to HAR snippets ([24979f2](https://github.com/stainless-api/stainless-api-cli/commit/24979f22f37f1f4e2f6cf473746ce523914f704a))
+* add timestamp to builds api ([1144d20](https://github.com/stainless-api/stainless-api-cli/commit/1144d20daa405a332c695fa08087fb43c37c8067))
+* make build api return documented specs as urls ([1127d78](https://github.com/stainless-api/stainless-api-cli/commit/1127d78574ed81939c6d003372715a5f9a06da47))
+
+
+### Chores
+
+* bump ([e6ba380](https://github.com/stainless-api/stainless-api-cli/commit/e6ba38062edf853d06f9ae47842ebb0137b83240))
+* bump go sdk version ([bb75e98](https://github.com/stainless-api/stainless-api-cli/commit/bb75e986444393f502c552b794eba65a295c6dc7))
+* **internal:** codegen related update ([e214b20](https://github.com/stainless-api/stainless-api-cli/commit/e214b2087a80dea5a66872a1272713eacd44a2ba))
+* **internal:** codegen related update ([8587cc5](https://github.com/stainless-api/stainless-api-cli/commit/8587cc5e08b5887eba04bdd7260de958d7c24943))
+* move sdkjson generation api out of v0 scope ([0c7361f](https://github.com/stainless-api/stainless-api-cli/commit/0c7361f9a4e00af8ae6d65a90c1a34cffd586a38))
+
 ## 0.1.0-alpha.24 (2025-07-02)
 
 Full Changelog: [v0.1.0-alpha.23...v0.1.0-alpha.24](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.23...v0.1.0-alpha.24)
