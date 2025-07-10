@@ -5,12 +5,12 @@ go 1.23.0
 toolchain go1.23.11
 
 require (
-  github.com/charmbracelet/bubbles v0.21.0
+	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/huh v0.7.0
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/logrusorgru/aurora/v4 v4.0.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
-	github.com/stainless-api/stainless-api-go v0.12.0
+	github.com/stainless-api/stainless-api-go v0.14.0
 	github.com/tidwall/gjson v1.17.0
 	github.com/tidwall/pretty v1.2.1
 	github.com/tidwall/sjson v1.2.5
