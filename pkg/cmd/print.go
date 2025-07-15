@@ -58,7 +58,7 @@ func (g Group) Property(key, msg string) Group {
 func (g Group) Progress(format string, args ...any) Group {
 	indentStr := strings.Repeat("  ", g.indent)
 	msg := fmt.Sprintf(format, args...)
-	fmt.Fprintf(os.Stderr, "%s%s %s\n", indentStr, aurora.Bold("✱"), msg)
+	fmt.Fprintf(os.Stderr, "%s%s %s\n", indentStr, aurora.Cyan("✱"), msg)
 	return Group{prefix: "✱", indent: g.indent + 1}
 }
 
