@@ -18,6 +18,8 @@ import (
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 	"github.com/urfave/cli/v3"
 )
 
@@ -25,6 +27,72 @@ import (
 type targetInfo struct {
 	name   string
 	status stainless.BuildTargetStatus
+}
+
+// parseTargetPaths processes target flags to extract target:path syntax
+// Returns a map of target names to their custom paths
+func parseTargetPaths() map[string]string {
+	targetPaths := make(map[string]string)
+
+	// Get the current JSON body with all mutations applied
+	body, _, _, err := jsonflag.ApplyMutations([]byte("{}"), []byte("{}"), []byte("{}"))
+	if err != nil {
+		return targetPaths // If we can't parse, return empty map
+	}
+
+	// Check if there are any targets in the body
+	targetsResult := gjson.GetBytes(body, "targets")
+	if !targetsResult.Exists() {
+		return targetPaths
+	}
+
+	// Process the targets array
+	var cleanTargets []string
+	for _, targetResult := range targetsResult.Array() {
+		target := targetResult.String()
+		cleanTarget, path := processSingleTarget(target)
+		cleanTargets = append(cleanTargets, cleanTarget)
+		if path != "" {
+			targetPaths[cleanTarget] = path
+		}
+	}
+
+	// Update the JSON body with cleaned targets
+	if len(cleanTargets) > 0 {
+		body, err = sjson.SetBytes(body, "targets", cleanTargets)
+		if err != nil {
+			return targetPaths
+		}
+
+		// Clear mutations and re-apply the cleaned JSON
+		jsonflag.ClearMutations()
+
+		// Re-register the cleaned body
+		bodyObj := gjson.ParseBytes(body)
+		bodyObj.ForEach(func(key, value gjson.Result) bool {
+			jsonflag.Mutate(jsonflag.Body, key.String(), value.Value())
+			return true
+		})
+	}
+
+	return targetPaths
+}
+
+// processSingleTarget extracts path from target:path and returns clean target name and path
+func processSingleTarget(target string) (string, string) {
+	target = strings.TrimSpace(target)
+	if !strings.Contains(target, ":") {
+		return target, ""
+	}
+
+	parts := strings.SplitN(target, ":", 2)
+	if len(parts) != 2 {
+		return target, ""
+	}
+
+	targetName := strings.TrimSpace(parts[0])
+	targetPath := strings.TrimSpace(parts[1])
+	return targetName, targetPath
 }
 
 // getCompletedTargets extracts completed targets from a build response
@@ -168,6 +236,14 @@ var buildsCreate = cli.Command{
 			},
 		},
 		&jsonflag.JSONStringFlag{
+			Name: "target",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "targets.-1",
+			},
+			Hidden: true,
+		},
+		&jsonflag.JSONStringFlag{
 			Name: "+target",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
@@ -308,6 +384,8 @@ var buildsCompare = cli.Command{
 }
 
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
+	targetPaths := parseTargetPaths()
+
 	cc, err := getAPICommandContextWithWorkspaceDefaults(cmd)
 	if err != nil {
 		return err
@@ -392,7 +470,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 		if cmd.Bool("pull") {
 			pullGroup := Progress("Pulling build outputs...")
-			if err := pullBuildOutputs(context.TODO(), cc.client, *res); err != nil {
+			if err := pullBuildOutputs(context.TODO(), cc.client, *res, targetPaths); err != nil {
 				pullGroup.Error("Failed to pull outputs: %v", err)
 			} else {
 				pullGroup.Success("Successfully pulled all outputs")
@@ -420,7 +498,7 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 }
 
 // pullBuildOutputs pulls the outputs for a completed build
-func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainless.BuildObject) error {
+func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainless.BuildObject, targetPaths map[string]string) error {
 	// Get all targets
 	allTargets := getCompletedTargets(res)
 
@@ -438,7 +516,13 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 
 	// Pull each target
 	for i, target := range targets {
-		targetGroup := Progress("[%d/%d] Pulling %s", i+1, len(targets), target)
+		// Use custom path if specified, otherwise use default
+		var targetDir string
+		if customPath, exists := targetPaths[target]; exists {
+			targetDir = customPath
+		}
+
+		targetGroup := Progress("[%d/%d] Pulling %s → %s", i+1, len(targets), target, targetDir)
 
 		// Get the output details
 		outputRes, err := client.Builds.TargetOutputs.Get(
@@ -456,7 +540,7 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 		}
 
 		// Handle based on output type
-		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref)
+		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, targetDir)
 		if err != nil {
 			targetGroup.Error("Failed to pull %s: %v", target, err)
 			continue
@@ -537,7 +621,7 @@ func extractFilename(urlStr string, resp *http.Response) string {
 }
 
 // pullOutput handles downloading or cloning a build target output
-func pullOutput(output, url, ref string) error {
+func pullOutput(output, url, ref, targetDir string) error {
 	switch output {
 	case "git":
 		// Extract repository name from git URL for directory name
@@ -545,7 +629,9 @@ func pullOutput(output, url, ref string) error {
 		// - https://github.com/owner/repo.git
 		// - https://github.com/owner/repo
 		// - git@github.com:owner/repo.git
-		targetDir := filepath.Base(url)
+		if targetDir == "" {
+			targetDir = filepath.Base(url)
+		}
 
 		// Remove .git suffix if present
 		if strings.HasSuffix(targetDir, ".git") {
