@@ -520,8 +520,6 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 		var targetDir string
 		if customPath, exists := targetPaths[target]; exists {
 			targetDir = customPath
-		} else {
-			targetDir = fmt.Sprintf("%s-%s", res.Project, target)
 		}
 
 		targetGroup := Progress("[%d/%d] Pulling %s → %s", i+1, len(targets), target, targetDir)
@@ -542,7 +540,7 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 		}
 
 		// Handle based on output type
-		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref)
+		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, targetDir)
 		if err != nil {
 			targetGroup.Error("Failed to pull %s: %v", target, err)
 			continue
@@ -623,7 +621,7 @@ func extractFilename(urlStr string, resp *http.Response) string {
 }
 
 // pullOutput handles downloading or cloning a build target output
-func pullOutput(output, url, ref string) error {
+func pullOutput(output, url, ref, targetDir string) error {
 	switch output {
 	case "git":
 		// Extract repository name from git URL for directory name
@@ -631,7 +629,9 @@ func pullOutput(output, url, ref string) error {
 		// - https://github.com/owner/repo.git
 		// - https://github.com/owner/repo
 		// - git@github.com:owner/repo.git
-		targetDir := filepath.Base(url)
+		if targetDir == "" {
+			targetDir = filepath.Base(url)
+		}
 
 		// Remove .git suffix if present
 		if strings.HasSuffix(targetDir, ".git") {
