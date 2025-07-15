@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.1.0-alpha.25 (2025-07-15)
+
+Full Changelog: [v0.1.0-alpha.24...v0.1.0-alpha.25](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.24...v0.1.0-alpha.25)
+
+### Features
+
+* add multipart form support to HAR snippets ([24979f2](https://github.com/stainless-api/stainless-api-cli/commit/24979f22f37f1f4e2f6cf473746ce523914f704a))
+* add timestamp to builds api ([1144d20](https://github.com/stainless-api/stainless-api-cli/commit/1144d20daa405a332c695fa08087fb43c37c8067))
+* **api:** add staging environment ([be9cb34](https://github.com/stainless-api/stainless-api-cli/commit/be9cb344a2ac600947dc4c523a51b5655203cf57))
+* **api:** manual updates ([13e06db](https://github.com/stainless-api/stainless-api-cli/commit/13e06db339629317a88a9ae994f0adbfbad49d05))
+* **api:** manual updates ([57ee9a1](https://github.com/stainless-api/stainless-api-cli/commit/57ee9a1481625046ca7a9d37bd3ba7f553ac3ca8))
+* **api:** manual updates ([5753cc0](https://github.com/stainless-api/stainless-api-cli/commit/5753cc08e608479ba81fbecee3ec07eba252274a))
+* improve output coloring ([b653f1c](https://github.com/stainless-api/stainless-api-cli/commit/b653f1c2609edd3f2de16988b995a434ce3fd89b))
+* improve output coloring ([617c876](https://github.com/stainless-api/stainless-api-cli/commit/617c876068015ad54412f19e6dd593d126ce5283))
+* make build api return documented specs as urls ([1127d78](https://github.com/stainless-api/stainless-api-cli/commit/1127d78574ed81939c6d003372715a5f9a06da47))
+* support target:path syntax for custom output directories ([d8c7e4c](https://github.com/stainless-api/stainless-api-cli/commit/d8c7e4ce9e3d7817d8bda3fab1823835122b7f68))
+* support target:path syntax for custom output directories ([97e7fae](https://github.com/stainless-api/stainless-api-cli/commit/97e7fae3a5c363c54d5add25c6e72d93a867e2af))
+* support target:path syntax for custom output directories ([d5447aa](https://github.com/stainless-api/stainless-api-cli/commit/d5447aaf314ce7b3bb009fe2551d74cc251c3b21))
+
+
+### Chores
+
+* bump ([e6ba380](https://github.com/stainless-api/stainless-api-cli/commit/e6ba38062edf853d06f9ae47842ebb0137b83240))
+* bump go sdk version ([bb75e98](https://github.com/stainless-api/stainless-api-cli/commit/bb75e986444393f502c552b794eba65a295c6dc7))
+* **internal:** codegen related update ([e214b20](https://github.com/stainless-api/stainless-api-cli/commit/e214b2087a80dea5a66872a1272713eacd44a2ba))
+* **internal:** codegen related update ([8587cc5](https://github.com/stainless-api/stainless-api-cli/commit/8587cc5e08b5887eba04bdd7260de958d7c24943))
+* move sdkjson generation api out of v0 scope ([0c7361f](https://github.com/stainless-api/stainless-api-cli/commit/0c7361f9a4e00af8ae6d65a90c1a34cffd586a38))
+
 ## 0.1.0-alpha.24 (2025-07-02)
 
 Full Changelog: [v0.1.0-alpha.23...v0.1.0-alpha.24](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.23...v0.1.0-alpha.24)
