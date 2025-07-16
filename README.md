@@ -33,7 +33,7 @@ stl [resource] [command] [flags]
 
 ```sh
 stl builds create \
-  --project project \
+  --project example \
   --revision string
 ```
 
