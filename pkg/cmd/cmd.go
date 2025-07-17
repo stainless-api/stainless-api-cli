@@ -101,6 +101,7 @@ var Command = cli.Command{
 		},
 
 		&mcpCommand,
+		&devCommand,
 	},
 	EnableShellCompletion: true,
 	HideHelpCommand:       true,
