@@ -184,10 +184,6 @@ func (m *BuildModel) getBuildDuration() time.Duration {
 }
 
 func (m BuildModel) View() string {
-	if m.err != nil {
-		return fmt.Sprintf("Error: %v\n", m.err)
-	}
-
 	var s strings.Builder
 
 	timeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
@@ -210,7 +206,7 @@ func (m BuildModel) View() string {
 		languages := getBuildLanguages(m.build)
 		// Target rows with colors
 		for _, target := range languages {
-			pipeline := renderPipeline(m.build, target)
+			pipeline := ViewPipeline(m.build, target)
 			langStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true)
 			s.WriteString(fmt.Sprintf("%-13s %s\n", langStyle.Render(string(target)), pipeline))
 		}
@@ -233,9 +229,6 @@ func (m BuildModel) View() string {
 		s.WriteString(statusStyle.Render(statusText))
 	}
 
-	// Diagnostics are now printed statically using tea.Println, so no need to show them here
-
-	// Show appropriate footer
 	s.WriteString("\n")
 	s.WriteString(renderHelpMenu())
 
@@ -388,31 +381,28 @@ func getGitUsername() (string, error) {
 	return strings.ToLower(strings.ReplaceAll(username, " ", "-")), nil
 }
 
-func renderPipeline(build *stainless.BuildObject, target stainless.Target) string {
+func ViewPipeline(build *stainless.BuildObject, target stainless.Target) string {
 	buildTarget := getBuildTarget(build, target)
 	if buildTarget == nil {
 		return ""
 	}
 
-	stepOrder := []string{"commit", "lint", "build", "test"}
-	var pipeline []string
+	stepOrder := getBuildSteps(buildTarget)
+	var pipeline strings.Builder
 
 	for _, step := range stepOrder {
-		if !gjson.Get(buildTarget.RawJSON(), step).Exists() {
-			continue
-		}
 		stepUnion := getStepUnion(buildTarget, step)
 		if stepUnion == nil {
 			continue // Skip steps that don't exist for this target
 		}
 		symbol := getStepSymbol(stepUnion)
-		if len(pipeline) > 0 {
-			pipeline = append(pipeline, " → ")
+		if pipeline.Len() > 0 {
+			pipeline.WriteString(" → ")
 		}
-		pipeline = append(pipeline, symbol+" "+step)
+		pipeline.WriteString(symbol + " " + step)
 	}
 
-	return strings.Join(pipeline, "")
+	return pipeline.String()
 }
 
 func getBuildTarget(build *stainless.BuildObject, target stainless.Target) *stainless.BuildTarget {
@@ -605,6 +595,29 @@ func isBuildCompleted(build *stainless.BuildObject) bool {
 		}
 	}
 	return true
+}
+
+func getBuildSteps(buildTarget *stainless.BuildTarget) []string {
+	if buildTarget == nil {
+		return []string{}
+	}
+
+	var steps []string
+	
+	if gjson.Get(buildTarget.RawJSON(), "commit").Exists() {
+		steps = append(steps, "commit")
+	}
+	if gjson.Get(buildTarget.RawJSON(), "lint").Exists() {
+		steps = append(steps, "lint")
+	}
+	if gjson.Get(buildTarget.RawJSON(), "build").Exists() {
+		steps = append(steps, "build")
+	}
+	if gjson.Get(buildTarget.RawJSON(), "test").Exists() {
+		steps = append(steps, "test")
+	}
+	
+	return steps
 }
 
 func getBuildLanguages(build *stainless.BuildObject) []stainless.Target {
