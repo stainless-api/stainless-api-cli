@@ -405,7 +405,7 @@ func renderPipeline(build *stainless.BuildObject, target stainless.Target) strin
 		if stepUnion == nil {
 			continue // Skip steps that don't exist for this target
 		}
-		symbol := getStepSymbol(stepUnion, step)
+		symbol := getStepSymbol(stepUnion)
 		if len(pipeline) > 0 {
 			pipeline = append(pipeline, " → ")
 		}
@@ -465,7 +465,7 @@ func getBuildTarget(build *stainless.BuildObject, target stainless.Target) *stai
 	return nil
 }
 
-func getStepUnion(target *stainless.BuildTarget, step string) interface{} {
+func getStepUnion(target *stainless.BuildTarget, step string) any {
 	switch step {
 	case "commit":
 		if target.JSON.Commit.Valid() {
@@ -487,7 +487,7 @@ func getStepUnion(target *stainless.BuildTarget, step string) interface{} {
 	return nil
 }
 
-func getStepSymbol(stepUnion any, stepName string) string {
+func getStepSymbol(stepUnion any) string {
 	greenStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
 	redStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 	yellowStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
