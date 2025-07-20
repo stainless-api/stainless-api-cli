@@ -42,43 +42,67 @@ func Spacer() {
 	fmt.Fprintf(os.Stderr, "\n")
 }
 
-func (g Group) Info(format string, args ...any) Group {
-	indentStr := strings.Repeat("  ", g.indent)
+func SInfo(indent int, format string, args ...any) string {
+	indentStr := strings.Repeat("  ", indent)
 	msg := fmt.Sprintf(format, args...)
-	fmt.Fprintf(os.Stderr, "%s%s %s\n", indentStr, aurora.BrightBlue("✱"), msg)
+	return fmt.Sprintf("%s%s %s\n", indentStr, aurora.BrightBlue("✱"), msg)
+}
+
+func SProperty(indent int, key, msg string) string {
+	indentStr := strings.Repeat("  ", indent)
+	return fmt.Sprintf("%s%s %s %s\n", indentStr, aurora.Cyan("✱"), aurora.Cyan(key), msg)
+}
+
+func SProgress(indent int, format string, args ...any) string {
+	indentStr := strings.Repeat("  ", indent)
+	msg := fmt.Sprintf(format, args...)
+	return fmt.Sprintf("%s%s %s\n", indentStr, aurora.Cyan("✱"), msg)
+}
+
+func SError(indent int, format string, args ...any) string {
+	indentStr := strings.Repeat("  ", indent)
+	msg := fmt.Sprintf(format, args...)
+	return fmt.Sprintf("%s%s %s\n", indentStr, aurora.BrightRed("✗"), msg)
+}
+
+func SWarn(indent int, format string, args ...any) string {
+	indentStr := strings.Repeat("  ", indent)
+	msg := fmt.Sprintf(format, args...)
+	return fmt.Sprintf("%s%s %s\n", indentStr, aurora.BrightYellow("!"), msg)
+}
+
+func SSuccess(indent int, format string, args ...any) string {
+	indentStr := strings.Repeat("  ", indent)
+	msg := fmt.Sprintf(format, args...)
+	return fmt.Sprintf("%s%s %s\n", indentStr, aurora.BrightGreen("✓"), msg)
+}
+
+func (g Group) Info(format string, args ...any) Group {
+	fmt.Fprint(os.Stderr, SInfo(g.indent, format, args...))
 	return Group{prefix: "i", indent: g.indent + 1}
 }
 
 func (g Group) Property(key, msg string) Group {
-	indentStr := strings.Repeat("  ", g.indent)
-	fmt.Fprintf(os.Stderr, "%s%s %s %s\n", indentStr, aurora.Cyan("✱"), aurora.Cyan(key), msg)
+	fmt.Fprint(os.Stderr, SProperty(g.indent, key, msg))
 	return Group{prefix: "✱", indent: g.indent + 1}
 }
 
 func (g Group) Progress(format string, args ...any) Group {
-	indentStr := strings.Repeat("  ", g.indent)
-	msg := fmt.Sprintf(format, args...)
-	fmt.Fprintf(os.Stderr, "%s%s %s\n", indentStr, aurora.Cyan("✱"), msg)
+	fmt.Fprint(os.Stderr, SProgress(g.indent, format, args...))
 	return Group{prefix: "✱", indent: g.indent + 1}
 }
 
 func (g Group) Error(format string, args ...any) Group {
-	indentStr := strings.Repeat("  ", g.indent)
-	msg := fmt.Sprintf(format, args...)
-	fmt.Fprintf(os.Stderr, "%s%s %s\n", indentStr, aurora.BrightRed("✗"), msg)
+	fmt.Fprint(os.Stderr, SError(g.indent, format, args...))
 	return Group{prefix: "✗", indent: g.indent + 1}
 }
 
 func (g Group) Warn(format string, args ...any) Group {
-	indentStr := strings.Repeat("  ", g.indent)
-	msg := fmt.Sprintf(format, args...)
-	fmt.Fprintf(os.Stderr, "%s%s %s\n", indentStr, aurora.BrightYellow("!"), msg)
+	fmt.Fprint(os.Stderr, SWarn(g.indent, format, args...))
 	return Group{prefix: "!", indent: g.indent + 1}
 }
 
 func (g Group) Success(format string, args ...any) Group {
-	indentStr := strings.Repeat("  ", g.indent)
-	msg := fmt.Sprintf(format, args...)
-	fmt.Fprintf(os.Stderr, "%s%s %s\n", indentStr, aurora.BrightGreen("✓"), msg)
+	fmt.Fprint(os.Stderr, SSuccess(g.indent, format, args...))
 	return Group{prefix: "✓", indent: g.indent + 1}
 }
