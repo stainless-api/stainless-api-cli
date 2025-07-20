@@ -10,7 +10,6 @@ import (
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -21,15 +20,17 @@ var ErrUserCancelled = errors.New("user cancelled")
 
 // BuildModel represents the bubbletea model for build monitoring
 type BuildModel struct {
-	start              func() (*stainless.BuildObject, error)
-	started            time.Time
-	ended              *time.Time
-	build              *stainless.BuildObject
-	diagnostics        []stainless.BuildDiagnosticListResponse
-	cc                 *apiCommandContext
-	ctx                context.Context
-	err                error
-	diagnosticsPrinted bool
+	start       func() (*stainless.BuildObject, error)
+	started     time.Time
+	ended       *time.Time
+	build       *stainless.BuildObject
+	diagnostics []stainless.BuildDiagnosticListResponse
+	view        string
+
+	cc          *apiCommandContext
+	ctx         context.Context
+	err         error
+	isCompleted bool
 }
 
 type tickMsg time.Time
@@ -73,6 +74,7 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			cmds = append(cmds, tea.Quit)
 		}
+
 	case tickMsg:
 		if m.build != nil {
 			cmds = append(cmds, m.fetchBuildStatus())
@@ -81,56 +83,25 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, tea.Tick(time.Second, func(t time.Time) tea.Msg {
 			return tickMsg(t)
 		}))
+
 	case fetchBuildMsg:
 		if m.build == nil {
-			buildIDStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Bold(true)
-			cmds = append(cmds, tea.Printf("\n\n%s", buildIDStyle.Render(fmt.Sprintf("==== Build ID: %s ====", msg.ID))))
+			m.build = msg
+			cmds = append(cmds, m.updateView("header"))
 		}
 
 		m.build = msg
-
-		if !m.diagnosticsPrinted && isCommitStepsCompleted(m.build) {
-			m.diagnosticsPrinted = true
+		if !m.isCompleted && isCommitStepsCompleted(m.build) {
+			m.isCompleted = true
 			cmds = append(cmds, m.fetchDiagnostics())
 		}
+
 	case fetchDiagnosticsMsg:
-		m.diagnostics = msg
-
-		// Print diagnostics to scrollback using tea.Println (Jest-like)
-		if len(msg) > 0 {
-			// Print first few diagnostics with colors
-			maxDiagnostics := 10
-
-			// Add separator
-			cmds = append(cmds, tea.Println())
-			cmds = append(cmds, tea.Println("Diagnostics"))
-			if len(msg) > maxDiagnostics {
-				cmds = append(cmds, tea.Printf("Showing first %d of %d diagnostics:", maxDiagnostics, len(msg)))
-			}
-
-			for i, diag := range msg {
-				if i >= maxDiagnostics {
-					break
-				}
-
-				levelIcon := getDiagnosticLevelIcon(diag.Level)
-				codeStyle := lipgloss.NewStyle().Bold(true)
-
-				cmds = append(cmds, tea.Println())
-				cmds = append(cmds, tea.Printf("%s %s", levelIcon, codeStyle.Render(diag.Code)))
-				cmds = append(cmds, tea.Printf("%s", diag.Message))
-
-				// Show source references if available
-				if diag.OasRef != "" {
-					refStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-					cmds = append(cmds, tea.Printf("    %s", refStyle.Render("OpenAPI: "+diag.OasRef)))
-				}
-				if diag.ConfigRef != "" {
-					refStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-					cmds = append(cmds, tea.Printf("    %s", refStyle.Render("Config: "+diag.ConfigRef)))
-				}
-			}
+		if m.diagnostics == nil {
+			m.diagnostics = msg
+			cmds = append(cmds, m.updateView("diagnostics"))
 		}
+
 	case errorMsg:
 		m.err = msg
 		cmds = append(cmds, tea.Quit)
@@ -181,58 +152,6 @@ func (m *BuildModel) getBuildDuration() time.Duration {
 	}
 
 	return time.Since(m.started)
-}
-
-func (m BuildModel) View() string {
-	var s strings.Builder
-
-	timeStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-	duration := m.getBuildDuration()
-
-	if m.build == nil {
-		buildIDStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Bold(true)
-		s.WriteString(fmt.Sprintf("\n\n%s\n", buildIDStyle.Render(fmt.Sprintf("==== Build ID: bui_xxxxxxxxxxxxxxxxxxxxxxxxxx ===="))))
-	}
-
-	if m.diagnostics == nil {
-		s.WriteString("\n")
-		s.WriteString(fmt.Sprintf("Diagnostics: waiting"))
-	}
-	s.WriteString("\n")
-	s.WriteString(fmt.Sprintf("Duration: %s\n", timeStyle.Render(duration.Round(time.Second).String())))
-	s.WriteString("\n")
-
-	if m.build != nil {
-		languages := getBuildLanguages(m.build)
-		// Target rows with colors
-		for _, target := range languages {
-			pipeline := ViewPipeline(m.build, target)
-			langStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true)
-			s.WriteString(fmt.Sprintf("%-13s %s\n", langStyle.Render(string(target)), pipeline))
-		}
-
-		s.WriteString("\n")
-
-		completed := 0
-		building := 0
-		for _, target := range languages {
-			if isBuildTargetCompleted(m.build, target) {
-				completed++
-			} else if isBuildTargetInProgress(m.build, target) {
-				building++
-			}
-		}
-
-		statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-		statusText := fmt.Sprintf("%d completed, %d building, %d pending\n",
-			completed, building, len(languages)-completed-building)
-		s.WriteString(statusStyle.Render(statusText))
-	}
-
-	s.WriteString("\n")
-	s.WriteString(renderHelpMenu())
-
-	return s.String()
 }
 
 var devCommand = cli.Command{
@@ -381,30 +300,6 @@ func getGitUsername() (string, error) {
 	return strings.ToLower(strings.ReplaceAll(username, " ", "-")), nil
 }
 
-func ViewPipeline(build *stainless.BuildObject, target stainless.Target) string {
-	buildTarget := getBuildTarget(build, target)
-	if buildTarget == nil {
-		return ""
-	}
-
-	stepOrder := getBuildSteps(buildTarget)
-	var pipeline strings.Builder
-
-	for _, step := range stepOrder {
-		stepUnion := getStepUnion(buildTarget, step)
-		if stepUnion == nil {
-			continue // Skip steps that don't exist for this target
-		}
-		symbol := getStepSymbol(stepUnion)
-		if pipeline.Len() > 0 {
-			pipeline.WriteString(" → ")
-		}
-		pipeline.WriteString(symbol + " " + step)
-	}
-
-	return pipeline.String()
-}
-
 func getBuildTarget(build *stainless.BuildObject, target stainless.Target) *stainless.BuildTarget {
 	switch target {
 	case "node":
@@ -475,35 +370,6 @@ func getStepUnion(target *stainless.BuildTarget, step string) any {
 		}
 	}
 	return nil
-}
-
-func getStepSymbol(stepUnion any) string {
-	greenStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
-	redStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
-	yellowStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
-	grayStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-
-	status, conclusion := extractStepInfo(stepUnion)
-
-	switch status {
-	case "not_started", "queued":
-		return grayStyle.Render("○")
-	case "in_progress":
-		return yellowStyle.Render("●")
-	case "completed":
-		switch conclusion {
-		case "success":
-			return greenStyle.Render("✓")
-		case "failure":
-			return redStyle.Render("❌")
-		case "warning":
-			return yellowStyle.Render("⚠")
-		default:
-			return greenStyle.Render("✓")
-		}
-	default:
-		return grayStyle.Render("○")
-	}
 }
 
 func extractStepInfo(stepUnion interface{}) (status, conclusion string) {
@@ -603,7 +469,7 @@ func getBuildSteps(buildTarget *stainless.BuildTarget) []string {
 	}
 
 	var steps []string
-	
+
 	if gjson.Get(buildTarget.RawJSON(), "commit").Exists() {
 		steps = append(steps, "commit")
 	}
@@ -616,7 +482,7 @@ func getBuildSteps(buildTarget *stainless.BuildTarget) []string {
 	if gjson.Get(buildTarget.RawJSON(), "test").Exists() {
 		steps = append(steps, "test")
 	}
-	
+
 	return steps
 }
 
@@ -664,84 +530,4 @@ func getBuildLanguages(build *stainless.BuildObject) []stainless.Target {
 
 	return languages
 
-}
-
-func getDiagnosticLevelIcon(level stainless.BuildDiagnosticListResponseLevel) string {
-	switch level {
-	case stainless.BuildDiagnosticListResponseLevelFatal:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true).Render("💀")
-	case stainless.BuildDiagnosticListResponseLevelError:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render("❌")
-	case stainless.BuildDiagnosticListResponseLevelWarning:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render("⚠️")
-	case stainless.BuildDiagnosticListResponseLevelNote:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Render("ℹ️")
-	default:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("•")
-	}
-}
-
-// renderHelpMenu creates a styled help menu inspired by huh help component
-func renderHelpMenu() string {
-	keyStyle := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
-		Light: "#909090",
-		Dark:  "#626262",
-	})
-
-	descStyle := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
-		Light: "#B2B2B2",
-		Dark:  "#4A4A4A",
-	})
-
-	sepStyle := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
-		Light: "#DDDADA",
-		Dark:  "#3C3C3C",
-	})
-
-	helpItems := []struct {
-		key  string
-		desc string
-	}{
-		{"enter", "rebuild"},
-		{"ctrl+c", "exit"},
-	}
-
-	var parts []string
-	for _, item := range helpItems {
-		parts = append(parts,
-			keyStyle.Render(item.key)+
-				sepStyle.Render(" ")+
-				descStyle.Render(item.desc))
-	}
-
-	return strings.Join(parts, sepStyle.Render(" • "))
-}
-
-// buildTargetOptions creates huh options from the list of configured targets
-func buildTargetOptions(configuredTargets []stainless.Target) []huh.Option[string] {
-	var options []huh.Option[string]
-
-	targetDisplayNames := map[stainless.Target]string{
-		"typescript": "TypeScript",
-		"python":     "Python",
-		"go":         "Go",
-		"java":       "Java",
-		"kotlin":     "Kotlin",
-		"ruby":       "Ruby",
-		"terraform":  "Terraform",
-		"cli":        "CLI",
-		"php":        "PHP",
-		"csharp":     "C#",
-		"node":       "Node.js",
-	}
-
-	for _, target := range configuredTargets {
-		displayName := targetDisplayNames[target]
-		if displayName == "" {
-			displayName = string(target)
-		}
-		options = append(options, huh.NewOption(displayName, string(target)))
-	}
-
-	return options
 }
