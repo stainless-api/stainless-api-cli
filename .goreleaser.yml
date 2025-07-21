@@ -76,7 +76,7 @@ brews:
   - name: stl
     repository:
       owner: stainless-api
-      name: homebrew-tap
+      name: homebrew-stl
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: https://stainless.com
     description: The official CLI for stainless.
