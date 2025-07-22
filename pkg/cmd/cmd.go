@@ -26,7 +26,8 @@ var Command = cli.Command{
 	},
 	Commands: []*cli.Command{
 		{
-			Name: "projects",
+			Name:     "projects",
+			Category: "API RESOURCE",
 			Commands: []*cli.Command{
 				&projectsCreate,
 				&projectsRetrieve,
@@ -36,7 +37,8 @@ var Command = cli.Command{
 		},
 
 		{
-			Name: "projects:branches",
+			Name:     "projects:branches",
+			Category: "API RESOURCE",
 			Commands: []*cli.Command{
 				&projectsBranchesCreate,
 				&projectsBranchesRetrieve,
@@ -44,7 +46,8 @@ var Command = cli.Command{
 		},
 
 		{
-			Name: "projects:configs",
+			Name:     "projects:configs",
+			Category: "API RESOURCE",
 			Commands: []*cli.Command{
 				&projectsConfigsRetrieve,
 				&projectsConfigsGuess,
@@ -52,7 +55,8 @@ var Command = cli.Command{
 		},
 
 		{
-			Name: "builds",
+			Name:     "builds",
+			Category: "API RESOURCE",
 			Commands: []*cli.Command{
 				&buildsCreate,
 				&buildsRetrieve,
@@ -62,21 +66,24 @@ var Command = cli.Command{
 		},
 
 		{
-			Name: "builds:diagnostics",
+			Name:     "builds:diagnostics",
+			Category: "API RESOURCE",
 			Commands: []*cli.Command{
 				&buildsDiagnosticsList,
 			},
 		},
 
 		{
-			Name: "builds:target_outputs",
+			Name:     "builds:target_outputs",
+			Category: "API RESOURCE",
 			Commands: []*cli.Command{
 				&buildsTargetOutputsRetrieve,
 			},
 		},
 
 		{
-			Name: "orgs",
+			Name:     "orgs",
+			Category: "API RESOURCE",
 			Commands: []*cli.Command{
 				&orgsRetrieve,
 				&orgsList,
