@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.23.11
 
 require (
-	github.com/stainless-api/stainless-api-go v0.19.0
+	github.com/stainless-api/stainless-api-go v0.20.0
 	github.com/tidwall/gjson v1.17.0
 	github.com/tidwall/pretty v1.2.1
 	github.com/tidwall/sjson v1.2.5
