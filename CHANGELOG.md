@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.1.0-alpha.26 (2025-07-22)
+
+Full Changelog: [v0.1.0-alpha.25...v0.1.0-alpha.26](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.25...v0.1.0-alpha.26)
+
+### Features
+
+* add dev mode ([5c7d002](https://github.com/stainless-api/stainless-api-cli/commit/5c7d002d71cc1f1955bbd23302e7179e7bfd8658))
+* **api:** manual updates ([851173a](https://github.com/stainless-api/stainless-api-cli/commit/851173a3796f1c925b0fcc02e8973b50cacd7dba))
+* **api:** manual updates ([f5f13f9](https://github.com/stainless-api/stainless-api-cli/commit/f5f13f97699ec60e69dc8e4f8104f9a154661a0b))
+* Codegen(go): encode path params ([3ff985f](https://github.com/stainless-api/stainless-api-cli/commit/3ff985f2f214b5c2a34482dcacbaf796a768ca77))
+* Codegen(php): unset optional parameters in constructor ([dcd415a](https://github.com/stainless-api/stainless-api-cli/commit/dcd415a35e1223572e32aae9af7de1b6564046bd))
+* php: generate stub union classes with discrimminator info ([dbc8aa0](https://github.com/stainless-api/stainless-api-cli/commit/dbc8aa04f616b9135ac720bc22983271f5db3d2e))
+
+
+### Chores
+
+* add unstable call out ([a0157be](https://github.com/stainless-api/stainless-api-cli/commit/a0157bef8ca29fc418bc43dd38c453d7ad21bdb8))
+* bump go sdk ([c671b1d](https://github.com/stainless-api/stainless-api-cli/commit/c671b1d3ebd95127cccdf97f6b6d5de570c54849))
+* bump go sdk version ([6b1aa80](https://github.com/stainless-api/stainless-api-cli/commit/6b1aa80ce7f247841a924adef77207514ebaf18a))
+* bump go version ([ad830cf](https://github.com/stainless-api/stainless-api-cli/commit/ad830cf2b99969d0638d1d319f8bac1586dfa8dd))
+* update homebrew repository ([e49e98c](https://github.com/stainless-api/stainless-api-cli/commit/e49e98c10098c08f46537cf3c2650d33580d6844))
+
+
+### Refactors
+
+* improve scrollback content viewer ([140f41b](https://github.com/stainless-api/stainless-api-cli/commit/140f41bd0ed944fe25759ad7bc39643ebfc0e245))
+* optimize pipeline rendering ([2ddf648](https://github.com/stainless-api/stainless-api-cli/commit/2ddf64830a410a66b686a082330288fc3683f51e))
+* simplify getStepSymbol ([a3f7d60](https://github.com/stainless-api/stainless-api-cli/commit/a3f7d60ea9d32bb73032dcd67673cd00c0d36c8f))
+
 ## 0.1.0-alpha.25 (2025-07-15)
 
 Full Changelog: [v0.1.0-alpha.24...v0.1.0-alpha.25](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.24...v0.1.0-alpha.25)
