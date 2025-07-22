@@ -1,5 +1,9 @@
 # Stainless CLI
 
+> [!CAUTION]
+>
+> The CLI is unstable and the API may change. Please feel free to use it locally, but don't build scripts against it.
+
 The official CLI for the Stainless REST API.
 
 It is generated with [Stainless](https://www.stainless.com/).
