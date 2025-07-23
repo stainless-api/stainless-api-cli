@@ -62,6 +62,47 @@ var projectsBranchesRetrieve = cli.Command{
 	HideHelpCommand: true,
 }
 
+var projectsBranchesList = cli.Command{
+	Name:  "list",
+	Usage: "List project branches",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name: "project",
+		},
+		&jsonflag.JSONStringFlag{
+			Name: "cursor",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "cursor",
+			},
+		},
+		&jsonflag.JSONFloatFlag{
+			Name: "limit",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "limit",
+			},
+		},
+	},
+	Action:          handleProjectsBranchesList,
+	HideHelpCommand: true,
+}
+
+var projectsBranchesDelete = cli.Command{
+	Name:  "delete",
+	Usage: "Delete a project branch",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name: "project",
+		},
+		&cli.StringFlag{
+			Name: "branch",
+		},
+	},
+	Action:          handleProjectsBranchesDelete,
+	HideHelpCommand: true,
+}
+
 func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	params := stainless.ProjectBranchNewParams{}
@@ -98,5 +139,46 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 	}
 
 	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
+	return nil
+}
+
+func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(cmd)
+	params := stainless.ProjectBranchListParams{}
+	if cmd.IsSet("project") {
+		params.Project = stainless.String(cmd.Value("project").(string))
+	}
+	res, err := cc.client.Projects.Branches.List(
+		context.TODO(),
+		params,
+		option.WithMiddleware(cc.AsMiddleware()),
+	)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
+	return nil
+}
+
+func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(cmd)
+	params := stainless.ProjectBranchDeleteParams{}
+	if cmd.IsSet("project") {
+		params.Project = stainless.String(cmd.Value("project").(string))
+	}
+	res := []byte{}
+	_, err := cc.client.Projects.Branches.Delete(
+		context.TODO(),
+		cmd.Value("branch").(string),
+		params,
+		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
+	)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s\n", ColorizeJSON(string(res), os.Stdout))
 	return nil
 }
