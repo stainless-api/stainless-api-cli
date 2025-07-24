@@ -1,7 +1,10 @@
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
 package cmd
 
 import (
 	"bytes"
+	"golang.org/x/term"
 	"io"
 	"log"
 	"net/http"
@@ -13,17 +16,17 @@ import (
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
-
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/pretty"
 	"github.com/urfave/cli/v3"
-	"golang.org/x/term"
 )
 
 func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 	opts := []option.RequestOption{
 		option.WithHeader("X-Stainless-Lang", "cli"),
+		option.WithHeader("X-Stainless-Package-Version", Version),
 		option.WithHeader("X-Stainless-Runtime", "cli"),
+		option.WithHeader("X-Stainless-CLI-Command", cmd.FullName()),
 	}
 
 	// Override base URL if the --base-url flag is provided
