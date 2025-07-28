@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/stainless-api/stainless-api-go"
@@ -75,7 +76,12 @@ func (m *BuildModel) updateView(targetState string) tea.Cmd {
 
 	// Print to scrollback
 	if output.Len() > 0 {
-		return tea.Printf(output.String())
+		out := output.String()
+		if out[len(out)-1] == '\n' {
+			return tea.Println(out[:len(out)-1])
+		} else {
+			return tea.Println(out)
+		}
 	}
 	return nil
 }
@@ -197,7 +203,7 @@ func ViewStepSymbol(stepUnion any) string {
 		case "success":
 			return greenStyle.Render("✓")
 		case "failure":
-			return redStyle.Render("❌")
+			return redStyle.Render("✗")
 		case "warning":
 			return yellowStyle.Render("⚠")
 		default:
@@ -288,15 +294,33 @@ func buildTargetOptions(configuredTargets []stainless.Target) []huh.Option[strin
 	return options
 }
 
+// renderMarkdown renders markdown content using glamour
+func renderMarkdown(content string) string {
+	r, err := glamour.NewTermRenderer(
+		glamour.WithAutoStyle(),
+		glamour.WithWordWrap(120),
+	)
+	if err != nil {
+		return content
+	}
+
+	rendered, err := r.Render(content)
+	if err != nil {
+		return content
+	}
+
+	return strings.Trim(rendered, "\n ")
+}
+
 func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnosticListResponse) string {
 	var s strings.Builder
 
 	if len(diagnostics) > 0 {
+		var sub strings.Builder
 		maxDiagnostics := 10
 
-		s.WriteString(SProperty(0, "Diagnostics", ""))
 		if len(diagnostics) > maxDiagnostics {
-			s.WriteString(fmt.Sprintf("Showing first %d of %d diagnostics:\n", maxDiagnostics, len(diagnostics)))
+			sub.WriteString(fmt.Sprintf("Showing first %d of %d diagnostics:\n", maxDiagnostics, len(diagnostics)))
 		}
 
 		for i, diag := range diagnostics {
@@ -307,21 +331,31 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnosticListResponse) s
 			levelIcon := ViewDiagnosticIcon(diag.Level)
 			codeStyle := lipgloss.NewStyle().Bold(true)
 
-			s.WriteString("\n")
-			s.WriteString(fmt.Sprintf("%s %s\n", levelIcon, codeStyle.Render(diag.Code)))
-			s.WriteString(fmt.Sprintf("%s\n", diag.Message))
+			if i > 0 {
+				sub.WriteString("\n")
+			}
+			sub.WriteString(fmt.Sprintf("%s %s\n", levelIcon, codeStyle.Render(diag.Code)))
+			sub.WriteString(fmt.Sprintf("%s\n", renderMarkdown(diag.Message)))
 
 			// Show source references if available
 			if diag.OasRef != "" {
 				refStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-				s.WriteString(fmt.Sprintf("    %s\n", refStyle.Render("OpenAPI: "+diag.OasRef)))
+				sub.WriteString(fmt.Sprintf("    %s\n", refStyle.Render("OpenAPI: "+diag.OasRef)))
 			}
 			if diag.ConfigRef != "" {
 				refStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-				s.WriteString(fmt.Sprintf("    %s\n", refStyle.Render("Config: "+diag.ConfigRef)))
+				sub.WriteString(fmt.Sprintf("    %s\n", refStyle.Render("Config: "+diag.ConfigRef)))
 			}
 		}
-		s.WriteString("\n")
+
+		s.WriteString(SProperty(0, "Diagnostics", ""))
+		s.WriteString(lipgloss.NewStyle().
+			Padding(1).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("7")).
+			Render(strings.TrimRight(sub.String(), "\n")),
+		)
+		s.WriteString("\n\n")
 	} else {
 		s.WriteString(SProperty(0, "Diagnostics", "(no diagnostics)"))
 	}

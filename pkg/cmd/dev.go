@@ -127,14 +127,14 @@ func (m BuildModel) fetchDiagnostics() tea.Cmd {
 		if m.build == nil {
 			return errorMsg(fmt.Errorf("no current build to fetch diagnostics for"))
 		}
-		diagnostics, err := m.cc.client.Builds.Diagnostics.List(m.ctx, m.build.ID, stainless.BuildDiagnosticListParams{
-			Limit: stainless.Float(1000),
+		diags := []stainless.BuildDiagnosticListResponse{}
+		diagnostics := m.cc.client.Builds.Diagnostics.ListAutoPaging(m.ctx, m.build.ID, stainless.BuildDiagnosticListParams{
+			Limit: stainless.Float(100),
 		})
-		if err != nil {
-			return errorMsg(fmt.Errorf("failed to fetch diagnostics: %v", err))
+		if diagnostics.Next() {
+			diags = append(diags, diagnostics.Current())
 		}
-
-		return fetchDiagnosticsMsg(diagnostics.Data)
+		return fetchDiagnosticsMsg(diags)
 	}
 }
 
