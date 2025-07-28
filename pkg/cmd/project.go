@@ -60,11 +60,6 @@ var projectsCreate = cli.Command{
 			Aliases: []string{"oas"},
 			Usage:   "Path to OpenAPI spec file",
 		},
-		&cli.StringFlag{
-			Name:    "stainless-config",
-			Aliases: []string{"config"},
-			Usage:   "Path to Stainless config file",
-		},
 		&cli.BoolFlag{
 			Name:  "workspace-init",
 			Usage: "Initialize workspace configuration after creating project",
@@ -165,7 +160,6 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	}
 	targetsFlag := cmd.String("targets")
 	openAPISpec := cmd.String("openapi-spec")
-	stainlessConfig := cmd.String("stainless-config")
 	initWorkspace := cmd.Bool("workspace-init")
 	downloadConfig := cmd.Bool("download-config")
 
@@ -177,16 +171,12 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	// Pre-fill OpenAPI spec and Stainless config if found and not provided via flags
+	// Pre-fill OpenAPI spec if found and not provided via flags
 	if openAPISpec == "" {
 		openAPISpec = findOpenAPISpec()
 	}
-	if stainlessConfig == "" {
-		stainlessConfig = findStainlessConfig()
-	}
 
 	// Check if all required values are provided via flags
-	// Stainless config is optional, but OpenAPI spec is required
 	allValuesProvided := org != "" && projectName != "" && openAPISpec != ""
 
 	if !allValuesProvided {
@@ -250,17 +240,8 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 						}
 						return nil
 					}),
-				huh.NewInput().
-					Title("stainless_config (optional)").
-					Description("Path where the Stainless config will be saved. If file exists, it will be used for project creation; otherwise, the auto-generated config will be saved here").
-					Placeholder("stainless.yml").
-					Value(&stainlessConfig),
-				huh.NewConfirm().
-					Title("download_config").
-					Description("Download project configuration after creation").
-					Value(&downloadConfig),
 			).Title("Page (2/2)"),
-		).WithTheme(GetFormTheme()).WithKeyMap(GetFormKeyMap())
+		).WithTheme(GetFormTheme(1)).WithKeyMap(GetFormKeyMap())
 
 		if err := form.Run(); err != nil {
 			return fmt.Errorf("failed to get project configuration: %v", err)
@@ -278,9 +259,6 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		if openAPISpec != "" {
 			group.Property("openapi_spec", openAPISpec)
 		}
-		if stainlessConfig != "" {
-			group.Property("stainless_config", stainlessConfig)
-		}
 
 		// Set the flag values so the JSONFlag middleware can pick them up
 		cmd.Set("org", org)
@@ -291,9 +269,6 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		}
 		if openAPISpec != "" {
 			cmd.Set("openapi-spec", openAPISpec)
-		}
-		if stainlessConfig != "" {
-			cmd.Set("stainless-config", stainlessConfig)
 		}
 	} else {
 		// Generate slug from project name for non-interactive mode too
@@ -307,14 +282,6 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		if err == nil {
 			// Inject the actual file content into the project creation payload
 			jsonflag.Mutate(jsonflag.Body, "revision.openapi\\.yml.content", string(content))
-		}
-	}
-
-	if stainlessConfig != "" {
-		content, err := os.ReadFile(stainlessConfig)
-		if err == nil {
-			// Inject the actual file content into the project creation payload
-			jsonflag.Mutate(jsonflag.Body, "revision.openapi\\.stainless\\.yml.content", string(content))
 		}
 	}
 
