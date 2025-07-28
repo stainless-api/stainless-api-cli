@@ -109,6 +109,7 @@ var Command = cli.Command{
 			},
 		},
 
+		&initCommand,
 		&mcpCommand,
 		&devCommand,
 	},

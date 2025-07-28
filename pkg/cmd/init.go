@@ -1,0 +1,402 @@
+package cmd
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
+	"github.com/stainless-api/stainless-api-go"
+	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/urfave/cli/v3"
+)
+
+var initCommand = cli.Command{
+	Name:  "init",
+	Usage: "Initialize a new stainless project interactively",
+	Flags: []cli.Flag{
+		&jsonflag.JSONStringFlag{
+			Name: "org",
+			Usage: "Organization name",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "org",
+			},
+		},
+		&jsonflag.JSONStringFlag{
+			Name: "display-name",
+			Usage: "Project display name",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "display_name",
+			},
+		},
+		&jsonflag.JSONStringFlag{
+			Name: "slug",
+			Usage: "Project slug",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "slug",
+			},
+		},
+		&jsonflag.JSONStringFlag{
+			Name: "targets",
+			Usage: "Comma-separated list of target languages",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "targets.#",
+			},
+		},
+		&jsonflag.JSONStringFlag{
+			Name: "+target",
+			Usage: "Add a single target language",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "targets.-1",
+			},
+		},
+		&cli.StringFlag{
+			Name:    "openapi-spec",
+			Aliases: []string{"oas"},
+			Usage:   "Path to OpenAPI spec file",
+		},
+		&cli.BoolFlag{
+			Name:  "workspace-init",
+			Usage: "Initialize workspace configuration",
+			Value: true,
+		},
+		&cli.BoolFlag{
+			Name:  "download-config",
+			Usage: "Download stainless config to workspace",
+			Value: true,
+		},
+	},
+	Action:          handleInit,
+	HideHelpCommand: true,
+}
+
+func handleInit(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(cmd)
+
+	// Define available target languages
+	availableTargets := []huh.Option[string]{
+		huh.NewOption("TypeScript", "typescript").Selected(true),
+		huh.NewOption("Python", "python").Selected(true),
+		huh.NewOption("Go", "go"),
+		huh.NewOption("Java", "java"),
+		huh.NewOption("Kotlin", "kotlin"),
+		huh.NewOption("Ruby", "ruby"),
+		huh.NewOption("Terraform", "terraform"),
+		huh.NewOption("C#", "csharp"),
+		huh.NewOption("PHP", "php"),
+	}
+
+	// Get values from flags
+	org := cmd.String("org")
+	projectName := cmd.String("display-name")
+	if projectName == "" {
+		projectName = cmd.String("slug")
+	}
+	targetsFlag := cmd.String("targets")
+	openAPISpec := cmd.String("openapi-spec")
+
+	// Convert comma-separated targets flag to slice for multi-select
+	var selectedTargets []string
+	if targetsFlag != "" {
+		for _, target := range strings.Split(targetsFlag, ",") {
+			selectedTargets = append(selectedTargets, strings.TrimSpace(target))
+		}
+	}
+
+	// Pre-fill OpenAPI spec if found and not provided via flags
+	if openAPISpec == "" {
+		openAPISpec = findOpenAPISpec()
+	}
+
+	group := Info("Creating a new project...")
+
+	// Check if all required values are provided via flags
+	allValuesProvided := org != "" && projectName != "" && openAPISpec != ""
+	if !allValuesProvided {
+		// Fetch available organizations for suggestions
+		orgs := fetchUserOrgs(cc.client, ctx)
+
+		// Auto-fill with first organization if org is empty and orgs are available
+		if org == "" && len(orgs) > 0 {
+			org = orgs[0]
+		}
+
+		form := huh.NewForm(
+			huh.NewGroup(
+				huh.NewInput().
+					Title("org").
+					Value(&org).
+					Suggestions(orgs).
+					Description("Enter the organization for this project").
+					Validate(func(s string) error {
+						if strings.TrimSpace(s) == "" {
+							return fmt.Errorf("organization is required")
+						}
+						return nil
+					}),
+				huh.NewInput().
+					Title("project").
+					Value(&projectName).
+					DescriptionFunc(func() string {
+						if projectName == "" {
+							return "Project name, slug will be 'my-project'."
+						}
+						slug := nameToSlug(projectName)
+						return fmt.Sprintf("Project name, slug will be '%s'.", slug)
+					}, &projectName).
+					Placeholder("My Project").
+					Validate(func(s string) error {
+						if strings.TrimSpace(s) == "" {
+							return fmt.Errorf("project name is required")
+						}
+						return nil
+					}),
+			),
+			huh.NewGroup(
+				huh.NewMultiSelect[string]().
+					Title("targets").
+					Description("Select target languages for code generation").
+					Options(availableTargets...).
+					Value(&selectedTargets),
+				huh.NewInput().
+					Title("openapi_spec").
+					Description("Relative path to your OpenAPI spec file").
+					Value(&openAPISpec).
+					Validate(func(s string) error {
+						if strings.TrimSpace(s) == "" {
+							return fmt.Errorf("OpenAPI spec file is required")
+						}
+						if _, err := os.Stat(s); os.IsNotExist(err) {
+							return fmt.Errorf("file '%s' does not exist", s)
+						}
+						return nil
+					}),
+			),
+		).WithTheme(GetFormTheme(1)).WithKeyMap(GetFormKeyMap())
+
+		if err := form.Run(); err != nil {
+			return fmt.Errorf("failed to get project configuration: %v", err)
+		}
+
+		group.Property("organization", org)
+		group.Property("project_name", projectName)
+		if len(selectedTargets) > 0 {
+			group.Property("targets", strings.Join(selectedTargets, ", "))
+		}
+		if openAPISpec != "" {
+			group.Property("openapi_spec", openAPISpec)
+		}
+	}
+
+	// Generate slug from project name
+	slug := nameToSlug(projectName)
+
+	// Set the CLI flags so that the JSONFlag middleware can pick them up
+	cmd.Set("org", org)
+	cmd.Set("display-name", projectName)
+	cmd.Set("slug", slug)
+	for _, target := range selectedTargets {
+		cmd.Set("+target", target)
+	}
+
+	// Inject file contents into the API payload if files are provided or found
+	if openAPISpec != "" {
+		content, err := os.ReadFile(openAPISpec)
+		if err == nil {
+			// Inject the actual file content into the project creation payload
+			jsonflag.Mutate(jsonflag.Body, "revision.openapi\\.yml.content", string(content))
+		}
+	}
+
+	params := stainless.ProjectNewParams{}
+	res, err := cc.client.Projects.New(
+		ctx,
+		params,
+		option.WithMiddleware(cc.AsMiddleware()),
+	)
+	if err != nil {
+		return err
+	}
+	group.Success("Project created successfully")
+	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
+
+	var config *WorkspaceConfig
+	{
+		// Ask about workspace initialization if flag wasn't explicitly provided
+		workspaceInit, err := Confirm(cmd, "workspace-init",
+			"Initialize workspace configuration?",
+			"Creates a stainless-workspace.json file for this project",
+			true)
+		if err != nil {
+			return fmt.Errorf("failed to get workspace configuration: %v", err)
+		}
+
+		// Initialize workspace if requested
+		if workspaceInit {
+			group := Info("Initializing workspace...")
+
+			// Use the same project name (slug) for workspace initialization
+			config, err = NewWorkspaceConfig(slug, openAPISpec, "")
+			if err != nil {
+				group.Error("Failed to create workspace config: %v", err)
+				return fmt.Errorf("project created but workspace initialization failed: %v", err)
+			}
+
+			err = config.Save()
+			if err != nil {
+				group.Error("Failed to save workspace config: %v", err)
+				return fmt.Errorf("project created but workspace initialization failed: %v", err)
+			}
+
+			group.Success("Workspace initialized at " + config.ConfigPath)
+		}
+
+		if !workspaceInit {
+			goto exit
+		}
+	}
+
+	Spacer()
+
+	{
+		// Download project configuration if requested
+		downloadConfig, err := Confirm(cmd, "download-config",
+			"Download stainless config to workspace? (Recommended)",
+			"Manages stainless config as part of your source code instead of in the cloud",
+			true)
+		if err != nil {
+			return fmt.Errorf("failed to get stainless config form: %v", err)
+		}
+		if downloadConfig {
+			stainlessConfig := "stainless.yml"
+			group := Info("Downloading stainless config...")
+
+			params := stainless.ProjectConfigGetParams{
+				Project: stainless.String(slug),
+			}
+
+			var configRes *stainless.ProjectConfigGetResponse
+			var err error
+			maxRetries := 3
+
+			// I'm not sure why, but our endpoint here doesn't work immediately after the project is created, but
+			// retrying it reliably fixes it.
+			for attempt := 1; attempt <= maxRetries; attempt++ {
+				configRes, err = cc.client.Projects.Configs.Get(ctx, params)
+				if err == nil {
+					break
+				}
+
+				if attempt < maxRetries {
+					time.Sleep(time.Duration(attempt) * time.Second)
+				}
+			}
+
+			if err != nil {
+				return fmt.Errorf("project created but config download failed after %d attempts: %v", maxRetries, err)
+			}
+
+			content := ""
+			if try, ok := (*configRes)["stainless.yml"]; ok {
+				content = try.Content
+			}
+			if try, ok := (*configRes)["openapi.stainless.yml"]; ok {
+				content = try.Content
+			}
+
+			// Write the config to file
+			err = os.WriteFile(stainlessConfig, []byte(content), 0644)
+			if err != nil {
+				group.Error("Failed to save project config to %s: %v", stainlessConfig, err)
+				return fmt.Errorf("project created but config save failed: %v", err)
+			}
+
+			// Update workspace config with stainless_config path
+			if config != nil {
+				config.StainlessConfig = stainlessConfig
+				err = config.Save()
+				if err != nil {
+					Error("Failed to update workspace config with stainless config path: %v", err)
+					return fmt.Errorf("config downloaded but workspace update failed: %v", err)
+				}
+			}
+
+			group.Success("Stainless config downloaded to %s", stainlessConfig)
+		}
+	}
+
+exit:
+	fmt.Fprintf(
+		os.Stderr,
+		"%s\n",
+		lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(1).Render(
+			"Congratulations and thank you for creating a new stainless project!\n\n"+
+				"  To configure your SDKs, see our docs page\n"+
+				"  https://www.stainless.com/docs/guides/configure\n\n"+
+				"  To run more builds, use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl builds create")+"\n"+
+				"  To build interactively: "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl dev"),
+		),
+	)
+
+	return nil
+}
+
+// fetchUserOrgs retrieves the list of organizations the user has access to
+func fetchUserOrgs(client stainless.Client, ctx context.Context) []string {
+	res, err := client.Orgs.List(ctx)
+	if err != nil {
+		// Return empty slice if we can't fetch orgs
+		return []string{}
+	}
+
+	var orgs []string
+	for _, org := range res.Data {
+		if org.Slug != "" {
+			orgs = append(orgs, org.Slug)
+		}
+	}
+
+	return orgs
+}
+
+// nameToSlug converts a project name to a URL-friendly slug
+func nameToSlug(name string) string {
+	// Convert to lowercase
+	slug := strings.ToLower(name)
+
+	// Replace spaces and common punctuation with hyphens
+	slug = strings.ReplaceAll(slug, " ", "-")
+	slug = strings.ReplaceAll(slug, "_", "-")
+	slug = strings.ReplaceAll(slug, ".", "-")
+	slug = strings.ReplaceAll(slug, "/", "-")
+	slug = strings.ReplaceAll(slug, "\\", "-")
+
+	// Remove any characters that aren't alphanumeric or hyphens
+	var result strings.Builder
+	for _, r := range slug {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
+			result.WriteRune(r)
+		}
+	}
+	slug = result.String()
+
+	// Remove multiple consecutive hyphens
+	for strings.Contains(slug, "--") {
+		slug = strings.ReplaceAll(slug, "--", "-")
+	}
+
+	// Trim hyphens from start and end
+	slug = strings.Trim(slug, "-")
+
+	return slug
+}
+
