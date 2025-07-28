@@ -5,7 +5,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/logrusorgru/aurora/v4"
+	"github.com/urfave/cli/v3"
 )
 
 // Group represents a nested logging group
@@ -105,4 +108,32 @@ func (g Group) Warn(format string, args ...any) Group {
 func (g Group) Success(format string, args ...any) Group {
 	fmt.Fprint(os.Stderr, SSuccess(g.indent, format, args...))
 	return Group{prefix: "✓", indent: g.indent + 1}
+}
+
+// Confirm prompts the user with a yes/no question if the flag wasn't explicitly set
+func Confirm(cmd *cli.Command, flagName, title, description string, defaultValue bool) (bool, error) {
+	if cmd.IsSet(flagName) {
+		return cmd.Bool(flagName), nil
+	}
+
+	foreground := lipgloss.Color("15")
+	cyanBright := lipgloss.Color("6")
+
+	t := GetFormTheme(0)
+	t.Focused.Title = t.Focused.Title.Foreground(foreground)
+	t.Focused.Base = t.Focused.Base.
+		SetString("\b\b" + lipgloss.NewStyle().Foreground(cyanBright).Render("✱")).
+		PaddingLeft(2)
+
+	value := defaultValue
+	err := huh.NewForm(
+		huh.NewGroup(
+			huh.NewConfirm().
+				Title(title).
+				Description(description).
+				Value(&value),
+		),
+	).WithTheme(t).WithKeyMap(GetFormKeyMap()).Run()
+
+	return value, err
 }

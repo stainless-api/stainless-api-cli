@@ -283,21 +283,12 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
 
 	// Ask about workspace initialization if flag wasn't explicitly provided
-	workspaceInitFlagSet := cmd.IsSet("workspace-init")
-	workspaceInit := cmd.Bool("workspace-init")
-	if !workspaceInitFlagSet {
-		workspaceInit = true // Default to true
-		err := huh.NewForm(
-			huh.NewGroup(
-				huh.NewConfirm().
-					Title("Initialize workspace configuration?").
-					Description("Creates a stainless-workspace.json file for this project").
-					Value(&workspaceInit),
-			),
-		).WithTheme(GetFormTheme(0)).WithKeyMap(GetFormKeyMap()).Run()
-		if err != nil {
-			return fmt.Errorf("failed to get workspace configuration: %v", err)
-		}
+	workspaceInit, err := Confirm(cmd, "workspace-init",
+		"Initialize workspace configuration?",
+		"Creates a stainless-workspace.json file for this project",
+		true)
+	if err != nil {
+		return fmt.Errorf("failed to get workspace configuration: %v", err)
 	}
 
 	// Initialize workspace if requested
@@ -326,22 +317,15 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		return nil
 	}
 
+	Spacer()
+
 	// Download project configuration if requested
-	downloadConfigFlagSet := cmd.IsSet("download-config")
-	downloadConfig := cmd.Bool("download-config")
-	if !downloadConfigFlagSet {
-		downloadConfig = true
-		err = huh.NewForm(
-			huh.NewGroup(
-				huh.NewConfirm().
-					Title("Download stainless config to workspace? (Recommended)").
-					Description("Manages stainless config as part of your source code instead of in the cloud").
-					Value(&downloadConfig),
-			),
-		).WithTheme(GetFormTheme(0)).WithKeyMap(GetFormKeyMap()).Run()
-		if err != nil {
-			return fmt.Errorf("failed to get stainless config form: %v", err)
-		}
+	downloadConfig, err := Confirm(cmd, "download-config",
+		"Download stainless config to workspace? (Recommended)",
+		"Manages stainless config as part of your source code instead of in the cloud",
+		true)
+	if err != nil {
+		return fmt.Errorf("failed to get stainless config form: %v", err)
 	}
 	if downloadConfig {
 		stainlessConfig := "stainless.yml"
