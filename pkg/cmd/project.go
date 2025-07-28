@@ -60,16 +60,6 @@ var projectsCreate = cli.Command{
 			Aliases: []string{"oas"},
 			Usage:   "Path to OpenAPI spec file",
 		},
-		&cli.BoolFlag{
-			Name:  "workspace-init",
-			Usage: "Initialize workspace configuration after creating project",
-			Value: true, // Default to true
-		},
-		&cli.BoolFlag{
-			Name:  "download-config",
-			Usage: "Download the project configuration after creation",
-			Value: true,
-		},
 	},
 	Action:          handleProjectsCreate,
 	HideHelpCommand: true,
@@ -160,8 +150,6 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	}
 	targetsFlag := cmd.String("targets")
 	openAPISpec := cmd.String("openapi-spec")
-	initWorkspace := cmd.Bool("workspace-init")
-	downloadConfig := cmd.Bool("download-config")
 
 	// Convert comma-separated targets flag to slice for multi-select
 	var selectedTargets []string
@@ -176,12 +164,11 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		openAPISpec = findOpenAPISpec()
 	}
 
+	group := Info("Creating a new project...")
+
 	// Check if all required values are provided via flags
 	allValuesProvided := org != "" && projectName != "" && openAPISpec != ""
-
 	if !allValuesProvided {
-		group := Info("Creating a new project...")
-
 		// Fetch available organizations for suggestions
 		orgs := fetchUserOrgs(cc.client, ctx)
 
@@ -220,7 +207,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 						}
 						return nil
 					}),
-			).Title("Page (1/2)"),
+			),
 			huh.NewGroup(
 				huh.NewMultiSelect[string]().
 					Title("targets").
@@ -240,7 +227,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 						}
 						return nil
 					}),
-			).Title("Page (2/2)"),
+			),
 		).WithTheme(GetFormTheme(1)).WithKeyMap(GetFormKeyMap())
 
 		if err := form.Run(); err != nil {
@@ -252,7 +239,6 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 
 		group.Property("organization", org)
 		group.Property("project_name", projectName)
-		group.Property("slug", slug)
 		if len(selectedTargets) > 0 {
 			group.Property("targets", strings.Join(selectedTargets, ", "))
 		}
@@ -284,7 +270,6 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 			jsonflag.Mutate(jsonflag.Body, "revision.openapi\\.yml.content", string(content))
 		}
 	}
-
 	params := stainless.ProjectNewParams{}
 	res, err := cc.client.Projects.New(
 		context.TODO(),
@@ -294,19 +279,35 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-
-	if !allValuesProvided {
-		Success("Project created successfully")
-	}
+	group.Success("Project created successfully")
 	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
 
+	// Ask about workspace initialization if flag wasn't explicitly provided
+	workspaceInitFlagSet := cmd.IsSet("workspace-init")
+	workspaceInit := cmd.Bool("workspace-init")
+	if !workspaceInitFlagSet {
+		workspaceInit = true // Default to true
+		err := huh.NewForm(
+			huh.NewGroup(
+				huh.NewConfirm().
+					Title("Initialize workspace configuration?").
+					Description("Creates a stainless-workspace.json file for this project").
+					Value(&workspaceInit),
+			),
+		).WithTheme(GetFormTheme(0)).WithKeyMap(GetFormKeyMap()).Run()
+		if err != nil {
+			return fmt.Errorf("failed to get workspace configuration: %v", err)
+		}
+	}
+
 	// Initialize workspace if requested
-	if initWorkspace {
-		group := Info("Initializing workspace configuration...")
+	var config *WorkspaceConfig
+	if workspaceInit {
+		group := Info("Initializing workspace...")
 
 		// Use the same project name (slug) for workspace initialization
 		slug := nameToSlug(projectName)
-		config, err := NewWorkspaceConfig(slug, openAPISpec, stainlessConfig)
+		config, err = NewWorkspaceConfig(slug, openAPISpec, "")
 		if err != nil {
 			group.Error("Failed to create workspace config: %v", err)
 			return fmt.Errorf("project created but workspace initialization failed: %v", err)
@@ -318,12 +319,33 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 			return fmt.Errorf("project created but workspace initialization failed: %v", err)
 		}
 
-		group.Success("Workspace initialized")
+		group.Success("Workspace initialized at " + config.ConfigPath)
+	}
+
+	if !workspaceInit {
+		return nil
 	}
 
 	// Download project configuration if requested
+	downloadConfigFlagSet := cmd.IsSet("download-config")
+	downloadConfig := cmd.Bool("download-config")
+	if !downloadConfigFlagSet {
+		downloadConfig = true
+		err = huh.NewForm(
+			huh.NewGroup(
+				huh.NewConfirm().
+					Title("Download stainless config to workspace? (Recommended)").
+					Description("Manages stainless config as part of your source code instead of in the cloud").
+					Value(&downloadConfig),
+			),
+		).WithTheme(GetFormTheme(0)).WithKeyMap(GetFormKeyMap()).Run()
+		if err != nil {
+			return fmt.Errorf("failed to get stainless config form: %v", err)
+		}
+	}
 	if downloadConfig {
-		group := Info("Downloading project configuration...")
+		stainlessConfig := "stainless.yml"
+		group := Info("Downloading stainless config...")
 
 		// Use the same project name (slug) for config download
 		slug := nameToSlug(projectName)
@@ -356,24 +378,24 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 			return fmt.Errorf("project created but config download failed after %d attempts: %v", maxRetries, err)
 		}
 
-		// Determine where to save the config file
-		var configPath string
-
-		if stainlessConfig != "" {
-			configPath = stainlessConfig
-		}
-		if configPath == "" {
-			configPath = "stainless.yml"
-		}
-
 		// Write the config to file
-		err = os.WriteFile(configPath, configData, 0644)
+		err = os.WriteFile(stainlessConfig, configData, 0644)
 		if err != nil {
-			Error("Failed to save project config to %s: %v", configPath, err)
+			group.Error("Failed to save project config to %s: %v", stainlessConfig, err)
 			return fmt.Errorf("project created but config save failed: %v", err)
 		}
 
-		group.Success("Project configuration downloaded to %s", configPath)
+		// Update workspace config with stainless_config path
+		if config != nil {
+			config.StainlessConfig = stainlessConfig
+			err = config.Save()
+			if err != nil {
+				Error("Failed to update workspace config with stainless config path: %v", err)
+				return fmt.Errorf("config downloaded but workspace update failed: %v", err)
+			}
+		}
+
+		group.Success("Stainless config downloaded to %s", stainlessConfig)
 	}
 
 	return nil
