@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.1.0-alpha.28 (2025-07-28)
+
+Full Changelog: [v0.1.0-alpha.27...v0.1.0-alpha.28](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.27...v0.1.0-alpha.28)
+
+### Features
+
+* add callout at project creation ([003796e](https://github.com/stainless-api/stainless-api-cli/commit/003796e6004bc9c9986861a72a4288ab393aa953))
+* add some polish around confirm dialogs ([40d3419](https://github.com/stainless-api/stainless-api-cli/commit/40d34192c6cfc937d9da9ddb4f9b393bf808417c))
+* **api:** manual updates ([27041d4](https://github.com/stainless-api/stainless-api-cli/commit/27041d4a81fe0cee98907a872bd73b0c60f92b31))
+* **api:** manual updates ([b97d699](https://github.com/stainless-api/stainless-api-cli/commit/b97d699c3e1d17dc7199ffdf8768c4942d875936))
+* flesh out project branches endpoints ([897282f](https://github.com/stainless-api/stainless-api-cli/commit/897282f565bc519c4256aef101aadb36c16e6c96))
+* improve output grouping ([012926f](https://github.com/stainless-api/stainless-api-cli/commit/012926fc3c5b0e44243a689e4fd911baebe46395))
+* improve project create form ([e3ec063](https://github.com/stainless-api/stainless-api-cli/commit/e3ec0632a86ae39d58f056a187636d3fc06c6c24))
+* remove stainless config uploading to the project create endpoint ([3bba950](https://github.com/stainless-api/stainless-api-cli/commit/3bba950d20c4117103f0ff1cb936f80543f80c0e))
+* rename init-workspace flag to workspace-init ([c3c7887](https://github.com/stainless-api/stainless-api-cli/commit/c3c7887e2bc39a3c7b20f58989f5cb7eab4ebcc4))
+
+
+### Bug Fixes
+
+* add retries to project config retrieve ([630b8e8](https://github.com/stainless-api/stainless-api-cli/commit/630b8e82c970478cc481093c9de774f08d55ff9b))
+* don't unconditionally indent forms ([249b151](https://github.com/stainless-api/stainless-api-cli/commit/249b15100bb714886efcfa8093b2108cda3fa5e4))
+* fix middleware with empty body ([b734f2e](https://github.com/stainless-api/stainless-api-cli/commit/b734f2ee032645f064f4c033131c164c75be6e97))
+* improve diagnostics printing ([9d42891](https://github.com/stainless-api/stainless-api-cli/commit/9d42891284b59e3c976f9eae879e114539c2ff9e))
+* improve printing of diagnostics when no diagnostics are there ([65e18d5](https://github.com/stainless-api/stainless-api-cli/commit/65e18d5c1d4167a4ae5911df3ed980f064c5c57e))
+* unwrap content for stainless config ([919d1b7](https://github.com/stainless-api/stainless-api-cli/commit/919d1b72fd7b8c9482039466ae56ef66efbf61f1))
+
 ## 0.1.0-alpha.27 (2025-07-28)
 
 Full Changelog: [v0.1.0-alpha.26...v0.1.0-alpha.27](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.26...v0.1.0-alpha.27)
