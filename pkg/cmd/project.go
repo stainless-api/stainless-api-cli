@@ -341,18 +341,14 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 				Project: stainless.String(slug),
 			}
 
-			configData := []byte{}
+			var configRes *stainless.ProjectConfigGetResponse
 			var err error
 			maxRetries := 3
 
 			// I'm not sure why, but our endpoint here doesn't work immediately after the project is created, but
 			// retrying it reliably fixes it.
 			for attempt := 1; attempt <= maxRetries; attempt++ {
-				_, err = cc.client.Projects.Configs.Get(
-					ctx,
-					params,
-					option.WithResponseBodyInto(&configData),
-				)
+				configRes, err = cc.client.Projects.Configs.Get(ctx, params)
 				if err == nil {
 					break
 				}
@@ -366,8 +362,16 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 				return fmt.Errorf("project created but config download failed after %d attempts: %v", maxRetries, err)
 			}
 
+			content := ""
+			if try, ok := (*configRes)["stainless.yml"]; ok {
+				content = try.Content
+			}
+			if try, ok := (*configRes)["openapi.stainless.yml"]; ok {
+				content = try.Content
+			}
+
 			// Write the config to file
-			err = os.WriteFile(stainlessConfig, configData, 0644)
+			err = os.WriteFile(stainlessConfig, []byte(content), 0644)
 			if err != nil {
 				group.Error("Failed to save project config to %s: %v", stainlessConfig, err)
 				return fmt.Errorf("project created but config save failed: %v", err)
