@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.0-alpha.27 (2025-07-28)
+
+Full Changelog: [v0.1.0-alpha.26...v0.1.0-alpha.27](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.26...v0.1.0-alpha.27)
+
+### Features
+
+* flesh out project branches endpoints ([3f50b90](https://github.com/stainless-api/stainless-api-cli/commit/3f50b90035c92641cebc44cf439fe70695c61098))
+
+
+### Chores
+
+* bump go version ([6179d9d](https://github.com/stainless-api/stainless-api-cli/commit/6179d9d015abe133f094fb6deca33c70f537f2dd))
+* **internal:** codegen related update ([71190a6](https://github.com/stainless-api/stainless-api-cli/commit/71190a66478187d4fdcb129cae63c408f1776631))
+* **internal:** codegen related update ([eacc95e](https://github.com/stainless-api/stainless-api-cli/commit/eacc95e59b1cd5cee96ca0567a3e0bb10e1d16cc))
+* **internal:** codegen related update ([66c2750](https://github.com/stainless-api/stainless-api-cli/commit/66c275001290e765feea3a636625486f67705380))
+
 ## 0.1.0-alpha.26 (2025-07-22)
 
 Full Changelog: [v0.1.0-alpha.25...v0.1.0-alpha.26](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.25...v0.1.0-alpha.26)
