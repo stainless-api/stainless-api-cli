@@ -20,7 +20,7 @@ var initCommand = cli.Command{
 	Usage: "Initialize a new stainless project interactively",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
-			Name: "org",
+			Name:  "org",
 			Usage: "Organization name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
@@ -28,7 +28,7 @@ var initCommand = cli.Command{
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "display-name",
+			Name:  "display-name",
 			Usage: "Project display name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
@@ -36,7 +36,7 @@ var initCommand = cli.Command{
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "slug",
+			Name:  "slug",
 			Usage: "Project slug",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
@@ -44,7 +44,7 @@ var initCommand = cli.Command{
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "targets",
+			Name:  "targets",
 			Usage: "Comma-separated list of target languages",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
@@ -52,7 +52,7 @@ var initCommand = cli.Command{
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "+target",
+			Name:  "+target",
 			Usage: "Add a single target language",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
@@ -399,4 +399,3 @@ func nameToSlug(name string) string {
 
 	return slug
 }
-
