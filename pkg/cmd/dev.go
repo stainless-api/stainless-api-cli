@@ -200,7 +200,7 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 				Options(branchOptions...).
 				Value(&selectedBranch),
 		),
-	).WithTheme(GetFormTheme())
+	).WithTheme(GetFormTheme(0))
 
 	if err := branchForm.Run(); err != nil {
 		return fmt.Errorf("branch selection failed: %v", err)
@@ -220,7 +220,7 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 				Options(targetOptions...).
 				Value(&selectedTargets),
 		),
-	).WithTheme(GetFormTheme())
+	).WithTheme(GetFormTheme(0))
 
 	if err := targetForm.Run(); err != nil {
 		return fmt.Errorf("target selection failed: %v", err)
