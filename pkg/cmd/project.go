@@ -66,7 +66,7 @@ var projectsCreate = cli.Command{
 			Usage:   "Path to Stainless config file",
 		},
 		&cli.BoolFlag{
-			Name:  "init-workspace",
+			Name:  "workspace-init",
 			Usage: "Initialize workspace configuration after creating project",
 			Value: true, // Default to true
 		},
@@ -166,7 +166,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	targetsFlag := cmd.String("targets")
 	openAPISpec := cmd.String("openapi-spec")
 	stainlessConfig := cmd.String("stainless-config")
-	initWorkspace := cmd.Bool("init-workspace")
+	initWorkspace := cmd.Bool("workspace-init")
 	downloadConfig := cmd.Bool("download-config")
 
 	// Convert comma-separated targets flag to slice for multi-select
