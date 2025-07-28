@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
@@ -282,105 +283,122 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	group.Success("Project created successfully")
 	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
 
-	// Ask about workspace initialization if flag wasn't explicitly provided
-	workspaceInit, err := Confirm(cmd, "workspace-init",
-		"Initialize workspace configuration?",
-		"Creates a stainless-workspace.json file for this project",
-		true)
-	if err != nil {
-		return fmt.Errorf("failed to get workspace configuration: %v", err)
-	}
-
-	// Initialize workspace if requested
 	var config *WorkspaceConfig
-	if workspaceInit {
-		group := Info("Initializing workspace...")
-
-		// Use the same project name (slug) for workspace initialization
-		slug := nameToSlug(projectName)
-		config, err = NewWorkspaceConfig(slug, openAPISpec, "")
+	{
+		// Ask about workspace initialization if flag wasn't explicitly provided
+		workspaceInit, err := Confirm(cmd, "workspace-init",
+			"Initialize workspace configuration?",
+			"Creates a stainless-workspace.json file for this project",
+			true)
 		if err != nil {
-			group.Error("Failed to create workspace config: %v", err)
-			return fmt.Errorf("project created but workspace initialization failed: %v", err)
+			return fmt.Errorf("failed to get workspace configuration: %v", err)
 		}
 
-		err = config.Save()
-		if err != nil {
-			group.Error("Failed to save workspace config: %v", err)
-			return fmt.Errorf("project created but workspace initialization failed: %v", err)
+		// Initialize workspace if requested
+		if workspaceInit {
+			group := Info("Initializing workspace...")
+
+			// Use the same project name (slug) for workspace initialization
+			slug := nameToSlug(projectName)
+			config, err = NewWorkspaceConfig(slug, openAPISpec, "")
+			if err != nil {
+				group.Error("Failed to create workspace config: %v", err)
+				return fmt.Errorf("project created but workspace initialization failed: %v", err)
+			}
+
+			err = config.Save()
+			if err != nil {
+				group.Error("Failed to save workspace config: %v", err)
+				return fmt.Errorf("project created but workspace initialization failed: %v", err)
+			}
+
+			group.Success("Workspace initialized at " + config.ConfigPath)
 		}
 
-		group.Success("Workspace initialized at " + config.ConfigPath)
-	}
-
-	if !workspaceInit {
-		return nil
+		if !workspaceInit {
+			goto exit
+		}
 	}
 
 	Spacer()
 
-	// Download project configuration if requested
-	downloadConfig, err := Confirm(cmd, "download-config",
-		"Download stainless config to workspace? (Recommended)",
-		"Manages stainless config as part of your source code instead of in the cloud",
-		true)
-	if err != nil {
-		return fmt.Errorf("failed to get stainless config form: %v", err)
-	}
-	if downloadConfig {
-		stainlessConfig := "stainless.yml"
-		group := Info("Downloading stainless config...")
-
-		// Use the same project name (slug) for config download
-		slug := nameToSlug(projectName)
-		params := stainless.ProjectConfigGetParams{
-			Project: stainless.String(slug),
+	{
+		// Download project configuration if requested
+		downloadConfig, err := Confirm(cmd, "download-config",
+			"Download stainless config to workspace? (Recommended)",
+			"Manages stainless config as part of your source code instead of in the cloud",
+			true)
+		if err != nil {
+			return fmt.Errorf("failed to get stainless config form: %v", err)
 		}
+		if downloadConfig {
+			stainlessConfig := "stainless.yml"
+			group := Info("Downloading stainless config...")
 
-		configData := []byte{}
-		var err error
-		maxRetries := 3
-
-		// I'm not sure why, but our endpoint here doesn't work immediately after the project is created, but
-		// retrying it reliably fixes it.
-		for attempt := 1; attempt <= maxRetries; attempt++ {
-			_, err = cc.client.Projects.Configs.Get(
-				ctx,
-				params,
-				option.WithResponseBodyInto(&configData),
-			)
-			if err == nil {
-				break
+			// Use the same project name (slug) for config download
+			slug := nameToSlug(projectName)
+			params := stainless.ProjectConfigGetParams{
+				Project: stainless.String(slug),
 			}
 
-			if attempt < maxRetries {
-				time.Sleep(time.Duration(attempt) * time.Second)
+			configData := []byte{}
+			var err error
+			maxRetries := 3
+
+			// I'm not sure why, but our endpoint here doesn't work immediately after the project is created, but
+			// retrying it reliably fixes it.
+			for attempt := 1; attempt <= maxRetries; attempt++ {
+				_, err = cc.client.Projects.Configs.Get(
+					ctx,
+					params,
+					option.WithResponseBodyInto(&configData),
+				)
+				if err == nil {
+					break
+				}
+
+				if attempt < maxRetries {
+					time.Sleep(time.Duration(attempt) * time.Second)
+				}
 			}
-		}
 
-		if err != nil {
-			return fmt.Errorf("project created but config download failed after %d attempts: %v", maxRetries, err)
-		}
-
-		// Write the config to file
-		err = os.WriteFile(stainlessConfig, configData, 0644)
-		if err != nil {
-			group.Error("Failed to save project config to %s: %v", stainlessConfig, err)
-			return fmt.Errorf("project created but config save failed: %v", err)
-		}
-
-		// Update workspace config with stainless_config path
-		if config != nil {
-			config.StainlessConfig = stainlessConfig
-			err = config.Save()
 			if err != nil {
-				Error("Failed to update workspace config with stainless config path: %v", err)
-				return fmt.Errorf("config downloaded but workspace update failed: %v", err)
+				return fmt.Errorf("project created but config download failed after %d attempts: %v", maxRetries, err)
 			}
-		}
 
-		group.Success("Stainless config downloaded to %s", stainlessConfig)
+			// Write the config to file
+			err = os.WriteFile(stainlessConfig, configData, 0644)
+			if err != nil {
+				group.Error("Failed to save project config to %s: %v", stainlessConfig, err)
+				return fmt.Errorf("project created but config save failed: %v", err)
+			}
+
+			// Update workspace config with stainless_config path
+			if config != nil {
+				config.StainlessConfig = stainlessConfig
+				err = config.Save()
+				if err != nil {
+					Error("Failed to update workspace config with stainless config path: %v", err)
+					return fmt.Errorf("config downloaded but workspace update failed: %v", err)
+				}
+			}
+
+			group.Success("Stainless config downloaded to %s", stainlessConfig)
+		}
 	}
+
+exit:
+	fmt.Fprintf(
+		os.Stderr,
+		"%s\n",
+		lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(1).Render(
+			"Congratulations and thank you for creating a new stainless project!\n\n"+
+				"  To configure your SDKs, see our docs page\n"+
+				"  https://www.stainless.com/docs/guides/configure\n\n"+
+				"  To run more builds, use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl builds create")+"\n"+
+				"  To build interactively: "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl dev"),
+		),
+	)
 
 	return nil
 }
