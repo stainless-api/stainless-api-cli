@@ -19,6 +19,10 @@ var Command = cli.Command{
 			Name:  "base-url",
 			Usage: "Override the base URL for API requests",
 		},
+		&cli.StringFlag{
+			Name:  "environment",
+			Usage: "Set the environment for API requests",
+		},
 	},
 	Commands: []*cli.Command{
 		{
