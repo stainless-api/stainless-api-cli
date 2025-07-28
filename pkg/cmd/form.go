@@ -16,6 +16,7 @@ func GetFormTheme() *huh.Theme {
 	primaryBright := lipgloss.Color("14")
 	error := lipgloss.Color("1")
 
+	t.Form.Base = t.Form.Base.PaddingLeft(2)
 	t.Group.Title = t.Group.Title.Foreground(gray).PaddingBottom(1)
 
 	t.Focused.Title = t.Focused.Title.Foreground(primaryBright).Bold(true)

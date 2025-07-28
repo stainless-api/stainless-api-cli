@@ -189,7 +189,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	allValuesProvided := org != "" && projectName != "" && openAPISpec != ""
 
 	if !allValuesProvided {
-		Info("Creating a new project...")
+		group := Info("Creating a new project...")
 
 		// Fetch available organizations for suggestions
 		orgs := fetchUserOrgs(cc.client, ctx)
@@ -268,17 +268,17 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		// Generate slug from project name
 		slug := nameToSlug(projectName)
 
-		Property("organization", org)
-		Property("project_name", projectName)
-		Property("slug", slug)
+		group.Property("organization", org)
+		group.Property("project_name", projectName)
+		group.Property("slug", slug)
 		if len(selectedTargets) > 0 {
-			Property("targets", strings.Join(selectedTargets, ", "))
+			group.Property("targets", strings.Join(selectedTargets, ", "))
 		}
 		if openAPISpec != "" {
-			Property("openapi_spec", openAPISpec)
+			group.Property("openapi_spec", openAPISpec)
 		}
 		if stainlessConfig != "" {
-			Property("stainless_config", stainlessConfig)
+			group.Property("stainless_config", stainlessConfig)
 		}
 
 		// Set the flag values so the JSONFlag middleware can pick them up
@@ -334,28 +334,28 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 
 	// Initialize workspace if requested
 	if initWorkspace {
-		Info("Initializing workspace configuration...")
+		group := Info("Initializing workspace configuration...")
 
 		// Use the same project name (slug) for workspace initialization
 		slug := nameToSlug(projectName)
 		config, err := NewWorkspaceConfig(slug, openAPISpec, stainlessConfig)
 		if err != nil {
-			Error("Failed to create workspace config: %v", err)
+			group.Error("Failed to create workspace config: %v", err)
 			return fmt.Errorf("project created but workspace initialization failed: %v", err)
 		}
 
 		err = config.Save()
 		if err != nil {
-			Error("Failed to save workspace config: %v", err)
+			group.Error("Failed to save workspace config: %v", err)
 			return fmt.Errorf("project created but workspace initialization failed: %v", err)
 		}
 
-		Success("Workspace initialized")
+		group.Success("Workspace initialized")
 	}
 
 	// Download project configuration if requested
 	if downloadConfig {
-		Info("Downloading project configuration...")
+		group := Info("Downloading project configuration...")
 
 		// Use the same project name (slug) for config download
 		slug := nameToSlug(projectName)
@@ -393,7 +393,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 			return fmt.Errorf("project created but config save failed: %v", err)
 		}
 
-		Success("Project configuration downloaded to %s", configPath)
+		group.Success("Project configuration downloaded to %s", configPath)
 	}
 
 	return nil
