@@ -310,7 +310,6 @@ func GetProjectName(cmd *cli.Command, flagName string) string {
 		// Log that we're using the workspace config if in interactive mode
 		if isTerminal(os.Stdout) {
 			Property("project", config.Project+" (from workspace)")
-			println()
 		}
 		return config.Project
 	}

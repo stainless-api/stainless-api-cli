@@ -312,10 +312,49 @@ func renderMarkdown(content string) string {
 	return strings.Trim(rendered, "\n ")
 }
 
+func countDiagnosticsBySeverity(diagnostics []stainless.BuildDiagnosticListResponse) (fatal, errors, warnings, notes int) {
+	for _, diag := range diagnostics {
+		switch diag.Level {
+		case stainless.BuildDiagnosticListResponseLevelFatal:
+			fatal++
+		case stainless.BuildDiagnosticListResponseLevelError:
+			errors++
+		case stainless.BuildDiagnosticListResponseLevelWarning:
+			warnings++
+		case stainless.BuildDiagnosticListResponseLevelNote:
+			notes++
+		}
+	}
+	return
+}
+
 func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnosticListResponse) string {
 	var s strings.Builder
 
 	if len(diagnostics) > 0 {
+		// Count diagnostics by severity
+		fatal, errors, warnings, notes := countDiagnosticsBySeverity(diagnostics)
+
+		// Create summary string
+		var summaryParts []string
+		if fatal > 0 {
+			summaryParts = append(summaryParts, fmt.Sprintf("%d fatal", fatal))
+		}
+		if errors > 0 {
+			summaryParts = append(summaryParts, fmt.Sprintf("%d errors", errors))
+		}
+		if warnings > 0 {
+			summaryParts = append(summaryParts, fmt.Sprintf("%d warnings", warnings))
+		}
+		if notes > 0 {
+			summaryParts = append(summaryParts, fmt.Sprintf("%d notes", notes))
+		}
+
+		summary := strings.Join(summaryParts, ", ")
+		if summary != "" {
+			summary = fmt.Sprintf(" (%s)", summary)
+		}
+
 		var sub strings.Builder
 		maxDiagnostics := 10
 
@@ -348,7 +387,7 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnosticListResponse) s
 			}
 		}
 
-		s.WriteString(SProperty(0, "Diagnostics", ""))
+		s.WriteString(SProperty(0, "Diagnostics", summary))
 		s.WriteString(lipgloss.NewStyle().
 			Padding(1).
 			Border(lipgloss.RoundedBorder()).
