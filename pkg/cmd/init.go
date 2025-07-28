@@ -74,6 +74,11 @@ var initCommand = cli.Command{
 			Usage: "Download stainless config to workspace",
 			Value: true,
 		},
+		&cli.BoolFlag{
+			Name:  "download-targets",
+			Usage: "Download and configure SDK targets",
+			Value: true,
+		},
 	},
 	Action:          handleInit,
 	HideHelpCommand: true,
@@ -334,12 +339,83 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
+	Spacer()
+
+	{
+		// Ask about target download and configuration
+		downloadTargets, err := Confirm(cmd, "download-targets",
+			"Download targets for selected languages?",
+			"Downloads and generates SDK code for your selected languages",
+			true)
+		if err != nil {
+			return fmt.Errorf("failed to get target download preference: %v", err)
+		}
+
+		if downloadTargets && len(selectedTargets) > 0 {
+			group := Info("Configuring SDK targets...")
+
+			// Collect output paths for each selected target
+			targets := map[string]*TargetConfig{}
+			for _, target := range selectedTargets {
+				defaultPath := fmt.Sprintf("%s-%s", slug, target)
+				targets[target] = &TargetConfig{OutputPath: defaultPath}
+			}
+
+			pathVars := make(map[string]*string)
+			var fields []huh.Field
+
+			for _, target := range selectedTargets {
+				pathVar := targets[target].OutputPath
+				pathVars[target] = &pathVar
+				input := huh.NewInput().
+					Title(fmt.Sprintf("%s output path", target)).
+					Value(pathVars[target])
+				fields = append(fields, input)
+			}
+
+			form := huh.NewForm(huh.NewGroup(fields...)).
+				WithTheme(GetFormTheme(1)).
+				WithKeyMap(GetFormKeyMap())
+			if err := form.Run(); err != nil {
+				return fmt.Errorf("failed to get target output paths: %v", err)
+			}
+
+			// Update the targets map with the final values, skipping empty paths
+			for target, pathVar := range pathVars {
+				if strings.TrimSpace(*pathVar) != "" {
+					targets[target] = &TargetConfig{OutputPath: *pathVar}
+				} else {
+					// Remove the target if path is empty
+					delete(targets, target)
+				}
+			}
+
+			config.Targets = targets
+			err = config.Save()
+			if err != nil {
+				group.Error("Failed to update workspace config with target paths: %v", err)
+				return fmt.Errorf("workspace config update failed: %v", err)
+			}
+			for target, targetConfig := range targets {
+				group.Property(target+".output_path", targetConfig.OutputPath)
+			}
+			group.Success("Targets configured to output locally")
+		}
+	}
+
+	Spacer()
+
+	{
+
+	}
+
 exit:
+	Spacer()
 	fmt.Fprintf(
 		os.Stderr,
 		"%s\n",
 		lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(1).Render(
-			"Congratulations and thank you for creating a new stainless project!\n\n"+
+			"Thank you for creating a new Stainless project!\n\n"+
 				"  To configure your SDKs, see our docs page\n"+
 				"  https://www.stainless.com/docs/guides/configure\n\n"+
 				"  To run more builds, use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl builds create")+"\n"+

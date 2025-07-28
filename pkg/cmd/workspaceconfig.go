@@ -7,11 +7,17 @@ import (
 	"path/filepath"
 )
 
+// TargetConfig stores configuration for a specific SDK target
+type TargetConfig struct {
+	OutputPath string `json:"output_path"`
+}
+
 // WorkspaceConfig stores workspace-level configuration
 type WorkspaceConfig struct {
-	Project         string `json:"project"`
-	OpenAPISpec     string `json:"openapi_spec,omitempty"`
-	StainlessConfig string `json:"stainless_config,omitempty"`
+	Project         string                   `json:"project"`
+	OpenAPISpec     string                   `json:"openapi_spec,omitempty"`
+	StainlessConfig string                   `json:"stainless_config,omitempty"`
+	Targets         map[string]*TargetConfig `json:"targets,omitempty"`
 
 	ConfigPath string `json:"-"`
 }
@@ -88,6 +94,10 @@ func (config *WorkspaceConfig) Save() error {
 }
 
 func NewWorkspaceConfig(projectName, openAPISpec, stainlessConfig string) (*WorkspaceConfig, error) {
+	return NewWorkspaceConfigWithTargets(projectName, openAPISpec, stainlessConfig, nil)
+}
+
+func NewWorkspaceConfigWithTargets(projectName, openAPISpec, stainlessConfig string, targets map[string]*TargetConfig) (*WorkspaceConfig, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return nil, err
@@ -97,6 +107,7 @@ func NewWorkspaceConfig(projectName, openAPISpec, stainlessConfig string) (*Work
 		Project:         projectName,
 		OpenAPISpec:     openAPISpec,
 		StainlessConfig: stainlessConfig,
+		Targets:         targets,
 		ConfigPath:      filepath.Join(dir, "stainless-workspace.json"),
 	}, nil
 }
