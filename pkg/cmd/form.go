@@ -7,7 +7,7 @@ import (
 )
 
 // GetFormTheme returns the standard huh theme used across all forms
-func GetFormTheme() *huh.Theme {
+func GetFormTheme(indent int) *huh.Theme {
 	t := huh.ThemeBase()
 
 	grayBright := lipgloss.Color("251")
@@ -16,7 +16,7 @@ func GetFormTheme() *huh.Theme {
 	primaryBright := lipgloss.Color("14")
 	error := lipgloss.Color("1")
 
-	t.Form.Base = t.Form.Base.PaddingLeft(2)
+	t.Form.Base = t.Form.Base.PaddingLeft(indent * 2)
 	t.Group.Title = t.Group.Title.Foreground(gray).PaddingBottom(1)
 
 	t.Focused.Title = t.Focused.Title.Foreground(primaryBright).Bold(true)

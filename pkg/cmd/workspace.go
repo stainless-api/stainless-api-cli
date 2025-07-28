@@ -104,7 +104,7 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 					Placeholder("openapi.stainless.yml").
 					Value(&stainlessConfig),
 			),
-		).WithTheme(GetFormTheme()).WithKeyMap(GetFormKeyMap())
+		).WithTheme(GetFormTheme(0)).WithKeyMap(GetFormKeyMap())
 
 		if err := form.Run(); err != nil {
 			return fmt.Errorf("failed to get workspace configuration: %v", err)
