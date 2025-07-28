@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/huh"
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
@@ -359,21 +360,33 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 
 		// Use the same project name (slug) for config download
 		slug := nameToSlug(projectName)
-
 		params := stainless.ProjectConfigGetParams{
 			Project: stainless.String(slug),
 		}
 
 		configData := []byte{}
-		_, err := cc.client.Projects.Configs.Get(
-			ctx,
-			params,
-			option.WithMiddleware(cc.AsMiddleware()),
-			option.WithResponseBodyInto(&configData),
-		)
+		var err error
+		maxRetries := 3
+
+		// I'm not sure why, but our endpoint here doesn't work immediately after the project is created, but
+		// retrying it reliably fixes it.
+		for attempt := 1; attempt <= maxRetries; attempt++ {
+			_, err = cc.client.Projects.Configs.Get(
+				ctx,
+				params,
+				option.WithResponseBodyInto(&configData),
+			)
+			if err == nil {
+				break
+			}
+
+			if attempt < maxRetries {
+				time.Sleep(time.Duration(attempt) * time.Second)
+			}
+		}
+
 		if err != nil {
-			Error("Failed to download project config: %v", err)
-			return fmt.Errorf("project created but config download failed: %v", err)
+			return fmt.Errorf("project created but config download failed after %d attempts: %v", maxRetries, err)
 		}
 
 		// Determine where to save the config file
