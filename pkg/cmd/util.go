@@ -105,11 +105,16 @@ func (c apiCommandContext) AsMiddleware() option.Middleware {
 
 		// Handle request body merging if there's a body to process
 		if r.Body != nil || len(body) > 2 { // More than just "{}"
-			// Read the existing request body
-			existingBody, err := io.ReadAll(r.Body)
-			r.Body.Close()
-			if err != nil {
-				return nil, fmt.Errorf("failed to read existing request body: %v", err)
+			var existingBody []byte
+			var err error
+
+			// Read the existing request body if it exists
+			if r.Body != nil {
+				existingBody, err = io.ReadAll(r.Body)
+				r.Body.Close()
+				if err != nil {
+					return nil, fmt.Errorf("failed to read existing request body: %v", err)
+				}
 			}
 
 			// Start with existing body as base (default from API params)
