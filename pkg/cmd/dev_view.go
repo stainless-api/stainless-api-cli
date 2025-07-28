@@ -104,7 +104,6 @@ var parts = []struct {
 				s.WriteString(SProperty(0, "Diagnostics", "waiting"))
 			} else {
 				s.WriteString(ViewDiagnosticsPrint(m.diagnostics))
-				s.WriteString("\n")
 			}
 		},
 	},
@@ -322,6 +321,9 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnosticListResponse) s
 				s.WriteString(fmt.Sprintf("    %s\n", refStyle.Render("Config: "+diag.ConfigRef)))
 			}
 		}
+		s.WriteString("\n")
+	} else {
+		s.WriteString(SProperty(0, "Diagnostics", "(no diagnostics)"))
 	}
 
 	return s.String()

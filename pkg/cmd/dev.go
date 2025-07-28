@@ -128,7 +128,7 @@ func (m BuildModel) fetchDiagnostics() tea.Cmd {
 			return errorMsg(fmt.Errorf("no current build to fetch diagnostics for"))
 		}
 		diagnostics, err := m.cc.client.Builds.Diagnostics.List(m.ctx, m.build.ID, stainless.BuildDiagnosticListParams{
-			Limit: stainless.Float(30.0),
+			Limit: stainless.Float(1000),
 		})
 		if err != nil {
 			return errorMsg(fmt.Errorf("failed to fetch diagnostics: %v", err))
