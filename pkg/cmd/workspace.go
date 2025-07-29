@@ -150,7 +150,11 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 		if err != nil {
 			return fmt.Errorf("failed to get stainless config preference: %v", err)
 		}
-
+		config.StainlessConfig = "./stainless.yml"
+		err = config.Save()
+		if err != nil {
+			return fmt.Errorf("workspace update failed: %v", err)
+		}
 		if downloadConfig {
 			if err := downloadStainlessConfig(ctx, cc.client, projectName, &config); err != nil {
 				return fmt.Errorf("config download failed: %v", err)

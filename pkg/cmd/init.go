@@ -265,6 +265,11 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 			return fmt.Errorf("failed to get Stainless config form: %v", err)
 		}
 		if downloadConfig {
+			config.StainlessConfig = "./stainless.yml"
+			err = config.Save()
+			if err != nil {
+				return fmt.Errorf("workspace update failed: %v", err)
+			}
 			if err := downloadStainlessConfig(ctx, cc.client, slug, &config); err != nil {
 				return fmt.Errorf("project created but config download failed: %v", err)
 			}
@@ -376,7 +381,11 @@ func nameToSlug(name string) string {
 
 // downloadStainlessConfig downloads the stainless config file for a project
 func downloadStainlessConfig(ctx context.Context, client stainless.Client, slug string, config *WorkspaceConfig) error {
-	stainlessConfig := "stainless.yml"
+	stainlessConfig := config.StainlessConfig
+	if config.StainlessConfig == "" {
+		return nil
+	}
+
 	group := Info("Downloading Stainless config...")
 
 	params := stainless.ProjectConfigGetParams{
@@ -412,21 +421,10 @@ func downloadStainlessConfig(ctx context.Context, client stainless.Client, slug 
 		content = try.Content
 	}
 
-	// Write the config to file
 	err = os.WriteFile(stainlessConfig, []byte(content), 0644)
 	if err != nil {
 		group.Error("Failed to save project config to %s: %v", stainlessConfig, err)
 		return fmt.Errorf("config save failed: %v", err)
-	}
-
-	// Update workspace config with stainless_config path
-	if config != nil {
-		config.StainlessConfig = stainlessConfig
-		err = config.Save()
-		if err != nil {
-			Error("Failed to update workspace config with stainless config path: %v", err)
-			return fmt.Errorf("workspace update failed: %v", err)
-		}
 	}
 
 	group.Success("Stainless config downloaded to %s", stainlessConfig)
