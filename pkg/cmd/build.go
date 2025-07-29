@@ -34,10 +34,21 @@ type targetInfo struct {
 func parseTargetPaths() map[string]string {
 	targetPaths := make(map[string]string)
 
+	// First, check workspace configuration for target paths
+	var config WorkspaceConfig
+	found, err := config.Find()
+	if err == nil && found && config.Targets != nil {
+		for targetName, targetConfig := range config.Targets {
+			if targetConfig.OutputPath != "" {
+				targetPaths[targetName] = targetConfig.OutputPath
+			}
+		}
+	}
+
 	// Get the current JSON body with all mutations applied
 	body, _, _, err := jsonflag.ApplyMutations([]byte("{}"), []byte("{}"), []byte("{}"))
 	if err != nil {
-		return targetPaths // If we can't parse, return empty map
+		return targetPaths // If we can't parse, return map with workspace paths
 	}
 
 	// Check if there are any targets in the body
@@ -53,6 +64,7 @@ func parseTargetPaths() map[string]string {
 		cleanTarget, path := processSingleTarget(target)
 		cleanTargets = append(cleanTargets, cleanTarget)
 		if path != "" {
+			// Command line target:path overrides workspace configuration
 			targetPaths[cleanTarget] = path
 		}
 	}
@@ -161,6 +173,56 @@ func getCompletedTargets(buildRes stainless.BuildObject) []targetInfo {
 // isTargetCompleted checks if a target is in a completed state
 func isTargetCompleted(status stainless.BuildTargetStatus) bool {
 	return status == "completed" || status == "postgen"
+}
+
+// waitForBuildCompletion polls a build until completion and shows progress updates
+func waitForBuildCompletion(ctx context.Context, client stainless.Client, buildID string, waitGroup *Group) (*stainless.BuildObject, error) {
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	targetProgress := make(map[string]string)
+
+	for {
+		select {
+		case <-ticker.C:
+			buildRes, err := client.Builds.Get(ctx, buildID)
+			if err != nil {
+				waitGroup.Error("Error polling build status: %v", err)
+				return nil, fmt.Errorf("build polling failed: %v", err)
+			}
+
+			targets := getCompletedTargets(*buildRes)
+			allCompleted := true
+
+			for _, target := range targets {
+				prevStatus := targetProgress[target.name]
+
+				if string(target.status) != prevStatus {
+					targetProgress[target.name] = string(target.status)
+
+					if isTargetCompleted(target.status) {
+						waitGroup.Success("%s: %s", target.name, "completed")
+					} else if target.status == "failed" {
+						waitGroup.Error("%s: %s", target.name, string(target.status))
+					}
+				}
+
+				if !isTargetCompleted(target.status) && target.status != "failed" {
+					allCompleted = false
+				}
+			}
+
+			if allCompleted && len(targets) > 0 {
+				if allCompleted {
+					waitGroup.Success("Build completed successfully")
+					return buildRes, nil
+				}
+			}
+
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
 }
 
 var buildsCreate = cli.Command{
@@ -408,69 +470,14 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	if cmd.Bool("wait") {
 		waitGroup := Progress("Waiting for build to complete...")
 
-		ticker := time.NewTicker(3 * time.Second)
-		defer ticker.Stop()
-
-		// Track progress for each target
-		targetProgress := make(map[string]string)
-
-	loop:
-		for {
-			select {
-			case <-ticker.C:
-				res, err = cc.client.Builds.Get(
-					context.TODO(),
-					res.ID,
-				)
-				if err != nil {
-					return fmt.Errorf("error polling build status: %v", err)
-				}
-
-				targets := getCompletedTargets(*res)
-
-				// Update progress for each target
-				allCompleted := true
-				anyCompleted := false
-
-				// Print status for each target
-				for _, target := range targets {
-					prevStatus := targetProgress[target.name]
-
-					if string(target.status) != prevStatus {
-						// Status changed, update it
-						targetProgress[target.name] = string(target.status)
-
-						// Only print completed statuses with a green checkmark
-						if isTargetCompleted(target.status) {
-							waitGroup.Success("Target %s: %s", target.name, string(target.status))
-							anyCompleted = true
-						} else if target.status == "failed" {
-							// For failures, use red text
-							waitGroup.Error("Target %s: %s", target.name, string(target.status))
-						}
-						// Don't print in-progress status updates
-					}
-
-					if !isTargetCompleted(target.status) && target.status != "failed" {
-						allCompleted = false
-					}
-				}
-
-				if (allCompleted || anyCompleted) && len(targets) > 0 {
-					if allCompleted {
-						waitGroup.Success("Build completed successfully")
-						break loop
-					}
-				}
-
-			case <-ctx.Done():
-				return ctx.Err()
-			}
+		res, err = waitForBuildCompletion(context.TODO(), cc.client, res.ID, &waitGroup)
+		if err != nil {
+			return err
 		}
 
 		if cmd.Bool("pull") {
 			pullGroup := Progress("Pulling build outputs...")
-			if err := pullBuildOutputs(context.TODO(), cc.client, *res, targetPaths); err != nil {
+			if err := pullBuildOutputs(context.TODO(), cc.client, *res, targetPaths, &pullGroup); err != nil {
 				pullGroup.Error("Failed to pull outputs: %v", err)
 			} else {
 				pullGroup.Success("Successfully pulled all outputs")
@@ -498,7 +505,7 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 }
 
 // pullBuildOutputs pulls the outputs for a completed build
-func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainless.BuildObject, targetPaths map[string]string) error {
+func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainless.BuildObject, targetPaths map[string]string, pullGroup *Group) error {
 	// Get all targets
 	allTargets := getCompletedTargets(res)
 
@@ -515,14 +522,14 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 	}
 
 	// Pull each target
-	for i, target := range targets {
+	for _, target := range targets {
 		// Use custom path if specified, otherwise use default
 		var targetDir string
 		if customPath, exists := targetPaths[target]; exists {
 			targetDir = customPath
 		}
 
-		targetGroup := Progress("[%d/%d] Pulling %s → %s", i+1, len(targets), target, targetDir)
+		targetGroup := pullGroup.Progress("downloading %s → %s", target, targetDir)
 
 		// Get the output details
 		outputRes, err := client.Builds.TargetOutputs.Get(
@@ -540,7 +547,7 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 		}
 
 		// Handle based on output type
-		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, targetDir)
+		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, targetDir, &targetGroup)
 		if err != nil {
 			targetGroup.Error("Failed to pull %s: %v", target, err)
 			continue
@@ -560,10 +567,6 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 		} else {
 			filename := extractFilenameFromURL(outputRes.URL)
 			targetGroup.Success("Successfully downloaded %s", filename)
-		}
-
-		if i < len(targets)-1 {
-			fmt.Fprintf(os.Stderr, "\n")
 		}
 	}
 
@@ -621,7 +624,7 @@ func extractFilename(urlStr string, resp *http.Response) string {
 }
 
 // pullOutput handles downloading or cloning a build target output
-func pullOutput(output, url, ref, targetDir string) error {
+func pullOutput(output, url, ref, targetDir string, targetGroup *Group) error {
 	switch output {
 	case "git":
 		// Extract repository name from git URL for directory name
@@ -656,8 +659,7 @@ func pullOutput(output, url, ref, targetDir string) error {
 			return fmt.Errorf("failed to create directory %s: %v", targetDir, err)
 		}
 		// Clone the repository
-		gitGroup := Info("Cloning repository")
-		gitGroup.Property("ref", ref)
+		targetGroup.Property("cloning ref", ref)
 
 		cmd := exec.Command("git", "clone", url, targetDir)
 		var stderr bytes.Buffer
@@ -678,8 +680,7 @@ func pullOutput(output, url, ref, targetDir string) error {
 
 	case "url":
 		// Download the file directly to current directory
-		downloadGroup := Info("Downloading file")
-		downloadGroup.Property("url", url)
+		targetGroup.Property("downloading url", url)
 
 		// Download the file
 		resp, err := http.Get(url)
@@ -694,7 +695,7 @@ func pullOutput(output, url, ref, targetDir string) error {
 
 		// Extract filename from URL and Content-Disposition header
 		filename := extractFilename(url, resp)
-		downloadGroup.Property("filename", filename)
+		targetGroup.Property("downloaded", filename)
 
 		// Create the output file in current directory
 		outFile, err := os.Create(filename)
