@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.0-alpha.29 (2025-07-29)
+
+Full Changelog: [v0.1.0-alpha.28...v0.1.0-alpha.29](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.28...v0.1.0-alpha.29)
+
+### Features
+
+* add diagnositcs count ([fa36fb2](https://github.com/stainless-api/stainless-api-cli/commit/fa36fb23190f91a79c2547bcad1def4f66497c69))
+* add init command ([af9d04b](https://github.com/stainless-api/stainless-api-cli/commit/af9d04b6aae5d4b97df29c8f48257fd26377d82e))
+* add targets to workspace config ([49e41a2](https://github.com/stainless-api/stainless-api-cli/commit/49e41a24b8f574df8f1e7641329192e1af43a20d))
+* port some init logic to workspace init ([c509357](https://github.com/stainless-api/stainless-api-cli/commit/c509357a229e08a2d470db7e664cfa1248903191))
+* pull targets from init ([98d427b](https://github.com/stainless-api/stainless-api-cli/commit/98d427b06f1b0509e2ea5745184d27863119c5a2))
+* use getAvailableTargetInfo for preselected builds ([63b7b1d](https://github.com/stainless-api/stainless-api-cli/commit/63b7b1d7d5090deeba60efbef461fb6f87dd2416))
+
+
+### Chores
+
+* run format ([f2703f4](https://github.com/stainless-api/stainless-api-cli/commit/f2703f41c1a8a662fbfa615ee582e9040c0b4e8c))
+
+
+### Refactors
+
+* rename getCompletedTargets to getTargetInfo ([a44754a](https://github.com/stainless-api/stainless-api-cli/commit/a44754a8b14e03b51716ec0e9d8f6baa948da43f))
+
 ## 0.1.0-alpha.28 (2025-07-28)
 
 Full Changelog: [v0.1.0-alpha.27...v0.1.0-alpha.28](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.27...v0.1.0-alpha.28)
