@@ -87,20 +87,8 @@ var initCommand = cli.Command{
 func handleInit(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 
-	// Define available target languages
-	availableTargets := []huh.Option[string]{
-		huh.NewOption("TypeScript", "typescript").Selected(true),
-		huh.NewOption("Python", "python").Selected(true),
-		huh.NewOption("Go", "go"),
-		huh.NewOption("Java", "java"),
-		huh.NewOption("Kotlin", "kotlin"),
-		huh.NewOption("Ruby", "ruby"),
-		huh.NewOption("Terraform", "terraform"),
-		huh.NewOption("C#", "csharp"),
-		huh.NewOption("PHP", "php"),
-	}
+	availableTargets := getAvailableTargets(ctx, cc.client, "")
 
-	// Get values from flags
 	org := cmd.String("org")
 	projectName := cmd.String("display-name")
 	if projectName == "" {
@@ -117,7 +105,6 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	// Pre-fill OpenAPI spec if found and not provided via flags
 	if openAPISpec == "" {
 		openAPISpec = findOpenAPISpec()
 	}
@@ -127,10 +114,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	// Check if all required values are provided via flags
 	allValuesProvided := org != "" && projectName != "" && openAPISpec != ""
 	if !allValuesProvided {
-		// Fetch available organizations for suggestions
 		orgs := fetchUserOrgs(cc.client, ctx)
-
-		// Auto-fill with first organization if org is empty and orgs are available
 		if org == "" && len(orgs) > 0 {
 			org = orgs[0]
 		}
@@ -236,7 +220,6 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 
 	var config *WorkspaceConfig
 	{
-		// Ask about workspace initialization if flag wasn't explicitly provided
 		workspaceInit, err := Confirm(cmd, "workspace-init",
 			"Initialize workspace configuration?",
 			"Creates a stainless-workspace.json file for this project",
@@ -273,76 +256,23 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	Spacer()
 
 	{
-		// Download project configuration if requested
 		downloadConfig, err := Confirm(cmd, "download-config",
-			"Download stainless config to workspace? (Recommended)",
+			"Download stainless config to workspace?",
 			"Manages stainless config as part of your source code instead of in the cloud",
 			true)
 		if err != nil {
 			return fmt.Errorf("failed to get stainless config form: %v", err)
 		}
 		if downloadConfig {
-			stainlessConfig := "stainless.yml"
-			group := Info("Downloading stainless config...")
-
-			params := stainless.ProjectConfigGetParams{
-				Project: stainless.String(slug),
+			if err := downloadStainlessConfig(ctx, cc.client, slug, config); err != nil {
+				return fmt.Errorf("project created but config download failed: %v", err)
 			}
-
-			var configRes *stainless.ProjectConfigGetResponse
-			var err error
-			maxRetries := 3
-
-			// I'm not sure why, but our endpoint here doesn't work immediately after the project is created, but
-			// retrying it reliably fixes it.
-			for attempt := 1; attempt <= maxRetries; attempt++ {
-				configRes, err = cc.client.Projects.Configs.Get(ctx, params)
-				if err == nil {
-					break
-				}
-
-				if attempt < maxRetries {
-					time.Sleep(time.Duration(attempt) * time.Second)
-				}
-			}
-
-			if err != nil {
-				return fmt.Errorf("project created but config download failed after %d attempts: %v", maxRetries, err)
-			}
-
-			content := ""
-			if try, ok := (*configRes)["stainless.yml"]; ok {
-				content = try.Content
-			}
-			if try, ok := (*configRes)["openapi.stainless.yml"]; ok {
-				content = try.Content
-			}
-
-			// Write the config to file
-			err = os.WriteFile(stainlessConfig, []byte(content), 0644)
-			if err != nil {
-				group.Error("Failed to save project config to %s: %v", stainlessConfig, err)
-				return fmt.Errorf("project created but config save failed: %v", err)
-			}
-
-			// Update workspace config with stainless_config path
-			if config != nil {
-				config.StainlessConfig = stainlessConfig
-				err = config.Save()
-				if err != nil {
-					Error("Failed to update workspace config with stainless config path: %v", err)
-					return fmt.Errorf("config downloaded but workspace update failed: %v", err)
-				}
-			}
-
-			group.Success("Stainless config downloaded to %s", stainlessConfig)
 		}
 	}
 
 	Spacer()
 
 	{
-		// Ask about target download and configuration
 		downloadTargets, err := Confirm(cmd, "download-targets",
 			"Configure targets",
 			"Set paths relative to the current directory that SDKs are output to.\n"+
@@ -353,100 +283,24 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		if downloadTargets && len(selectedTargets) > 0 {
-			group := Info("Configuring targets...")
-
-			// Collect output paths for each selected target
-			targets := map[string]*TargetConfig{}
-			for _, target := range selectedTargets {
-				defaultPath := fmt.Sprintf("%s-%s", slug, target)
-				targets[target] = &TargetConfig{OutputPath: defaultPath}
+			if err := configureTargets(slug, selectedTargets, config); err != nil {
+				return fmt.Errorf("target configuration failed: %v", err)
 			}
-
-			pathVars := make(map[string]*string)
-			var fields []huh.Field
-
-			for _, target := range selectedTargets {
-				pathVar := targets[target].OutputPath
-				pathVars[target] = &pathVar
-				input := huh.NewInput().
-					Title(fmt.Sprintf("%s output path", target)).
-					Value(pathVars[target])
-				fields = append(fields, input)
-			}
-
-			form := huh.NewForm(huh.NewGroup(fields...)).
-				WithTheme(GetFormTheme(1)).
-				WithKeyMap(GetFormKeyMap())
-			if err := form.Run(); err != nil {
-				return fmt.Errorf("failed to get target output paths: %v", err)
-			}
-
-			// Update the targets map with the final values, skipping empty paths
-			for target, pathVar := range pathVars {
-				if strings.TrimSpace(*pathVar) != "" {
-					targets[target] = &TargetConfig{OutputPath: *pathVar}
-				} else {
-					// Remove the target if path is empty
-					delete(targets, target)
-				}
-			}
-
-			config.Targets = targets
-			err = config.Save()
-			if err != nil {
-				group.Error("Failed to update workspace config with target paths: %v", err)
-				return fmt.Errorf("workspace config update failed: %v", err)
-			}
-			for target, targetConfig := range targets {
-				group.Property(target+".output_path", targetConfig.OutputPath)
-			}
-			group.Success("Targets configured to output locally")
 		}
 	}
 
 exit:
 	Spacer()
 
-	var buildRes *stainless.BuildObject
-	{
-		waitGroup := Progress("Waiting for build to complete...")
-
-		// Try to get the latest build for this project (which should have been created automatically)
-		buildID, err := getLatestBuildID(ctx, cc.client, slug, "main")
-		if err != nil {
-			return fmt.Errorf("expected build to exist after project creation, but none found: %v", err)
-		}
-
-		waitGroup.Property("build_id", buildID)
-
-		buildRes, err = waitForBuildCompletion(ctx, cc.client, buildID, &waitGroup)
-		if err != nil {
-			return err
+	// Wait for build and pull outputs if workspace is configured
+	if config != nil {
+		if err := waitAndPullBuild(ctx, cc.client, slug, config); err != nil {
+			return fmt.Errorf("build and pull failed: %v", err)
 		}
 	}
 
 	Spacer()
 
-	{
-		if config != nil {
-			// Pull targets if config has them configured
-			if config.Targets != nil && len(config.Targets) > 0 {
-				pullGroup := Progress("Pulling build outputs...")
-
-				// Create target paths map from workspace config
-				targetPaths := make(map[string]string)
-				for targetName, targetConfig := range config.Targets {
-					targetPaths[targetName] = targetConfig.OutputPath
-				}
-
-				if err := pullBuildOutputs(ctx, cc.client, *buildRes, targetPaths, &pullGroup); err != nil {
-					pullGroup.Error("Failed to pull outputs: %v", err)
-				}
-			}
-		}
-	}
-
-	Spacer()
 	fmt.Fprintf(
 		os.Stderr,
 		"%s\n",
@@ -510,4 +364,235 @@ func nameToSlug(name string) string {
 	slug = strings.Trim(slug, "-")
 
 	return slug
+}
+
+// downloadStainlessConfig downloads the stainless config file for a project
+func downloadStainlessConfig(ctx context.Context, client stainless.Client, slug string, config *WorkspaceConfig) error {
+	stainlessConfig := "stainless.yml"
+	group := Info("Downloading stainless config...")
+
+	params := stainless.ProjectConfigGetParams{
+		Project: stainless.String(slug),
+	}
+
+	var configRes *stainless.ProjectConfigGetResponse
+	var err error
+	maxRetries := 3
+
+	// I'm not sure why, but our endpoint here doesn't work immediately after the project is created, but
+	// retrying it reliably fixes it.
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		configRes, err = client.Projects.Configs.Get(ctx, params)
+		if err == nil {
+			break
+		}
+
+		if attempt < maxRetries {
+			time.Sleep(time.Duration(attempt) * time.Second)
+		}
+	}
+
+	if err != nil {
+		return fmt.Errorf("config download failed after %d attempts: %v", maxRetries, err)
+	}
+
+	content := ""
+	if try, ok := (*configRes)["stainless.yml"]; ok {
+		content = try.Content
+	}
+	if try, ok := (*configRes)["openapi.stainless.yml"]; ok {
+		content = try.Content
+	}
+
+	// Write the config to file
+	err = os.WriteFile(stainlessConfig, []byte(content), 0644)
+	if err != nil {
+		group.Error("Failed to save project config to %s: %v", stainlessConfig, err)
+		return fmt.Errorf("config save failed: %v", err)
+	}
+
+	// Update workspace config with stainless_config path
+	if config != nil {
+		config.StainlessConfig = stainlessConfig
+		err = config.Save()
+		if err != nil {
+			Error("Failed to update workspace config with stainless config path: %v", err)
+			return fmt.Errorf("workspace update failed: %v", err)
+		}
+	}
+
+	group.Success("Stainless config downloaded to %s", stainlessConfig)
+	return nil
+}
+
+// configureTargets prompts user for target output paths and saves them to workspace config
+func configureTargets(slug string, selectedTargets []string, config *WorkspaceConfig) error {
+	if len(selectedTargets) == 0 {
+		return nil
+	}
+
+	group := Info("Configuring targets...")
+
+	// Collect output paths for each selected target
+	targets := map[string]*TargetConfig{}
+	for _, target := range selectedTargets {
+		defaultPath := fmt.Sprintf("./%s-%s", slug, target)
+		targets[target] = &TargetConfig{OutputPath: defaultPath}
+	}
+
+	pathVars := make(map[string]*string)
+	var fields []huh.Field
+
+	for _, target := range selectedTargets {
+		pathVar := targets[target].OutputPath
+		pathVars[target] = &pathVar
+		input := huh.NewInput().
+			Title(fmt.Sprintf("%s output path", target)).
+			Value(pathVars[target])
+		fields = append(fields, input)
+	}
+
+	form := huh.NewForm(huh.NewGroup(fields...)).
+		WithTheme(GetFormTheme(1)).
+		WithKeyMap(GetFormKeyMap())
+	if err := form.Run(); err != nil {
+		return fmt.Errorf("failed to get target output paths: %v", err)
+	}
+
+	// Update the targets map with the final values, skipping empty paths
+	for target, pathVar := range pathVars {
+		if strings.TrimSpace(*pathVar) != "" {
+			targets[target] = &TargetConfig{OutputPath: *pathVar}
+		} else {
+			// Remove the target if path is empty
+			delete(targets, target)
+		}
+	}
+
+	config.Targets = targets
+	err := config.Save()
+	if err != nil {
+		group.Error("Failed to update workspace config with target paths: %v", err)
+		return fmt.Errorf("workspace config update failed: %v", err)
+	}
+	for target, targetConfig := range targets {
+		group.Property(target+".output_path", targetConfig.OutputPath)
+	}
+	group.Success("Targets configured to output locally")
+	return nil
+}
+
+// waitAndPullBuild waits for the latest build to complete and pulls configured targets
+func waitAndPullBuild(ctx context.Context, client stainless.Client, slug string, config *WorkspaceConfig) error {
+	waitGroup := Info("Waiting for build to complete...")
+
+	// Try to get the latest build for this project (which should have been created automatically)
+	buildID, err := getLatestBuildID(ctx, client, slug, "main")
+	if err != nil {
+		return fmt.Errorf("expected build to exist after project creation, but none found: %v", err)
+	}
+
+	waitGroup.Property("build_id", buildID)
+
+	buildRes, err := waitForBuildCompletion(ctx, client, buildID, &waitGroup)
+	if err != nil {
+		return err
+	}
+
+	if config != nil && config.Targets != nil && len(config.Targets) > 0 {
+		pullGroup := Info("Pulling build outputs...")
+
+		// Create target paths map from workspace config
+		targetPaths := make(map[string]string)
+		for targetName, targetConfig := range config.Targets {
+			targetPaths[targetName] = targetConfig.OutputPath
+		}
+
+		if err := pullBuildOutputs(ctx, client, *buildRes, targetPaths, &pullGroup); err != nil {
+			pullGroup.Error("Failed to pull outputs: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// TargetInfo represents a target with its display name and default selection
+type TargetInfo struct {
+	DisplayName     string
+	Value           string
+	DefaultSelected bool
+}
+
+// getAllTargetInfo returns all available targets with their display names and defaults
+func getAllTargetInfo() []TargetInfo {
+	return []TargetInfo{
+		{"TypeScript", "typescript", true},
+		{"Python", "python", true},
+		{"Node.js", "node", false},
+		{"Go", "go", false},
+		{"Java", "java", false},
+		{"Kotlin", "kotlin", false},
+		{"Ruby", "ruby", false},
+		{"Terraform", "terraform", false},
+		{"CLI", "cli", false},
+		{"C#", "csharp", false},
+		{"PHP", "php", false},
+	}
+}
+
+// createTargetOptions creates huh.Options from TargetInfo slice
+func createTargetOptions(targets []TargetInfo) []huh.Option[string] {
+	options := make([]huh.Option[string], len(targets))
+	for i, target := range targets {
+		options[i] = huh.NewOption(target.DisplayName, target.Value).Selected(target.DefaultSelected)
+	}
+	return options
+}
+
+// getAvailableTargets gets available targets from the project's latest build, with fallback to defaults
+func getAvailableTargets(ctx context.Context, client stainless.Client, projectName string) []huh.Option[string] {
+	allTargets := getAllTargetInfo()
+
+	// Try to get targets from latest build
+	if projectName == "" {
+		return createTargetOptions(allTargets)
+	}
+
+	buildID, err := getLatestBuildID(ctx, client, projectName, "main")
+	if err != nil {
+		// No build found, return defaults
+		return createTargetOptions(allTargets)
+	}
+
+	buildRes, err := client.Builds.Get(ctx, buildID)
+	if err != nil {
+		// Can't get build, return defaults
+		return createTargetOptions(allTargets)
+	}
+
+	// Extract target names from build
+	buildTargets := getCompletedTargets(*buildRes)
+	if len(buildTargets) == 0 {
+		return createTargetOptions(allTargets)
+	}
+
+	// Create map of build target names for quick lookup
+	buildTargetMap := make(map[string]bool)
+	for _, target := range buildTargets {
+		buildTargetMap[target.name] = true
+	}
+
+	// Filter to only targets that exist in the build
+	var availableTargets []TargetInfo
+	for _, target := range allTargets {
+		if buildTargetMap[target.Value] {
+			availableTargets = append(availableTargets, target)
+		}
+	}
+
+	// If we found targets from build, use them; otherwise fallback to all targets
+	if len(availableTargets) > 0 {
+		return createTargetOptions(availableTargets)
+	}
+	return createTargetOptions(allTargets)
 }

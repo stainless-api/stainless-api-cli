@@ -452,7 +452,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-	Progress("Creating build...")
+	buildGroup := Info("Creating build...")
 	params := stainless.BuildNewParams{}
 	res, err := cc.client.Builds.New(
 		context.TODO(),
@@ -463,12 +463,10 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	// Print the build ID to stderr
-	buildGroup := Success("Build created")
 	buildGroup.Property("build_id", res.ID)
 
 	if cmd.Bool("wait") {
-		waitGroup := Progress("Waiting for build to complete...")
+		waitGroup := Info("Waiting for build to complete...")
 
 		res, err = waitForBuildCompletion(context.TODO(), cc.client, res.ID, &waitGroup)
 		if err != nil {
@@ -476,7 +474,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		if cmd.Bool("pull") {
-			pullGroup := Progress("Pulling build outputs...")
+			pullGroup := Info("Pulling build outputs...")
 			if err := pullBuildOutputs(context.TODO(), cc.client, *res, targetPaths, &pullGroup); err != nil {
 				pullGroup.Error("Failed to pull outputs: %v", err)
 			} else {
