@@ -209,7 +209,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	params := stainless.ProjectNewParams{}
-	res, err := cc.client.Projects.New(
+	_, err := cc.client.Projects.New(
 		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
@@ -218,7 +218,6 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 	group.Success("Project created successfully")
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
 
 	var config WorkspaceConfig
 	{
