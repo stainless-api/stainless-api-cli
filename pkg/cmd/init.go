@@ -571,7 +571,7 @@ func getAvailableTargets(ctx context.Context, client stainless.Client, projectNa
 	}
 
 	// Extract target names from build
-	buildTargets := getCompletedTargets(*buildRes)
+	buildTargets := getTargetInfo(*buildRes)
 	if len(buildTargets) == 0 {
 		return createTargetOptions(allTargets)
 	}

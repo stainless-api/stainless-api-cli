@@ -107,8 +107,8 @@ func processSingleTarget(target string) (string, string) {
 	return targetName, targetPath
 }
 
-// getCompletedTargets extracts completed targets from a build response
-func getCompletedTargets(buildRes stainless.BuildObject) []targetInfo {
+// getTargetInfo extracts completed targets from a build response
+func getTargetInfo(buildRes stainless.BuildObject) []targetInfo {
 	targets := []targetInfo{}
 
 	// Check each target and add it to the list if it's completed or in postgen
@@ -191,7 +191,7 @@ func waitForBuildCompletion(ctx context.Context, client stainless.Client, buildI
 				return nil, fmt.Errorf("build polling failed: %v", err)
 			}
 
-			targets := getCompletedTargets(*buildRes)
+			targets := getTargetInfo(*buildRes)
 			allCompleted := true
 
 			for _, target := range targets {
@@ -505,7 +505,7 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 // pullBuildOutputs pulls the outputs for a completed build
 func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainless.BuildObject, targetPaths map[string]string, pullGroup *Group) error {
 	// Get all targets
-	allTargets := getCompletedTargets(res)
+	allTargets := getTargetInfo(res)
 
 	// Filter to only completed targets
 	var targets []string
