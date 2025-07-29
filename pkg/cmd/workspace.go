@@ -197,11 +197,18 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	Spacer()
-
 	if config.Targets != nil && len(config.Targets) > 0 {
-		if err := waitAndPullBuild(ctx, cc.client, projectName, config); err != nil {
-			return fmt.Errorf("build and target download failed: %v", err)
+		Spacer()
+
+		build, err := waitForLatestBuild(ctx, cc.client, projectName)
+		if err != nil {
+			return fmt.Errorf("build wait failed: %v", err)
+		}
+
+		Spacer()
+
+		if err := pullConfiguredTargets(ctx, cc.client, *build, config); err != nil {
+			return fmt.Errorf("target download failed: %v", err)
 		}
 	}
 
