@@ -344,15 +344,16 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	{
 		// Ask about target download and configuration
 		downloadTargets, err := Confirm(cmd, "download-targets",
-			"Download targets for selected languages?",
-			"Downloads and generates SDK code for your selected languages",
+			"Configure targets",
+			"Set paths relative to the current directory that SDKs are output to.\n"+
+				"Empty paths aren't downloaded by default.",
 			true)
 		if err != nil {
 			return fmt.Errorf("failed to get target download preference: %v", err)
 		}
 
 		if downloadTargets && len(selectedTargets) > 0 {
-			group := Info("Configuring SDK targets...")
+			group := Info("Configuring targets...")
 
 			// Collect output paths for each selected target
 			targets := map[string]*TargetConfig{}
@@ -403,13 +404,48 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
+exit:
+	Spacer()
+
+	var buildRes *stainless.BuildObject
+	{
+		waitGroup := Progress("Waiting for build to complete...")
+
+		// Try to get the latest build for this project (which should have been created automatically)
+		buildID, err := getLatestBuildID(ctx, cc.client, slug, "main")
+		if err != nil {
+			return fmt.Errorf("expected build to exist after project creation, but none found: %v", err)
+		}
+
+		waitGroup.Property("build_id", buildID)
+
+		buildRes, err = waitForBuildCompletion(ctx, cc.client, buildID, &waitGroup)
+		if err != nil {
+			return err
+		}
+	}
+
 	Spacer()
 
 	{
+		if config != nil {
+			// Pull targets if config has them configured
+			if config.Targets != nil && len(config.Targets) > 0 {
+				pullGroup := Progress("Pulling build outputs...")
 
+				// Create target paths map from workspace config
+				targetPaths := make(map[string]string)
+				for targetName, targetConfig := range config.Targets {
+					targetPaths[targetName] = targetConfig.OutputPath
+				}
+
+				if err := pullBuildOutputs(ctx, cc.client, *buildRes, targetPaths, &pullGroup); err != nil {
+					pullGroup.Error("Failed to pull outputs: %v", err)
+				}
+			}
+		}
 	}
 
-exit:
 	Spacer()
 	fmt.Fprintf(
 		os.Stderr,
