@@ -646,7 +646,7 @@ func pullOutput(output, url, ref, targetDir string, targetGroup *Group) error {
 
 		// Remove existing directory if it exists
 		if _, err := os.Stat(targetDir); err == nil {
-			Info("Removing existing directory %s", targetDir)
+			targetGroup.Info("Removing existing directory %s", targetDir)
 			if err := os.RemoveAll(targetDir); err != nil {
 				return fmt.Errorf("failed to remove existing directory %s: %v", targetDir, err)
 			}
