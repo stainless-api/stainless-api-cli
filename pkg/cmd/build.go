@@ -448,6 +448,20 @@ var buildsCompare = cli.Command{
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	targetPaths := parseTargetPaths()
 
+	// Check workspace config for targets
+	var config WorkspaceConfig
+	hasWorkspaceTargets := false
+	found, err := config.Find()
+	if err == nil && found && config.Targets != nil && len(config.Targets) > 0 {
+		hasWorkspaceTargets = true
+		// Merge workspace target paths with command line target paths
+		for targetName, targetConfig := range config.Targets {
+			if _, exists := targetPaths[targetName]; !exists && targetConfig.OutputPath != "" {
+				targetPaths[targetName] = targetConfig.OutputPath
+			}
+		}
+	}
+
 	cc, err := getAPICommandContextWithWorkspaceDefaults(cmd)
 	if err != nil {
 		return err
@@ -473,7 +487,10 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 			return err
 		}
 
-		if cmd.Bool("pull") {
+		// Pull if explicitly set via --pull flag, or if workspace has configured targets and --pull wasn't explicitly set to false
+		shouldPull := cmd.Bool("pull") || (hasWorkspaceTargets && !cmd.IsSet("pull"))
+		
+		if shouldPull {
 			pullGroup := Info("Downloading build outputs...")
 			if err := pullBuildOutputs(context.TODO(), cc.client, *res, targetPaths, &pullGroup); err != nil {
 				pullGroup.Error("Failed to download outputs: %v", err)
