@@ -474,11 +474,11 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		if cmd.Bool("pull") {
-			pullGroup := Info("Pulling build outputs...")
+			pullGroup := Info("Downloading build outputs...")
 			if err := pullBuildOutputs(context.TODO(), cc.client, *res, targetPaths, &pullGroup); err != nil {
-				pullGroup.Error("Failed to pull outputs: %v", err)
+				pullGroup.Error("Failed to download outputs: %v", err)
 			} else {
-				pullGroup.Success("Successfully pulled all outputs")
+				pullGroup.Success("Successfully downloaded all outputs")
 			}
 		}
 	}
@@ -561,7 +561,7 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 			if repoName == "" || repoName == "." || repoName == "/" {
 				repoName = "repository"
 			}
-			targetGroup.Success("Successfully pulled to %s", repoName)
+			targetGroup.Success("Successfully downloaded")
 		} else {
 			filename := extractFilenameFromURL(outputRes.URL)
 			targetGroup.Success("Successfully downloaded %s", filename)
@@ -635,45 +635,57 @@ func pullOutput(output, url, ref, targetDir string, targetGroup *Group) error {
 		}
 
 		// Remove .git suffix if present
-		if strings.HasSuffix(targetDir, ".git") {
-			targetDir = strings.TrimSuffix(targetDir, ".git")
-		}
+		targetDir = strings.TrimSuffix(targetDir, ".git")
 
 		// Handle empty or invalid names
 		if targetDir == "" || targetDir == "." || targetDir == "/" {
 			targetDir = "repository"
 		}
 
-		// Remove existing directory if it exists
+		// Check if directory exists
 		if _, err := os.Stat(targetDir); err == nil {
-			targetGroup.Info("Removing existing directory %s", targetDir)
-			if err := os.RemoveAll(targetDir); err != nil {
-				return fmt.Errorf("failed to remove existing directory %s: %v", targetDir, err)
+			// Check if it's a git directory
+			if _, err := os.Stat(filepath.Join(targetDir, ".git")); err != nil {
+				// Not a git directory, return error
+				return fmt.Errorf("directory %s already exists and is not a git repository", targetDir)
+			}
+		} else {
+			// Directory doesn't exist, create it and initialize git repo
+			if err := os.MkdirAll(targetDir, 0755); err != nil {
+				return fmt.Errorf("failed to create directory %s: %v", targetDir, err)
+			}
+
+			// Initialize git repository
+			cmd := exec.Command("git", "-C", targetDir, "init")
+			var stderr bytes.Buffer
+			cmd.Stdout = nil
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				return fmt.Errorf("git init failed: %v\nGit error: %s", err, stderr.String())
 			}
 		}
 
-		// Create a fresh directory for the output
-		if err := os.MkdirAll(targetDir, 0755); err != nil {
-			return fmt.Errorf("failed to create directory %s: %v", targetDir, err)
-		}
-		// Clone the repository
-		targetGroup.Property("cloning ref", ref)
-
-		cmd := exec.Command("git", "clone", url, targetDir)
-		var stderr bytes.Buffer
-		cmd.Stdout = nil // Suppress git clone output
-		cmd.Stderr = &stderr
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("git clone failed: %v\nGit error: %s", err, stderr.String())
+		{
+			targetGroup.Property("fetching from", url)
+			cmd := exec.Command("git", "-C", targetDir, "fetch", url)
+			var stderr bytes.Buffer
+			cmd.Stdout = nil
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				return fmt.Errorf("git fetch failed: %v\nGit error: %s", err, stderr.String())
+			}
 		}
 
 		// Checkout the specific ref
-		cmd = exec.Command("git", "-C", targetDir, "checkout", ref)
-		stderr.Reset()
-		cmd.Stdout = nil // Suppress git checkout output
-		cmd.Stderr = &stderr
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("git checkout failed: %v\nGit error: %s", err, stderr.String())
+		{
+			targetGroup.Property("checking out ref", ref)
+			cmd := exec.Command("git", "-C", targetDir, "checkout", ref)
+			var stderr bytes.Buffer
+			cmd.Stdout = nil // Suppress git checkout output
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				return fmt.Errorf("git checkout failed: %v\nGit error: %s", err, stderr.String())
+			}
 		}
 
 	case "url":

@@ -35,7 +35,7 @@ var workspaceInit = cli.Command{
 		},
 		&cli.BoolFlag{
 			Name:  "download-config",
-			Usage: "Download stainless config to workspace",
+			Usage: "Download Stainless config to workspace",
 			Value: true,
 		},
 		&cli.BoolFlag{
@@ -144,8 +144,8 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 
 	if stainlessConfig == "" {
 		downloadConfig, err := Confirm(cmd, "download-config",
-			"Download stainless config to workspace?",
-			"Manages stainless config as part of your source code instead of in the cloud",
+			"Download Stainless config to workspace?",
+			"Manages Stainless config as part of your source code instead of in the cloud",
 			true)
 		if err != nil {
 			return fmt.Errorf("failed to get stainless config preference: %v", err)
@@ -157,7 +157,7 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 			}
 		}
 	} else {
-		Info("Using existing stainless config: %s", stainlessConfig)
+		Info("Using existing Stainless config: %s", stainlessConfig)
 	}
 
 	Spacer()
