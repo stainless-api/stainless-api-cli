@@ -24,6 +24,7 @@ type BuildModel struct {
 	started     time.Time
 	ended       *time.Time
 	build       *stainless.BuildObject
+	branch      string
 	diagnostics []stainless.BuildDiagnosticListResponse
 	view        string
 
@@ -39,12 +40,13 @@ type fetchDiagnosticsMsg []stainless.BuildDiagnosticListResponse
 type errorMsg error
 type triggerNewBuildMsg struct{}
 
-func NewBuildModel(cc *apiCommandContext, ctx context.Context, fn func() (*stainless.BuildObject, error)) BuildModel {
+func NewBuildModel(cc *apiCommandContext, ctx context.Context, branch string, fn func() (*stainless.BuildObject, error)) BuildModel {
 	return BuildModel{
 		start:   fn,
 		started: time.Now(),
 		cc:      cc,
 		ctx:     ctx,
+		branch:  branch,
 	}
 }
 
@@ -264,7 +266,7 @@ func runDevBuild(ctx context.Context, cc *apiCommandContext, projectName string,
 		AllowEmpty: stainless.Bool(true),
 	}
 
-	model := NewBuildModel(cc, ctx, func() (*stainless.BuildObject, error) {
+	model := NewBuildModel(cc, ctx, branch, func() (*stainless.BuildObject, error) {
 		build, err := cc.client.Builds.New(ctx, buildReq, option.WithMiddleware(cc.AsMiddleware()))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create build: %v", err)
@@ -372,17 +374,19 @@ func getStepUnion(target *stainless.BuildTarget, step string) any {
 	return nil
 }
 
-func extractStepInfo(stepUnion interface{}) (status, conclusion string) {
+func extractStepInfo(stepUnion any) (status, url, conclusion string) {
 	if u, ok := stepUnion.(stainless.BuildTargetCommitUnion); ok {
 		status = u.Status
 		if u.Status == "completed" {
 			conclusion = u.Completed.Conclusion
+			url = fmt.Sprintf("https://github.com/%s/%s/commit/%s", u.Completed.Commit.Repo.Owner, u.Completed.Commit.Repo.Name, u.Completed.Commit.Sha)
 		}
 	}
 	if u, ok := stepUnion.(stainless.CheckStepUnion); ok {
 		status = u.Status
 		if u.Status == "completed" {
 			conclusion = u.Completed.Conclusion
+			url = u.Completed.URL
 		}
 	}
 	return
@@ -403,7 +407,7 @@ func isBuildTargetCompleted(build *stainless.BuildObject, target stainless.Targe
 		if stepUnion == nil {
 			continue
 		}
-		status, _ := extractStepInfo(stepUnion)
+		status, _, _ := extractStepInfo(stepUnion)
 		if status != "completed" {
 			return false
 		}
@@ -423,7 +427,7 @@ func isBuildTargetInProgress(build *stainless.BuildObject, target stainless.Targ
 		if stepUnion == nil {
 			continue
 		}
-		status, _ := extractStepInfo(stepUnion)
+		status, _, _ := extractStepInfo(stepUnion)
 		if status == "in_progress" {
 			return true
 		}
@@ -445,7 +449,7 @@ func isCommitStepsCompleted(build *stainless.BuildObject) bool {
 		if commitUnion == nil {
 			continue
 		}
-		status, _ := extractStepInfo(commitUnion)
+		status, _, _ := extractStepInfo(commitUnion)
 		if status != "completed" {
 			return false
 		}

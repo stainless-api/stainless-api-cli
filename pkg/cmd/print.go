@@ -7,6 +7,7 @@ import (
 
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/logrusorgru/aurora/v4"
 	"github.com/urfave/cli/v3"
 )
@@ -48,6 +49,10 @@ func Success(format string, args ...any) Group {
 
 func Spacer() {
 	fmt.Fprintf(os.Stderr, "\n")
+}
+
+func Hyperlink(url, text string) string {
+	return ansi.SetHyperlink(url, "") + text + ansi.ResetHyperlink()
 }
 
 func SHeader(format string, args ...any) string {

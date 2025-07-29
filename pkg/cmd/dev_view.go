@@ -106,7 +106,7 @@ var parts = []struct {
 		name: "diagnostics",
 		view: func(m BuildModel, s *strings.Builder) {
 			if m.diagnostics == nil {
-				s.WriteString(SProperty(0, "Diagnostics", "waiting"))
+				s.WriteString(SProperty(0, "diagnostics", "waiting for build to finish"))
 			} else {
 				s.WriteString(ViewDiagnosticsPrint(m.diagnostics))
 			}
@@ -116,20 +116,29 @@ var parts = []struct {
 		name: "duration",
 		view: func(m BuildModel, s *strings.Builder) {
 			duration := m.getBuildDuration()
-			s.WriteString(SProperty(0, "Duration", duration.Round(time.Second).String()))
-			s.WriteString("\n")
+			s.WriteString(SProperty(0, "duration", duration.Round(time.Second).String()))
+		},
+	},
+	{
+		name: "studio",
+		view: func(m BuildModel, s *strings.Builder) {
+			if m.build != nil {
+				url := fmt.Sprintf("https://app.stainless.com/%s/%s/studio?branch=%s", m.build.Org, m.build.Project, m.branch)
+				s.WriteString(SProperty(0, "studio", Hyperlink(url, url)))
+			}
 		},
 	},
 	{
 		name: "build_status",
 		view: func(m BuildModel, s *strings.Builder) {
+			s.WriteString("\n")
 			if m.build != nil {
 				languages := getBuildLanguages(m.build)
 				// Target rows with colors
 				for _, target := range languages {
-					pipeline := ViewPipeline(m.build, target)
+					pipeline := ViewBuildPipeline(m.build, target)
 					langStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true)
-					s.WriteString(fmt.Sprintf("%-13s %s\n", langStyle.Render(string(target)), pipeline))
+					s.WriteString(fmt.Sprintf("%s %s\n", langStyle.Render(fmt.Sprintf("%-13s", string(target))), pipeline))
 				}
 
 				s.WriteString("\n")
@@ -160,7 +169,7 @@ var parts = []struct {
 	},
 }
 
-func ViewPipeline(build *stainless.BuildObject, target stainless.Target) string {
+func ViewBuildPipeline(build *stainless.BuildObject, target stainless.Target) string {
 	buildTarget := getBuildTarget(build, target)
 	if buildTarget == nil {
 		return ""
@@ -174,23 +183,22 @@ func ViewPipeline(build *stainless.BuildObject, target stainless.Target) string 
 		if stepUnion == nil {
 			continue // Skip steps that don't exist for this target
 		}
-		symbol := ViewStepSymbol(stepUnion)
+		status, url, conclusion := extractStepInfo(stepUnion)
+		symbol := ViewStepSymbol(status, conclusion)
 		if pipeline.Len() > 0 {
 			pipeline.WriteString(" → ")
 		}
-		pipeline.WriteString(symbol + " " + step)
+		pipeline.WriteString(symbol + " " + Hyperlink(url, step))
 	}
 
 	return pipeline.String()
 }
 
-func ViewStepSymbol(stepUnion any) string {
+func ViewStepSymbol(status, conclusion string) string {
 	greenStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
 	redStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 	yellowStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
 	grayStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-
-	status, conclusion := extractStepInfo(stepUnion)
 
 	switch status {
 	case "not_started", "queued":
@@ -263,7 +271,6 @@ func ViewHelpMenu() string {
 
 	return strings.Join(parts, sepStyle.Render(" • "))
 }
-
 
 // renderMarkdown renders markdown content using glamour
 func renderMarkdown(content string) string {
@@ -358,7 +365,7 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnosticListResponse) s
 			}
 		}
 
-		s.WriteString(SProperty(0, "Diagnostics", summary))
+		s.WriteString(SProperty(0, "diagnostics", summary))
 		s.WriteString(lipgloss.NewStyle().
 			Padding(1).
 			Border(lipgloss.RoundedBorder()).
@@ -367,7 +374,7 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnosticListResponse) s
 		)
 		s.WriteString("\n\n")
 	} else {
-		s.WriteString(SProperty(0, "Diagnostics", "(no diagnostics)"))
+		s.WriteString(SProperty(0, "diagnostics", "(no errors or warnings)"))
 	}
 
 	return s.String()
