@@ -295,8 +295,17 @@ exit:
 	Spacer()
 
 	// Wait for build and pull outputs if workspace is configured
-	if err := waitAndPullBuild(ctx, cc.client, slug, config); err != nil {
-		return fmt.Errorf("build and pull failed: %v", err)
+	build, err := waitForLatestBuild(ctx, cc.client, slug)
+	if err != nil {
+		return fmt.Errorf("build wait failed: %v", err)
+	}
+
+	if len(config.Targets) > 0 {
+		Spacer()
+
+		if err := pullConfiguredTargets(ctx, cc.client, *build, config); err != nil {
+			return fmt.Errorf("pull targets failed: %v", err)
+		}
 	}
 
 	Spacer()
@@ -482,34 +491,42 @@ func configureTargets(slug string, selectedTargets []string, config *WorkspaceCo
 	return nil
 }
 
-// waitAndPullBuild waits for the latest build to complete and pulls configured targets
-func waitAndPullBuild(ctx context.Context, client stainless.Client, slug string, config WorkspaceConfig) error {
+// waitForLatestBuild waits for the latest build to complete
+func waitForLatestBuild(ctx context.Context, client stainless.Client, slug string) (*stainless.BuildObject, error) {
 	waitGroup := Info("Waiting for build to complete...")
 
 	// Try to get the latest build for this project (which should have been created automatically)
 	build, err := getLatestBuild(ctx, client, slug, "main")
 	if err != nil {
-		return fmt.Errorf("expected build to exist after project creation, but none found: %v", err)
+		return nil, fmt.Errorf("expected build to exist after project creation, but none found: %v", err)
 	}
 
 	waitGroup.Property("build_id", build.ID)
 	build, err = waitForBuildCompletion(ctx, client, build.ID, &waitGroup)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if config.Targets != nil && len(config.Targets) > 0 {
-		pullGroup := Info("Pulling build outputs...")
+	return build, nil
+}
 
-		// Create target paths map from workspace config
-		targetPaths := make(map[string]string)
-		for targetName, targetConfig := range config.Targets {
-			targetPaths[targetName] = targetConfig.OutputPath
-		}
+// pullConfiguredTargets pulls build outputs for configured targets
+func pullConfiguredTargets(ctx context.Context, client stainless.Client, build stainless.BuildObject, config WorkspaceConfig) error {
+	if config.Targets == nil || len(config.Targets) == 0 {
+		return nil
+	}
 
-		if err := pullBuildOutputs(ctx, client, *build, targetPaths, &pullGroup); err != nil {
-			pullGroup.Error("Failed to pull outputs: %v", err)
-		}
+	pullGroup := Info("Pulling build outputs...")
+
+	// Create target paths map from workspace config
+	targetPaths := make(map[string]string)
+	for targetName, targetConfig := range config.Targets {
+		targetPaths[targetName] = targetConfig.OutputPath
+	}
+
+	if err := pullBuildOutputs(ctx, client, build, targetPaths, &pullGroup); err != nil {
+		pullGroup.Error("Failed to pull outputs: %v", err)
+		return err
 	}
 
 	return nil
