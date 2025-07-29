@@ -68,8 +68,9 @@ func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 }
 
 type apiCommandContext struct {
-	client stainless.Client
-	cmd    *cli.Command
+	client          stainless.Client
+	cmd             *cli.Command
+	workspaceConfig WorkspaceConfig
 }
 
 func (c apiCommandContext) AsMiddleware() option.Middleware {
@@ -170,7 +171,30 @@ func (c apiCommandContext) AsMiddleware() option.Middleware {
 
 func getAPICommandContext(cmd *cli.Command) *apiCommandContext {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
-	return &apiCommandContext{client, cmd}
+
+	// Load workspace config if available
+	var workspaceConfig WorkspaceConfig
+	workspaceConfig.Find() // ConfigPath will be set if found
+
+	return &apiCommandContext{client, cmd, workspaceConfig}
+}
+
+// HasWorkspaceTargets returns true if workspace config has configured targets
+func (c *apiCommandContext) HasWorkspaceTargets() bool {
+	return c.workspaceConfig.ConfigPath != "" && c.workspaceConfig.Targets != nil && len(c.workspaceConfig.Targets) > 0
+}
+
+// GetWorkspaceTargetPaths returns a map of target names to their output paths from workspace config
+func (c *apiCommandContext) GetWorkspaceTargetPaths() map[string]string {
+	targetPaths := make(map[string]string)
+	if c.workspaceConfig.ConfigPath != "" && c.workspaceConfig.Targets != nil {
+		for targetName, targetConfig := range c.workspaceConfig.Targets {
+			if targetConfig.OutputPath != "" {
+				targetPaths[targetName] = targetConfig.OutputPath
+			}
+		}
+	}
+	return targetPaths
 }
 
 func serializeQuery(params []byte) url.Values {
@@ -293,59 +317,4 @@ func ColorizeJSON(input string, w io.Writer) string {
 		return input
 	}
 	return string(pretty.Color(pretty.Pretty([]byte(input)), nil))
-}
-
-// GetProjectName returns the project name from the command line flag or workspace config
-func GetProjectName(cmd *cli.Command, flagName string) string {
-	// First check if the flag was provided
-	projectName := cmd.String(flagName)
-	if projectName != "" {
-		return projectName
-	}
-
-	// Otherwise, try to get from workspace config
-	var config WorkspaceConfig
-	found, err := config.Find()
-	if err == nil && found && config.Project != "" {
-		// Log that we're using the workspace config if in interactive mode
-		if isTerminal(os.Stdout) {
-			Property("project", config.Project+" (from workspace)")
-		}
-		return config.Project
-	}
-
-	return ""
-}
-
-// CheckInteractiveAndInitWorkspace checks if running in interactive mode and prompts to init workspace if needed
-func CheckInteractiveAndInitWorkspace(cmd *cli.Command, projectName string) {
-	// Only run in interactive mode with a terminal
-	if !isTerminal(os.Stdout) {
-		return
-	}
-
-	// Check if workspace config exists
-	var config WorkspaceConfig
-	found, _ := config.Find()
-	if found {
-		return
-	}
-
-	// Prompt user to initialize workspace
-	var answer string
-	fmt.Fprintf(os.Stderr, "%s Would you like to initialize a workspace config with project '%s'? [y/N] ", au.BrightYellow("?"), projectName)
-	fmt.Scanln(&answer)
-
-	if strings.ToLower(answer) == "y" || strings.ToLower(answer) == "yes" {
-		config, err := NewWorkspaceConfig(projectName, "", "")
-		if err != nil {
-			Error("Failed to create workspace config: %v", err)
-			return
-		}
-		if err := config.Save(); err != nil {
-			Error("Failed to save workspace config: %v", err)
-			return
-		}
-		Success("Workspace initialized with project: %s", projectName)
-	}
 }

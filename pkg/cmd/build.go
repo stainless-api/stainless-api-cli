@@ -29,19 +29,15 @@ type BuildTargetInfo struct {
 	status stainless.BuildTargetStatus
 }
 
-// parseTargetPaths processes target flags to extract target:path syntax
+// parseTargetPaths processes target flags to extract target:path syntax with workspace config
 // Returns a map of target names to their custom paths
-func parseTargetPaths() map[string]string {
+func parseTargetPaths(workspaceConfig WorkspaceConfig) map[string]string {
 	targetPaths := make(map[string]string)
 
-	// First, check workspace configuration for target paths
-	var config WorkspaceConfig
-	found, err := config.Find()
-	if err == nil && found && config.Targets != nil {
-		for targetName, targetConfig := range config.Targets {
-			if targetConfig.OutputPath != "" {
-				targetPaths[targetName] = targetConfig.OutputPath
-			}
+	// Check workspace configuration for target paths if loaded
+	for targetName, targetConfig := range workspaceConfig.Targets {
+		if targetConfig.OutputPath != "" {
+			targetPaths[targetName] = targetConfig.OutputPath
 		}
 	}
 
@@ -446,26 +442,13 @@ var buildsCompare = cli.Command{
 }
 
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
-	targetPaths := parseTargetPaths()
-
-	// Check workspace config for targets
-	var config WorkspaceConfig
-	hasWorkspaceTargets := false
-	found, err := config.Find()
-	if err == nil && found && config.Targets != nil && len(config.Targets) > 0 {
-		hasWorkspaceTargets = true
-		// Merge workspace target paths with command line target paths
-		for targetName, targetConfig := range config.Targets {
-			if _, exists := targetPaths[targetName]; !exists && targetConfig.OutputPath != "" {
-				targetPaths[targetName] = targetConfig.OutputPath
-			}
-		}
-	}
-
 	cc, err := getAPICommandContextWithWorkspaceDefaults(cmd)
 	if err != nil {
 		return err
 	}
+
+	// Parse target paths using cached workspace config
+	targetPaths := parseTargetPaths(cc.workspaceConfig)
 	buildGroup := Info("Creating build...")
 	params := stainless.BuildNewParams{}
 	res, err := cc.client.Builds.New(
@@ -488,8 +471,8 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		// Pull if explicitly set via --pull flag, or if workspace has configured targets and --pull wasn't explicitly set to false
-		shouldPull := cmd.Bool("pull") || (hasWorkspaceTargets && !cmd.IsSet("pull"))
-		
+		shouldPull := cmd.Bool("pull") || (cc.HasWorkspaceTargets() && !cmd.IsSet("pull"))
+
 		if shouldPull {
 			pullGroup := Info("Downloading build outputs...")
 			if err := pullBuildOutputs(context.TODO(), cc.client, *res, targetPaths, &pullGroup); err != nil {
@@ -779,9 +762,10 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 // getAPICommandWithWorkspaceDefaults applies workspace defaults before initializing API command
 func getAPICommandContextWithWorkspaceDefaults(cmd *cli.Command) (*apiCommandContext, error) {
 	cc := getAPICommandContext(cmd)
-	var config WorkspaceConfig
-	found, err := config.Find()
-	if err == nil && found {
+
+	// Use cached workspace config if available
+	if cc.workspaceConfig.ConfigPath != "" {
+		config := cc.workspaceConfig
 		// Get the directory containing the workspace config file
 		configDir := filepath.Dir(config.ConfigPath)
 
@@ -805,5 +789,5 @@ func getAPICommandContextWithWorkspaceDefaults(cmd *cli.Command) (*apiCommandCon
 			jsonflag.Mutate(jsonflag.Body, "revision.openapi\\.stainless\\.yml.content", string(content))
 		}
 	}
-	return cc, err
+	return cc, nil
 }

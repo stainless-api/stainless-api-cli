@@ -172,11 +172,6 @@ var devCommand = cli.Command{
 }
 
 func runDevMode(ctx context.Context, cmd *cli.Command) error {
-	projectName := GetProjectName(cmd, "project")
-	if projectName == "" {
-		return fmt.Errorf("project name is required")
-	}
-
 	cc, err := getAPICommandContextWithWorkspaceDefaults(cmd)
 	if err != nil {
 		return err
@@ -213,11 +208,10 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 	// Phase 2: Language selection
 	var selectedTargets []string
 
-	// Try to find workspace config for intelligent defaults
-	var config WorkspaceConfig
-	config.Find()
+	// Use cached workspace config for intelligent defaults
+	config := cc.workspaceConfig
 
-	targetInfo := getAvailableTargetInfo(ctx, cc.client, projectName, config)
+	targetInfo := getAvailableTargetInfo(ctx, cc.client, cmd.String("project"), config)
 	targetOptions := targetInfoToOptions(targetInfo)
 
 	targetForm := huh.NewForm(
@@ -248,7 +242,7 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 
 	// Phase 3: Start build and monitor progress in a loop
 	for {
-		err := runDevBuild(ctx, cc, projectName, selectedBranch, targets)
+		err := runDevBuild(ctx, cc, cmd.String("project"), selectedBranch, targets)
 		if err != nil {
 			if errors.Is(err, ErrUserCancelled) {
 				return nil
