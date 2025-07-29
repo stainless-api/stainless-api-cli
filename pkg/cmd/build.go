@@ -23,8 +23,8 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-// targetInfo holds information about a build target
-type targetInfo struct {
+// BuildTargetInfo holds information about a build target
+type BuildTargetInfo struct {
 	name   string
 	status stainless.BuildTargetStatus
 }
@@ -107,61 +107,61 @@ func processSingleTarget(target string) (string, string) {
 	return targetName, targetPath
 }
 
-// getTargetInfo extracts completed targets from a build response
-func getTargetInfo(buildRes stainless.BuildObject) []targetInfo {
-	targets := []targetInfo{}
+// getBuildTargetInfo extracts completed targets from a build response
+func getBuildTargetInfo(buildRes stainless.BuildObject) []BuildTargetInfo {
+	targets := []BuildTargetInfo{}
 
 	// Check each target and add it to the list if it's completed or in postgen
 	if buildRes.Targets.JSON.Node.Valid() {
-		targets = append(targets, targetInfo{
+		targets = append(targets, BuildTargetInfo{
 			name:   "node",
 			status: buildRes.Targets.Node.Status,
 		})
 	}
 	if buildRes.Targets.JSON.Typescript.Valid() {
-		targets = append(targets, targetInfo{
+		targets = append(targets, BuildTargetInfo{
 			name:   "typescript",
 			status: buildRes.Targets.Typescript.Status,
 		})
 	}
 	if buildRes.Targets.JSON.Python.Valid() {
-		targets = append(targets, targetInfo{
+		targets = append(targets, BuildTargetInfo{
 			name:   "python",
 			status: buildRes.Targets.Python.Status,
 		})
 	}
 	if buildRes.Targets.JSON.Go.Valid() {
-		targets = append(targets, targetInfo{
+		targets = append(targets, BuildTargetInfo{
 			name:   "go",
 			status: buildRes.Targets.Go.Status,
 		})
 	}
 	if buildRes.Targets.JSON.Cli.Valid() {
-		targets = append(targets, targetInfo{
+		targets = append(targets, BuildTargetInfo{
 			name:   "cli",
 			status: buildRes.Targets.Cli.Status,
 		})
 	}
 	if buildRes.Targets.JSON.Kotlin.Valid() {
-		targets = append(targets, targetInfo{
+		targets = append(targets, BuildTargetInfo{
 			name:   "kotlin",
 			status: buildRes.Targets.Kotlin.Status,
 		})
 	}
 	if buildRes.Targets.JSON.Java.Valid() {
-		targets = append(targets, targetInfo{
+		targets = append(targets, BuildTargetInfo{
 			name:   "java",
 			status: buildRes.Targets.Java.Status,
 		})
 	}
 	if buildRes.Targets.JSON.Ruby.Valid() {
-		targets = append(targets, targetInfo{
+		targets = append(targets, BuildTargetInfo{
 			name:   "ruby",
 			status: buildRes.Targets.Ruby.Status,
 		})
 	}
 	if buildRes.Targets.JSON.Terraform.Valid() {
-		targets = append(targets, targetInfo{
+		targets = append(targets, BuildTargetInfo{
 			name:   "terraform",
 			status: buildRes.Targets.Terraform.Status,
 		})
@@ -191,7 +191,7 @@ func waitForBuildCompletion(ctx context.Context, client stainless.Client, buildI
 				return nil, fmt.Errorf("build polling failed: %v", err)
 			}
 
-			targets := getTargetInfo(*buildRes)
+			targets := getBuildTargetInfo(*buildRes)
 			allCompleted := true
 
 			for _, target := range targets {
@@ -505,7 +505,7 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 // pullBuildOutputs pulls the outputs for a completed build
 func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainless.BuildObject, targetPaths map[string]string, pullGroup *Group) error {
 	// Get all targets
-	allTargets := getTargetInfo(res)
+	allTargets := getBuildTargetInfo(res)
 
 	// Filter to only completed targets
 	var targets []string

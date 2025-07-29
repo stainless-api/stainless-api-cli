@@ -30,6 +30,10 @@ func (config *WorkspaceConfig) Find() (bool, error) {
 		return false, err
 	}
 
+	if config.ConfigPath != "" {
+		return true, nil
+	}
+
 	for {
 		configPath := filepath.Join(dir, "stainless-workspace.json")
 		if _, err := os.Stat(configPath); err == nil {
@@ -93,17 +97,17 @@ func (config *WorkspaceConfig) Save() error {
 	return encoder.Encode(config)
 }
 
-func NewWorkspaceConfig(projectName, openAPISpec, stainlessConfig string) (*WorkspaceConfig, error) {
+func NewWorkspaceConfig(projectName, openAPISpec, stainlessConfig string) (WorkspaceConfig, error) {
 	return NewWorkspaceConfigWithTargets(projectName, openAPISpec, stainlessConfig, nil)
 }
 
-func NewWorkspaceConfigWithTargets(projectName, openAPISpec, stainlessConfig string, targets map[string]*TargetConfig) (*WorkspaceConfig, error) {
+func NewWorkspaceConfigWithTargets(projectName, openAPISpec, stainlessConfig string, targets map[string]*TargetConfig) (WorkspaceConfig, error) {
 	dir, err := os.Getwd()
 	if err != nil {
-		return nil, err
+		return WorkspaceConfig{}, err
 	}
 
-	return &WorkspaceConfig{
+	return WorkspaceConfig{
 		Project:         projectName,
 		OpenAPISpec:     openAPISpec,
 		StainlessConfig: stainlessConfig,
