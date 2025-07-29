@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -769,7 +770,10 @@ func getAPICommandContextWithWorkspaceDefaults(cmd *cli.Command) (*apiCommandCon
 		// Get the directory containing the workspace config file
 		configDir := filepath.Dir(config.ConfigPath)
 
-		if !cmd.IsSet("openapi-spec") && !cmd.IsSet("oas") && config.OpenAPISpec != "" {
+		names := cmd.FlagNames()
+
+		if (slices.Contains(names, "openapi-spec") || slices.Contains(names, "oas")) &&
+			!cmd.IsSet("openapi-spec") && !cmd.IsSet("oas") && config.OpenAPISpec != "" {
 			// Resolve OpenAPI spec path relative to workspace config directory
 			openAPIPath := filepath.Join(configDir, config.OpenAPISpec)
 			content, err := os.ReadFile(openAPIPath)
@@ -779,7 +783,8 @@ func getAPICommandContextWithWorkspaceDefaults(cmd *cli.Command) (*apiCommandCon
 			jsonflag.Mutate(jsonflag.Body, "revision.openapi\\.yml.content", string(content))
 		}
 
-		if !cmd.IsSet("stainless-config") && !cmd.IsSet("config") && config.StainlessConfig != "" {
+		if (slices.Contains(names, "stainless-config") || slices.Contains(names, "config")) &&
+			!cmd.IsSet("stainless-config") && !cmd.IsSet("config") && config.StainlessConfig != "" {
 			// Resolve Stainless config path relative to workspace config directory
 			stainlessConfigPath := filepath.Join(configDir, config.StainlessConfig)
 			content, err := os.ReadFile(stainlessConfigPath)
@@ -787,6 +792,10 @@ func getAPICommandContextWithWorkspaceDefaults(cmd *cli.Command) (*apiCommandCon
 				return nil, fmt.Errorf("failed to load Stainless config from workspace config: %v", err)
 			}
 			jsonflag.Mutate(jsonflag.Body, "revision.openapi\\.stainless\\.yml.content", string(content))
+		}
+
+		if slices.Contains(names, "project") && !cmd.IsSet("project") && config.Project != "" {
+			cmd.Set("project", config.Project)
 		}
 	}
 	return cc, nil

@@ -89,6 +89,10 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 
 	targetInfo := getAvailableTargetInfo(ctx, cc.client, "", WorkspaceConfig{})
+	targetInfo = slices.DeleteFunc(targetInfo, func(item TargetInfo) bool {
+		// Remove node since it's a deprecated option
+		return item.Name == "node"
+	})
 	availableTargets := targetInfoToOptions(targetInfo)
 
 	org := cmd.String("org")
@@ -219,6 +223,8 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	}
 	group.Success("Project created successfully")
 
+	Spacer()
+
 	var config WorkspaceConfig
 	{
 		workspaceInit, err := Confirm(cmd, "workspace-init",
@@ -318,11 +324,10 @@ exit:
 		os.Stderr,
 		"%s\n",
 		lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(1).Render(
-			"Thank you for creating a new Stainless project!\n\n"+
-				"  To configure your SDKs, see our docs page\n"+
-				"  https://www.stainless.com/docs/guides/configure\n\n"+
-				"  To run more builds, use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl builds create")+"\n"+
-				"  To build interactively: "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl dev"),
+			"Next steps:\n\n"+
+				"  * See "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("https://www.stainless.com/docs/guides/configure")+" to configure the docs page\n\n"+
+				"  * Use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl builds create")+"\n"+
+				"  * Use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl dev"),
 		),
 	)
 
