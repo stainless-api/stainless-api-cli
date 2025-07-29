@@ -72,7 +72,7 @@ var initCommand = cli.Command{
 		},
 		&cli.BoolFlag{
 			Name:  "download-config",
-			Usage: "Download stainless config to workspace",
+			Usage: "Download Stainless config to workspace",
 			Value: true,
 		},
 		&cli.BoolFlag{
@@ -259,11 +259,11 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 
 	{
 		downloadConfig, err := Confirm(cmd, "download-config",
-			"Download stainless config to workspace?",
-			"Manages stainless config as part of your source code instead of in the cloud",
+			"Download Stainless config to workspace?",
+			"Manages Stainless config as part of your source code instead of in the cloud",
 			true)
 		if err != nil {
-			return fmt.Errorf("failed to get stainless config form: %v", err)
+			return fmt.Errorf("failed to get Stainless config form: %v", err)
 		}
 		if downloadConfig {
 			if err := downloadStainlessConfig(ctx, cc.client, slug, &config); err != nil {
@@ -369,7 +369,7 @@ func nameToSlug(name string) string {
 // downloadStainlessConfig downloads the stainless config file for a project
 func downloadStainlessConfig(ctx context.Context, client stainless.Client, slug string, config *WorkspaceConfig) error {
 	stainlessConfig := "stainless.yml"
-	group := Info("Downloading stainless config...")
+	group := Info("Downloading Stainless config...")
 
 	params := stainless.ProjectConfigGetParams{
 		Project: stainless.String(slug),
