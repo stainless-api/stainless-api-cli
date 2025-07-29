@@ -33,6 +33,21 @@ var workspaceInit = cli.Command{
 			Aliases: []string{"config"},
 			Usage:   "Path to Stainless config file",
 		},
+		&cli.BoolFlag{
+			Name:  "download-config",
+			Usage: "Download stainless config to workspace",
+			Value: true,
+		},
+		&cli.BoolFlag{
+			Name:  "configure-targets",
+			Usage: "Configure target output paths",
+			Value: true,
+		},
+		&cli.BoolFlag{
+			Name:  "download-targets",
+			Usage: "Download configured targets after build completion",
+			Value: true,
+		},
 	},
 	Action:          handleWorkspaceInit,
 	HideHelpCommand: true,
@@ -62,6 +77,7 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 	}
 	configPath := filepath.Join(dir, "stainless-workspace.json")
 	Info("Writing workspace config to: %s", configPath)
+
 	Spacer()
 
 	// Get values from flags or prepare for interactive prompt
@@ -109,27 +125,99 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 		if err := form.Run(); err != nil {
 			return fmt.Errorf("failed to get workspace configuration: %v", err)
 		}
+	}
 
-		group := Success("Configuration summary:")
-		group.Property("project_name", projectName)
-		if openAPISpec != "" {
-			group.Property("openapi_spec", openAPISpec)
-		}
-		if stainlessConfig != "" {
-			group.Property("stainless_config", stainlessConfig)
-		}
+	group := Info("Initializing workspace...")
+	group.Property("project_name", projectName)
+	if openAPISpec != "" {
+		group.Property("openapi_spec", openAPISpec)
+	}
+	if stainlessConfig != "" {
+		group.Property("stainless_config", stainlessConfig)
 	}
 
 	config, err := NewWorkspaceConfig(projectName, openAPISpec, stainlessConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create workspace config: %v", err)
 	}
-
 	if err := config.Save(); err != nil {
 		return fmt.Errorf("failed to save workspace config: %v", err)
 	}
+	group.Success("Workspace initialized")
 
-	Success("Workspace initialized")
+	Spacer()
+
+	if stainlessConfig == "" {
+		downloadConfig, err := Confirm(cmd, "download-config",
+			"Download stainless config to workspace?",
+			"Manages stainless config as part of your source code instead of in the cloud",
+			true)
+		if err != nil {
+			return fmt.Errorf("failed to get stainless config preference: %v", err)
+		}
+
+		if downloadConfig {
+			if err := downloadStainlessConfig(ctx, cc.client, projectName, config); err != nil {
+				return fmt.Errorf("config download failed: %v", err)
+			}
+		}
+	} else {
+		Info("Using existing stainless config: %s", stainlessConfig)
+	}
+
+	Spacer()
+
+	configureTargetsFlag, err := Confirm(cmd, "configure-targets",
+		"Configure targets?",
+		"Set up output paths for SDK generation targets",
+		true)
+	if err != nil {
+		return fmt.Errorf("failed to get target configuration preference: %v", err)
+	}
+	Info("Configuring targets...")
+	var selectedTargets []string
+	if configureTargetsFlag {
+		// Get available targets from project's latest build or use defaults
+		availableTargets := getAvailableTargets(ctx, cc.client, projectName)
+
+		targetForm := huh.NewForm(
+			huh.NewGroup(
+				huh.NewMultiSelect[string]().
+					Title("targets").
+					Description("Select target languages for code generation").
+					Options(availableTargets...).
+					Value(&selectedTargets),
+			),
+		).WithTheme(GetFormTheme(1)).WithKeyMap(GetFormKeyMap())
+
+		if err := targetForm.Run(); err != nil {
+			return fmt.Errorf("failed to get target selection: %v", err)
+		}
+
+		if len(selectedTargets) > 0 {
+			if err := configureTargets(projectName, selectedTargets, config); err != nil {
+				return fmt.Errorf("target configuration failed: %v", err)
+			}
+		}
+	}
+
+	Spacer()
+
+	// Ask about downloading targets after build completion
+	downloadTargets, err := Confirm(cmd, "download-targets",
+		"Download targets after build completion?",
+		"Waits for the latest build to complete and downloads configured targets",
+		true)
+	if err != nil {
+		return fmt.Errorf("failed to get target download preference: %v", err)
+	}
+
+	if downloadTargets && config.Targets != nil && len(config.Targets) > 0 {
+		if err := waitAndPullBuild(ctx, cc.client, projectName, config); err != nil {
+			return fmt.Errorf("build and target download failed: %v", err)
+		}
+	}
+
 	return nil
 }
 

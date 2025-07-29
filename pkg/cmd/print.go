@@ -17,6 +17,11 @@ type Group struct {
 	indent int
 }
 
+func Header(format string, args ...any) Group {
+	fmt.Fprint(os.Stderr, SHeader(format, args...))
+	return Group{indent: 1}
+}
+
 func Info(format string, args ...any) Group {
 	return Group{}.Info(format, args...)
 }
@@ -45,6 +50,11 @@ func Spacer() {
 	fmt.Fprintf(os.Stderr, "\n")
 }
 
+func SHeader(format string, args ...any) string {
+	msg := fmt.Sprintf(format, args...)
+	return fmt.Sprintf("%s\n", aurora.BgCyan(" "+msg+" ").Black().Bold())
+}
+
 func SInfo(indent int, format string, args ...any) string {
 	indentStr := strings.Repeat("  ", indent)
 	msg := fmt.Sprintf(format, args...)
@@ -53,7 +63,7 @@ func SInfo(indent int, format string, args ...any) string {
 
 func SProperty(indent int, key, msg string) string {
 	indentStr := strings.Repeat("  ", indent)
-	return fmt.Sprintf("%s%s %s %s\n", indentStr, aurora.Cyan("✱"), aurora.Cyan(key), msg)
+	return fmt.Sprintf("%s%s %s %s\n", indentStr, aurora.Cyan("✱"), key, aurora.Gray(13, msg))
 }
 
 func SProgress(indent int, format string, args ...any) string {

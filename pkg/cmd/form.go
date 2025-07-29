@@ -19,7 +19,7 @@ func GetFormTheme(indent int) *huh.Theme {
 	t.Form.Base = t.Form.Base.PaddingLeft(indent * 2)
 	t.Group.Title = t.Group.Title.Foreground(gray).PaddingBottom(1)
 
-	t.Focused.Title = t.Focused.Title.Foreground(primaryBright).Bold(true)
+	t.Focused.Title = t.Focused.Title.Bold(true)
 	t.Focused.Base = t.Focused.Base.
 		BorderLeft(false).
 		SetString("\b\b" + lipgloss.NewStyle().Foreground(primaryBright).Render("✱")).
@@ -30,7 +30,7 @@ func GetFormTheme(indent int) *huh.Theme {
 	t.Focused.ErrorIndicator = t.Focused.ErrorIndicator.Foreground(error)
 	t.Focused.ErrorMessage = t.Focused.ErrorMessage.Foreground(error)
 
-	t.Blurred.Title = t.Blurred.Title.Foreground(primary).Bold(true)
+	t.Blurred.Title = t.Blurred.Title.Foreground(grayBright).Bold(true)
 	t.Blurred.Base = t.Blurred.Base.
 		Foreground(grayBright).
 		BorderLeft(false).
