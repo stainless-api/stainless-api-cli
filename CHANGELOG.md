@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.0-alpha.30 (2025-07-29)
+
+Full Changelog: [v0.1.0-alpha.29...v0.1.0-alpha.30](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.29...v0.1.0-alpha.30)
+
+### Features
+
+* add links to dev mode ([579819a](https://github.com/stainless-api/stainless-api-cli/commit/579819a364d8527000472c47923f64efc0dff8d9))
+* don't print project json on init ([f5479c4](https://github.com/stainless-api/stainless-api-cli/commit/f5479c4949ce837ac1cc1b92d4089a5bb15af363))
+* fix spacing between waiting for build and pulling outputs ([472cb40](https://github.com/stainless-api/stainless-api-cli/commit/472cb40d9ffe818d964e3b82ec44e8ec56c7379a))
+* support reading from config.Targets in builds create ([a451f8f](https://github.com/stainless-api/stainless-api-cli/commit/a451f8f1f59588bca5c0b00b4081976b2aa65a59))
+* update target download logic ([3d4a32e](https://github.com/stainless-api/stainless-api-cli/commit/3d4a32e17fee21a647845db2edf52892ecf80d26))
+
+
+### Refactors
+
+* change semantics of downloadStainlessConfig ([2748f4b](https://github.com/stainless-api/stainless-api-cli/commit/2748f4bfd4e7c09075046abb11e7c8ec4021622b))
+* simplify config threading ([3e3874a](https://github.com/stainless-api/stainless-api-cli/commit/3e3874aa6536e5243dc6409b27ac487dd38a4957))
+
 ## 0.1.0-alpha.29 (2025-07-29)
 
 Full Changelog: [v0.1.0-alpha.28...v0.1.0-alpha.29](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.28...v0.1.0-alpha.29)
