@@ -281,14 +281,9 @@ func findStainlessConfig() string {
 }
 
 func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {
-	// Look for workspace configuration
-	var config WorkspaceConfig
-	found, err := config.Find()
-	if err != nil {
-		return fmt.Errorf("error searching for workspace config: %v", err)
-	}
+	cc := getAPICommandContext(cmd)
 
-	if !found {
+	if cc.workspaceConfig.ConfigPath == "" {
 		group := Warn("No workspace configuration found")
 		group.Info("Run 'stl workspace init' to initialize a workspace in this directory.")
 		return nil
@@ -301,36 +296,36 @@ func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	// Get relative path from cwd to config file
-	relPath, err := filepath.Rel(cwd, config.ConfigPath)
+	relPath, err := filepath.Rel(cwd, cc.workspaceConfig.ConfigPath)
 	if err != nil {
-		relPath = config.ConfigPath // fallback to absolute path
+		relPath = cc.workspaceConfig.ConfigPath // fallback to absolute path
 	}
 
 	group := Success("Workspace configuration found")
 	group.Property("path", relPath)
-	group.Property("project", config.Project)
+	group.Property("project", cc.workspaceConfig.Project)
 
-	if config.OpenAPISpec != "" {
+	if cc.workspaceConfig.OpenAPISpec != "" {
 		// Check if OpenAPI spec file exists
-		configDir := filepath.Dir(config.ConfigPath)
-		specPath := filepath.Join(configDir, config.OpenAPISpec)
+		configDir := filepath.Dir(cc.workspaceConfig.ConfigPath)
+		specPath := filepath.Join(configDir, cc.workspaceConfig.OpenAPISpec)
 		if _, err := os.Stat(specPath); err == nil {
-			group.Property("openapi_spec", config.OpenAPISpec)
+			group.Property("openapi_spec", cc.workspaceConfig.OpenAPISpec)
 		} else {
-			group.Property("openapi_spec", config.OpenAPISpec+" (not found)")
+			group.Property("openapi_spec", cc.workspaceConfig.OpenAPISpec+" (not found)")
 		}
 	} else {
 		group.Property("openapi_spec", "(not configured)")
 	}
 
-	if config.StainlessConfig != "" {
+	if cc.workspaceConfig.StainlessConfig != "" {
 		// Check if Stainless config file exists
-		configDir := filepath.Dir(config.ConfigPath)
-		stainlessPath := filepath.Join(configDir, config.StainlessConfig)
+		configDir := filepath.Dir(cc.workspaceConfig.ConfigPath)
+		stainlessPath := filepath.Join(configDir, cc.workspaceConfig.StainlessConfig)
 		if _, err := os.Stat(stainlessPath); err == nil {
-			group.Property("stainless_config", config.StainlessConfig)
+			group.Property("stainless_config", cc.workspaceConfig.StainlessConfig)
 		} else {
-			group.Property("stainless_config", config.StainlessConfig+" (not found)")
+			group.Property("stainless_config", cc.workspaceConfig.StainlessConfig+" (not found)")
 		}
 	} else {
 		group.Property("stainless_config", "(not configured)")
