@@ -66,11 +66,11 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 
 	buildID := cmd.String("build-id")
 	if buildID == "" {
-		latestBuildID, err := getLatestBuildID(ctx, cc.client, cmd.String("project"), cmd.String("branch"))
+		latestBuild, err := getLatestBuild(ctx, cc.client, cmd.String("project"), cmd.String("branch"))
 		if err != nil {
 			return fmt.Errorf("failed to get latest build: %v", err)
 		}
-		buildID = latestBuildID
+		buildID = latestBuild.ID
 	}
 
 	params := stainless.BuildTargetOutputGetParams{
@@ -95,9 +95,9 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 	return nil
 }
 
-func getLatestBuildID(ctx context.Context, client stainless.Client, project, branch string) (string, error) {
+func getLatestBuild(ctx context.Context, client stainless.Client, project, branch string) (*stainless.BuildObject, error) {
 	if project == "" {
-		return "", fmt.Errorf("project is required when build-id is not provided")
+		return nil, fmt.Errorf("project is required when build-id is not provided")
 	}
 
 	params := stainless.BuildListParams{
@@ -113,12 +113,12 @@ func getLatestBuildID(ctx context.Context, client stainless.Client, project, bra
 		params,
 	)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if len(res.Data) == 0 {
-		return "", fmt.Errorf("no builds found for project %s", project)
+		return nil, fmt.Errorf("no builds found for project %s", project)
 	}
 
-	return res.Data[0].ID, nil
+	return &res.Data[0], nil
 }

@@ -7,7 +7,6 @@ import (
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
-	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/stainless-api/stainless-api-go"
 )
@@ -265,34 +264,6 @@ func ViewHelpMenu() string {
 	return strings.Join(parts, sepStyle.Render(" • "))
 }
 
-// buildTargetOptions creates huh options from the list of configured targets
-func buildTargetOptions(configuredTargets []stainless.Target) []huh.Option[string] {
-	var options []huh.Option[string]
-
-	targetDisplayNames := map[stainless.Target]string{
-		"typescript": "TypeScript",
-		"python":     "Python",
-		"go":         "Go",
-		"java":       "Java",
-		"kotlin":     "Kotlin",
-		"ruby":       "Ruby",
-		"terraform":  "Terraform",
-		"cli":        "CLI",
-		"php":        "PHP",
-		"csharp":     "C#",
-		"node":       "Node.js",
-	}
-
-	for _, target := range configuredTargets {
-		displayName := targetDisplayNames[target]
-		if displayName == "" {
-			displayName = string(target)
-		}
-		options = append(options, huh.NewOption(displayName, string(target)))
-	}
-
-	return options
-}
 
 // renderMarkdown renders markdown content using glamour
 func renderMarkdown(content string) string {

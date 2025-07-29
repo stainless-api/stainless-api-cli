@@ -175,9 +175,9 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("project name is required")
 	}
 
-	configuredTargets := []stainless.Target{
-		"typescript", "python", "go", "java", "kotlin",
-		"ruby", "terraform", "cli", "php", "csharp", "node",
+	cc, err := getAPICommandContextWithWorkspaceDefaults(cmd)
+	if err != nil {
+		return err
 	}
 
 	gitUser, err := getGitUsername()
@@ -210,7 +210,13 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 
 	// Phase 2: Language selection
 	var selectedTargets []string
-	targetOptions := buildTargetOptions(configuredTargets)
+
+	// Try to find workspace config for intelligent defaults
+	var config WorkspaceConfig
+	config.Find()
+
+	targetInfo := getAvailableTargetInfo(ctx, cc.client, projectName, config)
+	targetOptions := targetInfoToOptions(targetInfo)
 
 	targetForm := huh.NewForm(
 		huh.NewGroup(
@@ -236,12 +242,6 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 	targets := make([]stainless.Target, len(selectedTargets))
 	for i, target := range selectedTargets {
 		targets[i] = stainless.Target(target)
-	}
-
-	// Get API command context for the build
-	cc, err := getAPICommandContextWithWorkspaceDefaults(cmd)
-	if err != nil {
-		return err
 	}
 
 	// Phase 3: Start build and monitor progress in a loop

@@ -39,11 +39,6 @@ var workspaceInit = cli.Command{
 			Value: true,
 		},
 		&cli.BoolFlag{
-			Name:  "configure-targets",
-			Usage: "Configure target output paths",
-			Value: true,
-		},
-		&cli.BoolFlag{
 			Name:  "download-targets",
 			Usage: "Download configured targets after build completion",
 			Value: true,
@@ -157,7 +152,7 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		if downloadConfig {
-			if err := downloadStainlessConfig(ctx, cc.client, projectName, config); err != nil {
+			if err := downloadStainlessConfig(ctx, cc.client, projectName, &config); err != nil {
 				return fmt.Errorf("config download failed: %v", err)
 			}
 		}
@@ -167,7 +162,7 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 
 	Spacer()
 
-	configureTargetsFlag, err := Confirm(cmd, "configure-targets",
+	configureTargetsFlag, err := Confirm(cmd, "download-targets",
 		"Configure targets?",
 		"Set up output paths for SDK generation targets",
 		true)
@@ -177,8 +172,9 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 	Info("Configuring targets...")
 	var selectedTargets []string
 	if configureTargetsFlag {
-		// Get available targets from project's latest build or use defaults
-		availableTargets := getAvailableTargets(ctx, cc.client, projectName)
+		// Get available targets from project's latest build with workspace config for defaults
+		targetInfo := getAvailableTargetInfo(ctx, cc.client, projectName, config)
+		availableTargets := targetInfoToOptions(targetInfo)
 
 		targetForm := huh.NewForm(
 			huh.NewGroup(
@@ -195,7 +191,7 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		if len(selectedTargets) > 0 {
-			if err := configureTargets(projectName, selectedTargets, config); err != nil {
+			if err := configureTargets(projectName, selectedTargets, &config); err != nil {
 				return fmt.Errorf("target configuration failed: %v", err)
 			}
 		}
@@ -203,16 +199,7 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 
 	Spacer()
 
-	// Ask about downloading targets after build completion
-	downloadTargets, err := Confirm(cmd, "download-targets",
-		"Download targets after build completion?",
-		"Waits for the latest build to complete and downloads configured targets",
-		true)
-	if err != nil {
-		return fmt.Errorf("failed to get target download preference: %v", err)
-	}
-
-	if downloadTargets && config.Targets != nil && len(config.Targets) > 0 {
+	if config.Targets != nil && len(config.Targets) > 0 {
 		if err := waitAndPullBuild(ctx, cc.client, projectName, config); err != nil {
 			return fmt.Errorf("build and target download failed: %v", err)
 		}

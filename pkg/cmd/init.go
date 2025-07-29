@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -87,7 +88,8 @@ var initCommand = cli.Command{
 func handleInit(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 
-	availableTargets := getAvailableTargets(ctx, cc.client, "")
+	targetInfo := getAvailableTargetInfo(ctx, cc.client, "", WorkspaceConfig{})
+	availableTargets := targetInfoToOptions(targetInfo)
 
 	org := cmd.String("org")
 	projectName := cmd.String("display-name")
@@ -218,7 +220,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	group.Success("Project created successfully")
 	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
 
-	var config *WorkspaceConfig
+	var config WorkspaceConfig
 	{
 		workspaceInit, err := Confirm(cmd, "workspace-init",
 			"Initialize workspace configuration?",
@@ -264,7 +266,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 			return fmt.Errorf("failed to get stainless config form: %v", err)
 		}
 		if downloadConfig {
-			if err := downloadStainlessConfig(ctx, cc.client, slug, config); err != nil {
+			if err := downloadStainlessConfig(ctx, cc.client, slug, &config); err != nil {
 				return fmt.Errorf("project created but config download failed: %v", err)
 			}
 		}
@@ -283,7 +285,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		if downloadTargets && len(selectedTargets) > 0 {
-			if err := configureTargets(slug, selectedTargets, config); err != nil {
+			if err := configureTargets(slug, selectedTargets, &config); err != nil {
 				return fmt.Errorf("target configuration failed: %v", err)
 			}
 		}
@@ -293,10 +295,8 @@ exit:
 	Spacer()
 
 	// Wait for build and pull outputs if workspace is configured
-	if config != nil {
-		if err := waitAndPullBuild(ctx, cc.client, slug, config); err != nil {
-			return fmt.Errorf("build and pull failed: %v", err)
-		}
+	if err := waitAndPullBuild(ctx, cc.client, slug, config); err != nil {
+		return fmt.Errorf("build and pull failed: %v", err)
 	}
 
 	Spacer()
@@ -483,23 +483,22 @@ func configureTargets(slug string, selectedTargets []string, config *WorkspaceCo
 }
 
 // waitAndPullBuild waits for the latest build to complete and pulls configured targets
-func waitAndPullBuild(ctx context.Context, client stainless.Client, slug string, config *WorkspaceConfig) error {
+func waitAndPullBuild(ctx context.Context, client stainless.Client, slug string, config WorkspaceConfig) error {
 	waitGroup := Info("Waiting for build to complete...")
 
 	// Try to get the latest build for this project (which should have been created automatically)
-	buildID, err := getLatestBuildID(ctx, client, slug, "main")
+	build, err := getLatestBuild(ctx, client, slug, "main")
 	if err != nil {
 		return fmt.Errorf("expected build to exist after project creation, but none found: %v", err)
 	}
 
-	waitGroup.Property("build_id", buildID)
-
-	buildRes, err := waitForBuildCompletion(ctx, client, buildID, &waitGroup)
+	waitGroup.Property("build_id", build.ID)
+	build, err = waitForBuildCompletion(ctx, client, build.ID, &waitGroup)
 	if err != nil {
 		return err
 	}
 
-	if config != nil && config.Targets != nil && len(config.Targets) > 0 {
+	if config.Targets != nil && len(config.Targets) > 0 {
 		pullGroup := Info("Pulling build outputs...")
 
 		// Create target paths map from workspace config
@@ -508,7 +507,7 @@ func waitAndPullBuild(ctx context.Context, client stainless.Client, slug string,
 			targetPaths[targetName] = targetConfig.OutputPath
 		}
 
-		if err := pullBuildOutputs(ctx, client, *buildRes, targetPaths, &pullGroup); err != nil {
+		if err := pullBuildOutputs(ctx, client, *build, targetPaths, &pullGroup); err != nil {
 			pullGroup.Error("Failed to pull outputs: %v", err)
 		}
 	}
@@ -519,15 +518,15 @@ func waitAndPullBuild(ctx context.Context, client stainless.Client, slug string,
 // TargetInfo represents a target with its display name and default selection
 type TargetInfo struct {
 	DisplayName     string
-	Value           string
+	Name            string
 	DefaultSelected bool
 }
 
-// getAllTargetInfo returns all available targets with their display names and defaults
+// getAllTargetInfo returns all available targets with their display names
 func getAllTargetInfo() []TargetInfo {
 	return []TargetInfo{
-		{"TypeScript", "typescript", true},
-		{"Python", "python", true},
+		{"TypeScript", "typescript", false},
+		{"Python", "python", false},
 		{"Node.js", "node", false},
 		{"Go", "go", false},
 		{"Java", "java", false},
@@ -540,59 +539,60 @@ func getAllTargetInfo() []TargetInfo {
 	}
 }
 
-// createTargetOptions creates huh.Options from TargetInfo slice
-func createTargetOptions(targets []TargetInfo) []huh.Option[string] {
+// targetInfoToOptions converts TargetInfo slice to huh.Options
+func targetInfoToOptions(targets []TargetInfo) []huh.Option[string] {
 	options := make([]huh.Option[string], len(targets))
 	for i, target := range targets {
-		options[i] = huh.NewOption(target.DisplayName, target.Value).Selected(target.DefaultSelected)
+		options[i] = huh.NewOption(target.DisplayName, target.Name).Selected(target.DefaultSelected)
 	}
 	return options
 }
 
-// getAvailableTargets gets available targets from the project's latest build, with fallback to defaults
-func getAvailableTargets(ctx context.Context, client stainless.Client, projectName string) []huh.Option[string] {
-	allTargets := getAllTargetInfo()
+// getAvailableTargetInfo gets available targets from the project's latest build with workspace config for default selection
+func getAvailableTargetInfo(ctx context.Context, client stainless.Client, projectName string, config WorkspaceConfig) []TargetInfo {
+	targetInfo := getAllTargetInfo()
 
-	// Try to get targets from latest build
-	if projectName == "" {
-		return createTargetOptions(allTargets)
-	}
-
-	buildID, err := getLatestBuildID(ctx, client, projectName, "main")
-	if err != nil {
-		// No build found, return defaults
-		return createTargetOptions(allTargets)
-	}
-
-	buildRes, err := client.Builds.Get(ctx, buildID)
-	if err != nil {
-		// Can't get build, return defaults
-		return createTargetOptions(allTargets)
-	}
-
-	// Extract target names from build
-	buildTargets := getTargetInfo(*buildRes)
-	if len(buildTargets) == 0 {
-		return createTargetOptions(allTargets)
-	}
-
-	// Create map of build target names for quick lookup
-	buildTargetMap := make(map[string]bool)
-	for _, target := range buildTargets {
-		buildTargetMap[target.name] = true
-	}
-
-	// Filter to only targets that exist in the build
-	var availableTargets []TargetInfo
-	for _, target := range allTargets {
-		if buildTargetMap[target.Value] {
-			availableTargets = append(availableTargets, target)
+	for targetName := range config.Targets {
+		for idx, target := range targetInfo {
+			if targetName == target.Name {
+				targetInfo[idx].DefaultSelected = true
+			}
 		}
 	}
 
-	// If we found targets from build, use them; otherwise fallback to all targets
-	if len(availableTargets) > 0 {
-		return createTargetOptions(availableTargets)
+	// If there is no configured targets, just set python and typescript to be true.
+	if len(config.Targets) == 0 {
+		for idx, target := range targetInfo {
+			if "typescript" == target.Name || "python" == target.Name {
+				targetInfo[idx].DefaultSelected = true
+			}
+		}
 	}
-	return createTargetOptions(allTargets)
+
+	// Try to get targets from latest build
+	if projectName == "" {
+		return targetInfo
+	}
+	build, err := getLatestBuild(ctx, client, projectName, "main")
+	if err != nil {
+		return targetInfo
+	}
+	buildTargets := getBuildTargetInfo(*build)
+	if len(buildTargets) == 0 {
+		return targetInfo
+	}
+
+	return slices.DeleteFunc(targetInfo, func(item TargetInfo) bool {
+		for name := range config.Targets {
+			if name == item.Name {
+				return false
+			}
+		}
+		for _, target := range buildTargets {
+			if target.name == item.Name {
+				return false
+			}
+		}
+		return true
+	})
 }
