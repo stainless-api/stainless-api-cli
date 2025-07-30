@@ -16,6 +16,7 @@ import (
 type Group struct {
 	prefix string
 	indent int
+	silent bool
 }
 
 func Header(format string, args ...any) Group {
@@ -96,32 +97,44 @@ func SSuccess(indent int, format string, args ...any) string {
 }
 
 func (g Group) Info(format string, args ...any) Group {
-	fmt.Fprint(os.Stderr, SInfo(g.indent, format, args...))
+	if !g.silent {
+		fmt.Fprint(os.Stderr, SInfo(g.indent, format, args...))
+	}
 	return Group{prefix: "i", indent: g.indent + 1}
 }
 
 func (g Group) Property(key, msg string) Group {
-	fmt.Fprint(os.Stderr, SProperty(g.indent, key, msg))
+	if !g.silent {
+		fmt.Fprint(os.Stderr, SProperty(g.indent, key, msg))
+	}
 	return Group{prefix: "✱", indent: g.indent + 1}
 }
 
 func (g Group) Progress(format string, args ...any) Group {
-	fmt.Fprint(os.Stderr, SProgress(g.indent, format, args...))
+	if !g.silent {
+		fmt.Fprint(os.Stderr, SProgress(g.indent, format, args...))
+	}
 	return Group{prefix: "✱", indent: g.indent + 1}
 }
 
 func (g Group) Error(format string, args ...any) Group {
-	fmt.Fprint(os.Stderr, SError(g.indent, format, args...))
+	if !g.silent {
+		fmt.Fprint(os.Stderr, SError(g.indent, format, args...))
+	}
 	return Group{prefix: "✗", indent: g.indent + 1}
 }
 
 func (g Group) Warn(format string, args ...any) Group {
-	fmt.Fprint(os.Stderr, SWarn(g.indent, format, args...))
+	if !g.silent {
+		fmt.Fprint(os.Stderr, SWarn(g.indent, format, args...))
+	}
 	return Group{prefix: "!", indent: g.indent + 1}
 }
 
 func (g Group) Success(format string, args ...any) Group {
-	fmt.Fprint(os.Stderr, SSuccess(g.indent, format, args...))
+	if !g.silent {
+		fmt.Fprint(os.Stderr, SSuccess(g.indent, format, args...))
+	}
 	return Group{prefix: "✓", indent: g.indent + 1}
 }
 
