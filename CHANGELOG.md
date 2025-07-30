@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.0-alpha.32 (2025-07-30)
+
+Full Changelog: [v0.1.0-alpha.31...v0.1.0-alpha.32](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.31...v0.1.0-alpha.32)
+
+### Features
+
+* add download to dev mode ([6532712](https://github.com/stainless-api/stainless-api-cli/commit/65327127654bf67a804aeb141cfec4a4017c183c))
+
+
+### Bug Fixes
+
+* remove debug logging ([87d0f51](https://github.com/stainless-api/stainless-api-cli/commit/87d0f51c63f89ca42dcd4731ca872faeecf30e01))
+
 ## 0.1.0-alpha.31 (2025-07-30)
 
 Full Changelog: [v0.1.0-alpha.30...v0.1.0-alpha.31](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.30...v0.1.0-alpha.31)
