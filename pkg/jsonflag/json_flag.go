@@ -2,7 +2,6 @@ package jsonflag
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 
