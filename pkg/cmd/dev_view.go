@@ -136,7 +136,7 @@ var parts = []struct {
 				languages := getBuildLanguages(m.build)
 				// Target rows with colors
 				for _, target := range languages {
-					pipeline := ViewBuildPipeline(m.build, target)
+					pipeline := ViewBuildPipeline(m.build, target, m.downloads)
 					langStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true)
 					s.WriteString(fmt.Sprintf("%s %s\n", langStyle.Render(fmt.Sprintf("%-13s", string(target))), pipeline))
 				}
@@ -169,7 +169,10 @@ var parts = []struct {
 	},
 }
 
-func ViewBuildPipeline(build *stainless.BuildObject, target stainless.Target) string {
+func ViewBuildPipeline(build *stainless.BuildObject, target stainless.Target, downloads map[stainless.Target]struct {
+	status string
+	path   string
+}) string {
 	buildTarget := getBuildTarget(build, target)
 	if buildTarget == nil {
 		return ""
@@ -189,6 +192,18 @@ func ViewBuildPipeline(build *stainless.BuildObject, target stainless.Target) st
 			pipeline.WriteString(" → ")
 		}
 		pipeline.WriteString(symbol + " " + Hyperlink(url, step))
+	}
+
+	if download, ok := downloads[target]; ok {
+		if download.status == "not started" {
+			// do nothing
+		} else if download.status == "started" {
+			pipeline.WriteString(" → " + "downloading")
+		} else if download.status == "completed" {
+			pipeline.WriteString(" → " + "downloaded")
+		} else {
+			pipeline.WriteString(" → " + download.status)
+		}
 	}
 
 	return pipeline.String()

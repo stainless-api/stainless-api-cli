@@ -26,7 +26,11 @@ type BuildModel struct {
 	build       *stainless.BuildObject
 	branch      string
 	diagnostics []stainless.BuildDiagnosticListResponse
-	view        string
+	downloads   map[stainless.Target]struct {
+		status string
+		path   string
+	}
+	view string
 
 	cc          *apiCommandContext
 	ctx         context.Context
@@ -38,6 +42,7 @@ type tickMsg time.Time
 type fetchBuildMsg *stainless.BuildObject
 type fetchDiagnosticsMsg []stainless.BuildDiagnosticListResponse
 type errorMsg error
+type downloadMsg stainless.Target
 type triggerNewBuildMsg struct{}
 
 func NewBuildModel(cc *apiCommandContext, ctx context.Context, branch string, fn func() (*stainless.BuildObject, error)) BuildModel {
@@ -77,6 +82,11 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, tea.Quit)
 		}
 
+	case downloadMsg:
+		download := m.downloads[stainless.Target(msg)]
+		download.status = "completed"
+		m.downloads[stainless.Target(msg)] = download
+
 	case tickMsg:
 		if m.build != nil {
 			cmds = append(cmds, m.fetchBuildStatus())
@@ -89,6 +99,19 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case fetchBuildMsg:
 		if m.build == nil {
 			m.build = msg
+			m.downloads = make(map[stainless.Target]struct {
+				status string
+				path   string
+			})
+			for targetName, targetConfig := range m.cc.workspaceConfig.Targets {
+				m.downloads[stainless.Target(targetName)] = struct {
+					status string
+					path   string
+				}{
+					status: "not started",
+					path:   targetConfig.OutputPath,
+				}
+			}
 			cmds = append(cmds, m.updateView("header"))
 		}
 
@@ -96,6 +119,25 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !m.isCompleted && isCommitStepsCompleted(m.build) {
 			m.isCompleted = true
 			cmds = append(cmds, m.fetchDiagnostics())
+		}
+		languages := getBuildLanguages(m.build)
+		for _, target := range languages {
+			buildTarget := getBuildTarget(m.build, target)
+			if buildTarget == nil {
+				continue
+			}
+			commitUnion := getStepUnion(buildTarget, "commit")
+			if commitUnion == nil {
+				continue
+			}
+			status, _, _ := extractStepInfo(commitUnion)
+			if status == "completed" {
+				if download, ok := m.downloads[target]; ok && download.status == "not started" {
+					download.status = "started"
+					cmds = append(cmds, m.downloadTarget(target))
+					m.downloads[target] = download
+				}
+			}
 		}
 
 	case fetchDiagnosticsMsg:
@@ -109,6 +151,32 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, tea.Quit)
 	}
 	return m, tea.Sequence(cmds...)
+}
+
+func (m BuildModel) downloadTarget(target stainless.Target) tea.Cmd {
+	return func() tea.Msg {
+		if m.build == nil {
+			return errorMsg(fmt.Errorf("no current build to download target from"))
+		}
+		params := stainless.BuildTargetOutputGetParams{
+			BuildID: m.build.ID,
+			Target:  stainless.BuildTargetOutputGetParamsTarget(target),
+			Type:    "source",
+			Output:  "git",
+		}
+		outputRes, err := m.cc.client.Builds.TargetOutputs.Get(
+			context.TODO(),
+			params,
+		)
+		if err != nil {
+			return errorMsg(err)
+		}
+		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.downloads[target].path, &Group{silent: true})
+		if err != nil {
+			return errorMsg(err)
+		}
+		return downloadMsg(target)
+	}
 }
 
 func (m BuildModel) fetchBuildStatus() tea.Cmd {
