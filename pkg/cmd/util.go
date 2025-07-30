@@ -197,6 +197,19 @@ func (c *apiCommandContext) GetWorkspaceTargetPaths() map[string]string {
 	return targetPaths
 }
 
+// applyFileFlag reads a file from a flag and mutates the JSON body
+func applyFileFlag(cmd *cli.Command, flagName, jsonPath string) error {
+	filePath := cmd.String(flagName)
+	if filePath != "" {
+		content, err := os.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("failed to read %s file: %v", flagName, err)
+		}
+		jsonflag.Mutate(jsonflag.Body, jsonPath, string(content))
+	}
+	return nil
+}
+
 func serializeQuery(params []byte) url.Values {
 	serialized := url.Values{}
 
