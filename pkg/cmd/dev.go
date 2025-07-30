@@ -250,10 +250,7 @@ var devCommand = cli.Command{
 }
 
 func runDevMode(ctx context.Context, cmd *cli.Command) error {
-	cc, err := getAPICommandContextWithWorkspaceDefaults(cmd)
-	if err != nil {
-		return err
-	}
+	cc := getAPICommandContext(cmd)
 
 	gitUser, err := getGitUsername()
 	if err != nil {

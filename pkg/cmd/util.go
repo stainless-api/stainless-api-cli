@@ -5,14 +5,17 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"golang.org/x/term"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"path/filepath"
+	"slices"
 	"strings"
+
+	"golang.org/x/term"
 
 	"github.com/logrusorgru/aurora/v4"
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
@@ -172,9 +175,35 @@ func (c apiCommandContext) AsMiddleware() option.Middleware {
 func getAPICommandContext(cmd *cli.Command) *apiCommandContext {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 
-	// Load workspace config if available
 	var workspaceConfig WorkspaceConfig
-	workspaceConfig.Find() // ConfigPath will be set if found
+	found, _ := workspaceConfig.Find()
+
+	if found {
+		names := []string{}
+		for _, flag := range cmd.VisibleFlags() {
+			names = append(names, flag.Names()...)
+		}
+
+		config := workspaceConfig
+		// Get the directory containing the workspace config file
+		configDir := filepath.Dir(config.ConfigPath)
+
+		if slices.Contains(names, "openapi-spec") && !cmd.IsSet("openapi-spec") && config.OpenAPISpec != "" {
+			// Set OpenAPI spec path relative to workspace config directory
+			openAPIPath := filepath.Join(configDir, config.OpenAPISpec)
+			cmd.Set("openapi-spec", openAPIPath)
+		}
+
+		if slices.Contains(names, "stainless-config") && !cmd.IsSet("stainless-config") && config.StainlessConfig != "" {
+			// Set Stainless config path relative to workspace config directory
+			stainlessConfigPath := filepath.Join(configDir, config.StainlessConfig)
+			cmd.Set("stainless-config", stainlessConfigPath)
+		}
+
+		if slices.Contains(names, "project") && !cmd.IsSet("project") && config.Project != "" {
+			cmd.Set("project", config.Project)
+		}
+	}
 
 	return &apiCommandContext{client, cmd, workspaceConfig}
 }
