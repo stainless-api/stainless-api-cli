@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.0-alpha.31 (2025-07-30)
+
+Full Changelog: [v0.1.0-alpha.30...v0.1.0-alpha.31](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.30...v0.1.0-alpha.31)
+
+### Features
+
+* improve autofill project name logic ([6adcbcd](https://github.com/stainless-api/stainless-api-cli/commit/6adcbcddc9679f89c3da93d23e8315a8fb6437be))
+
+
+### Bug Fixes
+
+* remove unused os import ([a8d8227](https://github.com/stainless-api/stainless-api-cli/commit/a8d8227e64f46c5237da2a4dedcebab389d8ad02))
+
+
+### Refactors
+
+* clean up file flags ([7248111](https://github.com/stainless-api/stainless-api-cli/commit/72481118d3fc5620bd91dfea8e57849c97caffde))
+
 ## 0.1.0-alpha.30 (2025-07-29)
 
 Full Changelog: [v0.1.0-alpha.29...v0.1.0-alpha.30](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.29...v0.1.0-alpha.30)
