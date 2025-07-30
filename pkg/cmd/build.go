@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 
@@ -437,10 +436,7 @@ var buildsCompare = cli.Command{
 }
 
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
-	cc, err := getAPICommandContextWithWorkspaceDefaults(cmd)
-	if err != nil {
-		return err
-	}
+	cc := getAPICommandContext(cmd)
 
 	// Handle file flags by reading files and mutating JSON body
 	if err := applyFileFlag(cmd, "openapi-spec", "revision.openapi\\.yml.content"); err != nil {
@@ -760,38 +756,4 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 
 	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
 	return nil
-}
-
-// getAPICommandWithWorkspaceDefaults applies workspace defaults before initializing API command
-func getAPICommandContextWithWorkspaceDefaults(cmd *cli.Command) (*apiCommandContext, error) {
-	names := []string{}
-	for _, flag := range cmd.VisibleFlags() {
-		names = append(names, flag.Names()...)
-	}
-
-	cc := getAPICommandContext(cmd)
-
-	// Use cached workspace config if available
-	if cc.workspaceConfig.ConfigPath != "" {
-		config := cc.workspaceConfig
-		// Get the directory containing the workspace config file
-		configDir := filepath.Dir(config.ConfigPath)
-
-		if slices.Contains(names, "openapi-spec") && !cmd.IsSet("openapi-spec") && config.OpenAPISpec != "" {
-			// Set OpenAPI spec path relative to workspace config directory
-			openAPIPath := filepath.Join(configDir, config.OpenAPISpec)
-			cmd.Set("openapi-spec", openAPIPath)
-		}
-
-		if slices.Contains(names, "stainless-config") && !cmd.IsSet("stainless-config") && config.StainlessConfig != "" {
-			// Set Stainless config path relative to workspace config directory
-			stainlessConfigPath := filepath.Join(configDir, config.StainlessConfig)
-			cmd.Set("stainless-config", stainlessConfigPath)
-		}
-
-		if slices.Contains(names, "project") && !cmd.IsSet("project") && config.Project != "" {
-			cmd.Set("project", config.Project)
-		}
-	}
-	return cc, nil
 }
