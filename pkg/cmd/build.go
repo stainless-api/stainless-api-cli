@@ -777,15 +777,9 @@ func getAPICommandContextWithWorkspaceDefaults(cmd *cli.Command) (*apiCommandCon
 		// Get the directory containing the workspace config file
 		configDir := filepath.Dir(config.ConfigPath)
 
-		println("WTF " + strings.Join(names, ","))
 		if slices.Contains(names, "openapi-spec") && !cmd.IsSet("openapi-spec") && config.OpenAPISpec != "" {
 			// Set OpenAPI spec path relative to workspace config directory
 			openAPIPath := filepath.Join(configDir, config.OpenAPISpec)
-			println()
-			println(openAPIPath)
-			println()
-			println()
-			println()
 			cmd.Set("openapi-spec", openAPIPath)
 		}
 
