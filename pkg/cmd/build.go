@@ -670,7 +670,7 @@ func pullOutput(output, url, ref, targetDir string, targetGroup *Group) error {
 
 		{
 			targetGroup.Property("fetching from", url)
-			cmd := exec.Command("git", "-C", targetDir, "fetch", url)
+			cmd := exec.Command("git", "-C", targetDir, "fetch", url, ref)
 			var stderr bytes.Buffer
 			cmd.Stdout = nil
 			cmd.Stderr = &stderr
