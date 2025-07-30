@@ -240,21 +240,15 @@ var buildsCreate = cli.Command{
 				Path: "revision",
 			},
 		},
-		&jsonflag.JSONFileFlag{
+		&cli.StringFlag{
 			Name:    "openapi-spec",
 			Aliases: []string{"oas"},
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "revision.openapi\\.yml.content",
-			},
+			Usage:   "Path to OpenAPI spec file",
 		},
-		&jsonflag.JSONFileFlag{
+		&cli.StringFlag{
 			Name:    "stainless-config",
 			Aliases: []string{"config"},
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "revision.openapi\\.stainless\\.yml.content",
-			},
+			Usage:   "Path to Stainless config file",
 		},
 		&cli.BoolFlag{
 			Name:  "wait",
@@ -445,6 +439,14 @@ var buildsCompare = cli.Command{
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	cc, err := getAPICommandContextWithWorkspaceDefaults(cmd)
 	if err != nil {
+		return err
+	}
+
+	// Handle file flags by reading files and mutating JSON body
+	if err := applyFileFlag(cmd, "openapi-spec", "revision.openapi\\.yml.content"); err != nil {
+		return err
+	}
+	if err := applyFileFlag(cmd, "stainless-config", "revision.openapi\\.stainless\\.yml.content"); err != nil {
 		return err
 	}
 
@@ -762,6 +764,11 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 
 // getAPICommandWithWorkspaceDefaults applies workspace defaults before initializing API command
 func getAPICommandContextWithWorkspaceDefaults(cmd *cli.Command) (*apiCommandContext, error) {
+	names := []string{}
+	for _, flag := range cmd.VisibleFlags() {
+		names = append(names, flag.Names()...)
+	}
+
 	cc := getAPICommandContext(cmd)
 
 	// Use cached workspace config if available
@@ -770,28 +777,22 @@ func getAPICommandContextWithWorkspaceDefaults(cmd *cli.Command) (*apiCommandCon
 		// Get the directory containing the workspace config file
 		configDir := filepath.Dir(config.ConfigPath)
 
-		names := cmd.FlagNames()
-
-		if (slices.Contains(names, "openapi-spec") || slices.Contains(names, "oas")) &&
-			!cmd.IsSet("openapi-spec") && !cmd.IsSet("oas") && config.OpenAPISpec != "" {
-			// Resolve OpenAPI spec path relative to workspace config directory
+		println("WTF " + strings.Join(names, ","))
+		if slices.Contains(names, "openapi-spec") && !cmd.IsSet("openapi-spec") && config.OpenAPISpec != "" {
+			// Set OpenAPI spec path relative to workspace config directory
 			openAPIPath := filepath.Join(configDir, config.OpenAPISpec)
-			content, err := os.ReadFile(openAPIPath)
-			if err != nil {
-				return nil, fmt.Errorf("failed to load OpenAPI spec from workspace config: %v", err)
-			}
-			jsonflag.Mutate(jsonflag.Body, "revision.openapi\\.yml.content", string(content))
+			println()
+			println(openAPIPath)
+			println()
+			println()
+			println()
+			cmd.Set("openapi-spec", openAPIPath)
 		}
 
-		if (slices.Contains(names, "stainless-config") || slices.Contains(names, "config")) &&
-			!cmd.IsSet("stainless-config") && !cmd.IsSet("config") && config.StainlessConfig != "" {
-			// Resolve Stainless config path relative to workspace config directory
+		if slices.Contains(names, "stainless-config") && !cmd.IsSet("stainless-config") && config.StainlessConfig != "" {
+			// Set Stainless config path relative to workspace config directory
 			stainlessConfigPath := filepath.Join(configDir, config.StainlessConfig)
-			content, err := os.ReadFile(stainlessConfigPath)
-			if err != nil {
-				return nil, fmt.Errorf("failed to load Stainless config from workspace config: %v", err)
-			}
-			jsonflag.Mutate(jsonflag.Body, "revision.openapi\\.stainless\\.yml.content", string(content))
+			cmd.Set("stainless-config", stainlessConfigPath)
 		}
 
 		if slices.Contains(names, "project") && !cmd.IsSet("project") && config.Project != "" {

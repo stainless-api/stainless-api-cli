@@ -242,60 +242,6 @@ func (v *jsonDateValue) IsBoolFlag() bool {
 	return false
 }
 
-// JsonFileValueCreator handles file-based flags that read content and register with mutations
-type JsonFileValueCreator struct{}
-
-func (c JsonFileValueCreator) Create(val string, dest *string, config JSONConfig) cli.Value {
-	*dest = val
-	return &jsonFileValue{
-		destination: dest,
-		config:      config,
-	}
-}
-
-func (c JsonFileValueCreator) ToString(val string) string {
-	return val
-}
-
-type jsonFileValue struct {
-	destination *string
-	config      JSONConfig
-}
-
-func (v *jsonFileValue) Set(filePath string) error {
-	// Read the file content
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return fmt.Errorf("failed to read file %q: %w", filePath, err)
-	}
-
-	// Store the file path in the destination
-	*v.destination = filePath
-
-	// Register the file content with the global registry
-	globalRegistry.Mutate(v.config.Kind, v.config.Path, string(content))
-	return nil
-}
-
-func (v *jsonFileValue) Get() any {
-	if v.destination != nil {
-		return *v.destination
-	}
-	return ""
-}
-
-func (v *jsonFileValue) String() string {
-	if v.destination != nil {
-		return *v.destination
-	}
-	return ""
-}
-
-func (v *jsonFileValue) IsBoolFlag() bool {
-	return false
-}
-
-type JSONFileFlag = cli.FlagBase[string, JSONConfig, JsonFileValueCreator]
 type JSONStringFlag = cli.FlagBase[string, JSONConfig, JSONValueCreator[string]]
 type JSONBoolFlag = cli.FlagBase[bool, JSONConfig, JSONValueCreator[bool]]
 type JSONIntFlag = cli.FlagBase[int, JSONConfig, JSONValueCreator[int]]

@@ -165,6 +165,16 @@ var devCommand = cli.Command{
 			Aliases: []string{"p"},
 			Usage:   "Project name to use for the build",
 		},
+		&cli.StringFlag{
+			Name:    "openapi-spec",
+			Aliases: []string{"oas"},
+			Usage:   "Path to OpenAPI spec file",
+		},
+		&cli.StringFlag{
+			Name:    "stainless-config",
+			Aliases: []string{"config"},
+			Usage:   "Path to Stainless config file",
+		},
 	},
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		return runDevMode(ctx, cmd)
@@ -242,7 +252,7 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 
 	// Phase 3: Start build and monitor progress in a loop
 	for {
-		err := runDevBuild(ctx, cc, cmd.String("project"), selectedBranch, targets)
+		err := runDevBuild(ctx, cc, cmd, selectedBranch, targets)
 		if err != nil {
 			if errors.Is(err, ErrUserCancelled) {
 				return nil
@@ -252,7 +262,16 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 	}
 }
 
-func runDevBuild(ctx context.Context, cc *apiCommandContext, projectName string, branch string, languages []stainless.Target) error {
+func runDevBuild(ctx context.Context, cc *apiCommandContext, cmd *cli.Command, branch string, languages []stainless.Target) error {
+	// Handle file flags by reading files and mutating JSON body
+	if err := applyFileFlag(cmd, "openapi-spec", "revision.openapi\\.yml.content"); err != nil {
+		return err
+	}
+	if err := applyFileFlag(cmd, "stainless-config", "revision.openapi\\.stainless\\.yml.content"); err != nil {
+		return err
+	}
+
+	projectName := cmd.String("project")
 	buildReq := stainless.BuildNewParams{
 		Project:    stainless.String(projectName),
 		Branch:     stainless.String(branch),
