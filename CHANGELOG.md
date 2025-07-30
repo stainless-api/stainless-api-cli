@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.33 (2025-07-30)
+
+Full Changelog: [v0.1.0-alpha.32...v0.1.0-alpha.33](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.32...v0.1.0-alpha.33)
+
+### Bug Fixes
+
+* fix git fetch when building branch ([7cb800e](https://github.com/stainless-api/stainless-api-cli/commit/7cb800ef4717ddbf39296f239a31678ab3251540))
+
 ## 0.1.0-alpha.32 (2025-07-30)
 
 Full Changelog: [v0.1.0-alpha.31...v0.1.0-alpha.32](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.31...v0.1.0-alpha.32)
