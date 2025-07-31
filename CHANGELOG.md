@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.0-alpha.34 (2025-07-31)
+
+Full Changelog: [v0.1.0-alpha.33...v0.1.0-alpha.34](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.33...v0.1.0-alpha.34)
+
+### Features
+
+* **api:** manual updates ([ca8a538](https://github.com/stainless-api/stainless-api-cli/commit/ca8a538790ae9599f9eb0ec07b8c04c377405751))
+* simplify getAPICommandContext ([23ccc6d](https://github.com/stainless-api/stainless-api-cli/commit/23ccc6db032a8b7bba5b86bf1ecb369c15fba7f7))
+* wait for organization creation in CLI ([2295a90](https://github.com/stainless-api/stainless-api-cli/commit/2295a90f35b25e7e30dccb457024ba5fdfa0f271))
+
+
+### Chores
+
+* update tap repository ([7a8cb8d](https://github.com/stainless-api/stainless-api-cli/commit/7a8cb8d175b94c7fd8e017665769a359d3f52f8f))
+
 ## 0.1.0-alpha.33 (2025-07-30)
 
 Full Changelog: [v0.1.0-alpha.32...v0.1.0-alpha.33](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.32...v0.1.0-alpha.33)
