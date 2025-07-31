@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.35 (2025-07-31)
+
+Full Changelog: [v0.1.0-alpha.34...v0.1.0-alpha.35](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.34...v0.1.0-alpha.35)
+
+### Features
+
+* show status code and route for errors ([e75999f](https://github.com/stainless-api/stainless-api-cli/commit/e75999f72da0cc90c65526c9a801fc25652160d8))
+
 ## 0.1.0-alpha.34 (2025-07-31)
 
 Full Changelog: [v0.1.0-alpha.33...v0.1.0-alpha.34](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.33...v0.1.0-alpha.34)
