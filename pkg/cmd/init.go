@@ -10,6 +10,7 @@ import (
 
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/pkg/browser"
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
@@ -95,7 +96,35 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	})
 	availableTargets := targetInfoToOptions(targetInfo)
 
+	orgs := fetchUserOrgs(cc.client, ctx)
+
+	if len(orgs) == 0 {
+		signupURL := "https://app.stainless.com/signup?source=cli"
+		group := Info("Creating organization for user...")
+		group.Property("signup_url", signupURL)
+		if err := browser.OpenURL(signupURL); err != nil {
+			group.Info("Browser opened")
+		}
+
+		group.Progress("Waiting for organization to be created...")
+
+		for {
+			time.Sleep(5 * time.Second)
+			orgs = fetchUserOrgs(cc.client, ctx)
+			if len(orgs) > 0 {
+				group.Success("Organization found! Continuing...")
+				break
+			}
+		}
+
+		Spacer()
+	}
+
 	org := cmd.String("org")
+	if org == "" && len(orgs) > 0 {
+		org = orgs[0]
+	}
+
 	projectName := cmd.String("display-name")
 	if projectName == "" {
 		projectName = cmd.String("slug")
@@ -120,10 +149,6 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	// Check if all required values are provided via flags
 	allValuesProvided := org != "" && projectName != "" && openAPISpec != ""
 	if !allValuesProvided {
-		orgs := fetchUserOrgs(cc.client, ctx)
-		if org == "" && len(orgs) > 0 {
-			org = orgs[0]
-		}
 
 		form := huh.NewForm(
 			huh.NewGroup(
