@@ -107,12 +107,12 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 				huh.NewInput().
 					Title("openapi_spec (optional)").
 					Description("Relative path to your OpenAPI spec file").
-					Placeholder("openapi.yml").
+					Placeholder("./openapi.yml").
 					Value(&openAPISpec),
 				huh.NewInput().
 					Title("stainless_config (optional)").
 					Description("Relative path to your Stainless config file").
-					Placeholder("openapi.stainless.yml").
+					Placeholder("./openapi.stainless.yml").
 					Value(&stainlessConfig),
 			),
 		).WithTheme(GetFormTheme(0)).WithKeyMap(GetFormKeyMap())
@@ -261,7 +261,7 @@ func findOpenAPISpec() string {
 
 	for _, filename := range commonOpenAPIFiles {
 		if _, err := os.Stat(filename); err == nil {
-			return filename
+			return "./" + filename
 		}
 	}
 	return ""
@@ -278,7 +278,7 @@ func findStainlessConfig() string {
 
 	for _, filename := range commonStainlessFiles {
 		if _, err := os.Stat(filename); err == nil {
-			return filename
+			return "./" + filename
 		}
 	}
 	return ""
