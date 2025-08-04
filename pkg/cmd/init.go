@@ -357,9 +357,9 @@ exit:
 		"%s\n",
 		lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(1).Render(
 			"Next steps:\n\n"+
-				"  * See "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("https://www.stainless.com/docs/guides/configure")+" to configure the docs page\n\n"+
-				"  * Use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl builds create")+"\n"+
-				"  * Use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl dev"),
+				"  * See "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("https://www.stainless.com/docs/guides/configure")+" to learn how to customize your SDKs\n\n"+
+				"  * Use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl builds create")+" to create more builds\n"+
+				"  * Use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl dev")+" to launch a development server that helps you build and see output locally.",
 		),
 	)
 
