@@ -101,9 +101,16 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	if len(orgs) == 0 {
 		signupURL := "https://app.stainless.com/signup?source=cli"
 		group := Info("Creating organization for user...")
-		group.Property("signup_url", signupURL)
-		if err := browser.OpenURL(signupURL); err != nil {
-			group.Info("Browser opened")
+		group.Property("url", signupURL)
+
+		ok, err := Confirm(cmd, "browser", "Open browser?", "", true)
+		if err != nil {
+			return err
+		}
+		if ok {
+			if err := browser.OpenURL(signupURL); err != nil {
+				Info("Opening browser...")
+			}
 		}
 
 		group.Progress("Waiting for organization to be created...")

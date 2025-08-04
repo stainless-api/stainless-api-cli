@@ -48,6 +48,11 @@ func Success(format string, args ...any) Group {
 	return Group{}.Success(format, args...)
 }
 
+func Confirm(cmd *cli.Command, flagName, title, description string, defaultValue bool) (bool, error) {
+	value, _, err := Group{}.Confirm(cmd, flagName, title, description, defaultValue)
+	return value, err
+}
+
 func Spacer() {
 	fmt.Fprintf(os.Stderr, "\n")
 }
@@ -138,16 +143,15 @@ func (g Group) Success(format string, args ...any) Group {
 	return Group{prefix: "✓", indent: g.indent + 1}
 }
 
-// Confirm prompts the user with a yes/no question if the flag wasn't explicitly set
-func Confirm(cmd *cli.Command, flagName, title, description string, defaultValue bool) (bool, error) {
+func (g Group) Confirm(cmd *cli.Command, flagName, title, description string, defaultValue bool) (bool, Group, error) {
 	if cmd.IsSet(flagName) {
-		return cmd.Bool(flagName), nil
+		return cmd.Bool(flagName), Group{prefix: "✱", indent: g.indent + 1}, nil
 	}
 
 	foreground := lipgloss.Color("15")
 	cyanBright := lipgloss.Color("6")
 
-	t := GetFormTheme(0)
+	t := GetFormTheme(g.indent)
 	t.Focused.Title = t.Focused.Title.Foreground(foreground)
 	t.Focused.Base = t.Focused.Base.
 		SetString("\b\b" + lipgloss.NewStyle().Foreground(cyanBright).Render("✱")).
@@ -163,5 +167,5 @@ func Confirm(cmd *cli.Command, flagName, title, description string, defaultValue
 		),
 	).WithTheme(t).WithKeyMap(GetFormKeyMap()).Run()
 
-	return value, err
+	return value, Group{prefix: "✱", indent: g.indent + 1}, err
 }

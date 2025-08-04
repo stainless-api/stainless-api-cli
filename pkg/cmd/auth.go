@@ -52,7 +52,7 @@ func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	clientID := cmd.String("client-id")
 	scope := "openapi:read project:write project:read"
-	config, err := startDeviceFlow(ctx, cc.client, clientID, scope)
+	config, err := startDeviceFlow(ctx, cmd, cc.client, clientID, scope)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
 		Error("Failed to save authentication: %v", err)
 		return fmt.Errorf("authentication failed")
 	}
-	Success("Authentication successful! Your credentials have been saved.")
+	Success("Authentication successful! Your credentials have been saved to.")
 	return nil
 }
 
@@ -179,7 +179,7 @@ func handleAuthStatus(ctx context.Context, cmd *cli.Command) error {
 }
 
 // startDeviceFlow initiates the OAuth 2.0 device flow
-func startDeviceFlow(ctx context.Context, client stainless.Client, clientID, scope string) (*AuthConfig, error) {
+func startDeviceFlow(ctx context.Context, cmd *cli.Command, client stainless.Client, clientID, scope string) (*AuthConfig, error) {
 	var deviceResponse struct {
 		DeviceCode              string `json:"device_code"`
 		UserCode                string `json:"user_code"`
@@ -198,14 +198,20 @@ func startDeviceFlow(ctx context.Context, client stainless.Client, clientID, sco
 		return nil, err
 	}
 
-	if err := browser.OpenURL(deviceResponse.VerificationURIComplete); err != nil {
-		group := Info("To authenticate, visit the verification URL")
-		group.Property("url", deviceResponse.VerificationURI)
-		group.Property("code", deviceResponse.UserCode)
-		group.Property("direct_url", deviceResponse.VerificationURIComplete)
-	} else {
-		group := Info("Browser opened")
-		group.Property("url", deviceResponse.VerificationURIComplete)
+	group := Info("To authenticate, visit the verification URL")
+	group.Property("url", deviceResponse.VerificationURIComplete)
+	group.Property("code", deviceResponse.UserCode)
+
+	ok, _, err := group.Confirm(cmd, "browser", "Open browser?", "", true)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		if err := browser.OpenURL(deviceResponse.VerificationURIComplete); err == nil {
+			group.Info("Opening browser...")
+		} else {
+			group.Warn("Could not open browser")
+		}
 	}
 
 	return pollForToken(
@@ -249,7 +255,7 @@ func pollForToken(ctx context.Context, client stainless.Client, clientID, device
 			var apierr *stainless.Error
 			if errors.As(err, &apierr) {
 				// If we got an error, check if it's "authorization_pending" and continue polling
-				errorStr := gjson.Get(apierr.RawJSON(), "error.error").String()
+				errorStr := gjson.Get(apierr.RawJSON(), "error").String()
 				// This is expected, continue polling
 				if errorStr == "authorization_pending" {
 					continue
