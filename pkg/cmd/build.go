@@ -570,6 +570,18 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 	return nil
 }
 
+// stripHTTPAuth removes HTTP authentication credentials from a URL for display purposes
+func stripHTTPAuth(urlStr string) string {
+	parsedURL, err := url.Parse(urlStr)
+	if err != nil {
+		return urlStr
+	}
+
+	// Remove user info (username:password)
+	parsedURL.User = nil
+	return parsedURL.String()
+}
+
 // extractFilenameFromURL extracts the filename from just the URL path (without query parameters)
 func extractFilenameFromURL(urlStr string) string {
 	// Parse URL to remove query parameters
@@ -665,7 +677,7 @@ func pullOutput(output, url, ref, targetDir string, targetGroup *Group) error {
 		}
 
 		{
-			targetGroup.Property("fetching from", url)
+			targetGroup.Property("fetching from", stripHTTPAuth(url))
 			cmd := exec.Command("git", "-C", targetDir, "fetch", url, ref)
 			var stderr bytes.Buffer
 			cmd.Stdout = nil
