@@ -507,10 +507,10 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 	// Get all targets
 	allTargets := getBuildTargetInfo(res)
 
-	// Filter to only completed targets
+	// Filter to only completed targets without fatal conclusions
 	var targets []string
 	for _, target := range allTargets {
-		if isTargetCompleted(target.status) {
+		if isTargetCompleted(target.status) && !hasFailedCommitStep(res, stainless.Target(target.name)) {
 			targets = append(targets, target.name)
 		}
 	}
@@ -569,6 +569,26 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 	}
 
 	return nil
+}
+
+// hasFailedCommitStep checks if a target has a fatal commit conclusion
+func hasFailedCommitStep(build stainless.BuildObject, target stainless.Target) bool {
+	buildTarget := getBuildTarget(&build, target)
+	if buildTarget == nil {
+		return false
+	}
+	
+	commitUnion := getStepUnion(buildTarget, "commit")
+	if commitUnion == nil {
+		return false
+	}
+	
+	status, _, conclusion := extractStepInfo(commitUnion)
+	if status == "completed" && conclusion == "fatal" {
+		return true
+	}
+	
+	return false
 }
 
 // stripHTTPAuth removes HTTP authentication credentials from a URL for display purposes
