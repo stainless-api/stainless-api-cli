@@ -7,8 +7,14 @@ import (
 )
 
 var Command = cli.Command{
-	Name:    "stl",
-	Usage:   "CLI for the stainless API",
+	Name:  "stl",
+	Usage: "CLI for the stainless API",
+	UsageText: `stl [global options] [command [command options]]
+
+stl auth login
+stl init
+stl dev
+stl builds create --branch <branch>`,
 	Version: Version,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
