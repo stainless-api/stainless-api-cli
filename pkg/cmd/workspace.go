@@ -188,6 +188,8 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 				return fmt.Errorf("config download failed: %v", err)
 			}
 		}
+	} else if stainlessConfig == "" {
+		Info("Stainless config not configured to output locally, skipping download")
 	} else {
 		Info("Stainless config already exists, skipping download")
 	}
