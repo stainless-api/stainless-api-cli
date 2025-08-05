@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.0-alpha.35 (2025-08-05)
+
+Full Changelog: [v0.1.0-alpha.34...v0.1.0-alpha.35](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.34...v0.1.0-alpha.35)
+
+### Features
+
+* add path to config output ([7a6fd0b](https://github.com/stainless-api/stainless-api-cli/commit/7a6fd0bf6f227b4c9c79b92294882130d9539e03))
+* add remote if it doesn't exist ([8455a8d](https://github.com/stainless-api/stainless-api-cli/commit/8455a8d2c715da64c2041c37854200fe202ac075))
+* change next steps padding ([e2e3be2](https://github.com/stainless-api/stainless-api-cli/commit/e2e3be2e211fc0cf7503529041f2220566ea0de0))
+* fix workspace init command ([f7873f3](https://github.com/stainless-api/stainless-api-cli/commit/f7873f3c3c43508558a58b8d4e987aaa634316d4))
+* improve form styling ([290d3a6](https://github.com/stainless-api/stainless-api-cli/commit/290d3a62b810be711b28f8b43e94a6dd52cd4191))
+* remove too much choice from init flow ([056aeec](https://github.com/stainless-api/stainless-api-cli/commit/056aeec148d3ba28748682b86d47669967a4ba7f))
+* strip http login url ([6576c07](https://github.com/stainless-api/stainless-api-cli/commit/6576c07f9b85dc2b1c35eca392ac09540a97b2b9))
+* use checkmark for multiselect ([3edf4be](https://github.com/stainless-api/stainless-api-cli/commit/3edf4bea0a14607b22768f821aa558941ec47353))
+
+
+### Chores
+
+* add usage examples ([2f51c69](https://github.com/stainless-api/stainless-api-cli/commit/2f51c699a2ed4ad8ebff9137e8687f6f19648d2e))
+* consistently capitalize Stainless ([9f3d5e8](https://github.com/stainless-api/stainless-api-cli/commit/9f3d5e829ef18b9977dfd8bbf88ee710ec19ec82))
+
 ## 0.1.0-alpha.34 (2025-07-31)
 
 Full Changelog: [v0.1.0-alpha.33...v0.1.0-alpha.34](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.33...v0.1.0-alpha.34)
