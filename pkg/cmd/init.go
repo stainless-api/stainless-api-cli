@@ -259,94 +259,62 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 
 	var config WorkspaceConfig
 	{
-		workspaceInit, err := Confirm(cmd, "workspace-init",
-			"Initialize workspace configuration?",
-			"Creates a stainless-workspace.json file for this project",
-			true)
+		group := Info("Initializing workspace...")
+
+		// Use the same project name (slug) for workspace initialization
+		config, err = NewWorkspaceConfig(slug, openAPISpec, "")
 		if err != nil {
-			return fmt.Errorf("failed to get workspace configuration: %v", err)
+			group.Error("Failed to create workspace config: %v", err)
+			return fmt.Errorf("project created but workspace initialization failed: %v", err)
 		}
 
-		// Initialize workspace if requested
-		if workspaceInit {
-			group := Info("Initializing workspace...")
-
-			// Use the same project name (slug) for workspace initialization
-			config, err = NewWorkspaceConfig(slug, openAPISpec, "")
-			if err != nil {
-				group.Error("Failed to create workspace config: %v", err)
-				return fmt.Errorf("project created but workspace initialization failed: %v", err)
-			}
-
-			err = config.Save()
-			if err != nil {
-				group.Error("Failed to save workspace config: %v", err)
-				return fmt.Errorf("project created but workspace initialization failed: %v", err)
-			}
-
-			group.Success("Workspace initialized at " + config.ConfigPath)
+		err = config.Save()
+		if err != nil {
+			group.Error("Failed to save workspace config: %v", err)
+			return fmt.Errorf("project created but workspace initialization failed: %v", err)
 		}
 
-		if !workspaceInit {
-			goto exit
+		group.Success("Workspace initialized at " + config.ConfigPath)
+	}
+
+	Spacer()
+
+	{
+		config.StainlessConfig = "./stainless.yml"
+		err = config.Save()
+		if err != nil {
+			return fmt.Errorf("workspace update failed: %v", err)
+		}
+		if err := downloadStainlessConfig(ctx, cc.client, slug, &config); err != nil {
+			return fmt.Errorf("project created but config download failed: %v", err)
 		}
 	}
 
 	Spacer()
 
 	{
-		downloadConfig, err := Confirm(cmd, "download-config",
-			"Download Stainless config to workspace?",
-			"Manages Stainless config as part of your source code instead of in the cloud",
-			true)
-		if err != nil {
-			return fmt.Errorf("failed to get Stainless config form: %v", err)
-		}
-		if downloadConfig {
-			config.StainlessConfig = "./stainless.yml"
-			err = config.Save()
-			if err != nil {
-				return fmt.Errorf("workspace update failed: %v", err)
-			}
-			if err := downloadStainlessConfig(ctx, cc.client, slug, &config); err != nil {
-				return fmt.Errorf("project created but config download failed: %v", err)
-			}
-		}
-	}
-
-	Spacer()
-
-	{
-		downloadTargets, err := Confirm(cmd, "download-targets",
-			"Configure targets",
-			"Set paths relative to the current directory that SDKs are output to.\n"+
-				"Empty paths aren't downloaded by default.",
-			true)
-		if err != nil {
-			return fmt.Errorf("failed to get target download preference: %v", err)
-		}
-
-		if downloadTargets && len(selectedTargets) > 0 {
+		if len(selectedTargets) > 0 {
 			if err := configureTargets(slug, selectedTargets, &config); err != nil {
 				return fmt.Errorf("target configuration failed: %v", err)
 			}
 		}
 	}
 
-exit:
 	Spacer()
 
 	// Wait for build and pull outputs if workspace is configured
-	build, err := waitForLatestBuild(ctx, cc.client, slug)
-	if err != nil {
-		return fmt.Errorf("build wait failed: %v", err)
-	}
+	{
+		build, err := waitForLatestBuild(ctx, cc.client, slug)
+		if err != nil {
+			return fmt.Errorf("build wait failed: %v", err)
+		}
 
-	if len(config.Targets) > 0 {
-		Spacer()
+		if len(config.Targets) > 0 {
+			Spacer()
 
-		if err := pullConfiguredTargets(ctx, cc.client, *build, config); err != nil {
-			return fmt.Errorf("pull targets failed: %v", err)
+			if err := pullConfiguredTargets(ctx, cc.client, *build, config); err != nil {
+				return fmt.Errorf("pull targets failed: %v", err)
+			}
 		}
 	}
 
