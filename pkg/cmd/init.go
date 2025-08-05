@@ -19,7 +19,7 @@ import (
 
 var initCommand = cli.Command{
 	Name:  "init",
-	Usage: "Initialize a new stainless project interactively",
+	Usage: "Initialize a new Stainless project interactively",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
 			Name:  "org",
