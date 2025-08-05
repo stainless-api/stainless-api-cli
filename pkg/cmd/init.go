@@ -504,7 +504,7 @@ func waitForLatestBuild(ctx context.Context, client stainless.Client, slug strin
 	}
 
 	waitGroup.Property("build_id", build.ID)
-	build, err = waitForBuildCompletion(ctx, client, build.ID, &waitGroup)
+	build, err = waitForBuildCompletion(ctx, client, build, &waitGroup)
 	if err != nil {
 		return nil, err
 	}
