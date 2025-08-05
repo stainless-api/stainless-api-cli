@@ -188,13 +188,13 @@ func getAPICommandContext(cmd *cli.Command) *apiCommandContext {
 		// Get the directory containing the workspace config file
 		configDir := filepath.Dir(config.ConfigPath)
 
-		if slices.Contains(names, "openapi-spec") && !cmd.IsSet("openapi-spec") && config.OpenAPISpec != "" {
+		if slices.Contains(names, "openapi-spec") && !cmd.IsSet("openapi-spec") && !cmd.IsSet("revision") && config.OpenAPISpec != "" {
 			// Set OpenAPI spec path relative to workspace config directory
 			openAPIPath := filepath.Join(configDir, config.OpenAPISpec)
 			cmd.Set("openapi-spec", openAPIPath)
 		}
 
-		if slices.Contains(names, "stainless-config") && !cmd.IsSet("stainless-config") && config.StainlessConfig != "" {
+		if slices.Contains(names, "stainless-config") && !cmd.IsSet("stainless-config") && !cmd.IsSet("revision") && config.StainlessConfig != "" {
 			// Set Stainless config path relative to workspace config directory
 			stainlessConfigPath := filepath.Join(configDir, config.StainlessConfig)
 			cmd.Set("stainless-config", stainlessConfigPath)
