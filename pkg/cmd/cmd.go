@@ -8,7 +8,7 @@ import (
 
 var Command = cli.Command{
 	Name:  "stl",
-	Usage: "CLI for the stainless API",
+	Usage: "CLI for the Stainless API",
 	UsageText: `stl [global options] [command [command options]]
 
 stl auth login
