@@ -56,11 +56,12 @@ func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-	if err := SaveAuthConfig(config); err != nil {
+	path, err := AuthConfigPath()
+	if err := SaveAuthConfig(config, path); err != nil {
 		Error("Failed to save authentication: %v", err)
 		return fmt.Errorf("authentication failed")
 	}
-	Success("Authentication successful! Your credentials have been saved to.")
+	Success("Authentication successful! Your credentials have been saved to " + path)
 	return nil
 }
 
@@ -109,14 +110,16 @@ func LoadAuthConfig() (*AuthConfig, error) {
 	return &config, nil
 }
 
-// SaveAuthConfig saves the auth config to disk
-func SaveAuthConfig(config *AuthConfig) error {
+func AuthConfigPath() (string, error) {
 	configDir, err := ConfigDir()
 	if err != nil {
-		return err
+		return "", err
 	}
+	return filepath.Join(configDir, "auth.json"), nil
+}
 
-	configPath := filepath.Join(configDir, "auth.json")
+// SaveAuthConfig saves the auth config to disk
+func SaveAuthConfig(config *AuthConfig, configPath string) error {
 	file, err := os.Create(configPath)
 	if err != nil {
 		return err
