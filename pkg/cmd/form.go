@@ -19,6 +19,7 @@ func GetFormTheme(indent int) *huh.Theme {
 	t.Form.Base = t.Form.Base.PaddingLeft(indent * 2)
 	t.Group.Title = t.Group.Title.Foreground(gray).PaddingBottom(1)
 
+	t.Focused.SelectedPrefix = lipgloss.NewStyle().SetString("[✓] ")
 	t.Focused.Title = t.Focused.Title.Bold(true)
 	t.Focused.Base = t.Focused.Base.
 		BorderLeft(false).
