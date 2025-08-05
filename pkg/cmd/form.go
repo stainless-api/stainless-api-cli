@@ -19,14 +19,14 @@ func GetFormTheme(indent int) *huh.Theme {
 	t.Form.Base = t.Form.Base.PaddingLeft(indent * 2)
 	t.Group.Title = t.Group.Title.Foreground(gray).PaddingBottom(1)
 
-	t.Focused.SelectedPrefix = lipgloss.NewStyle().SetString("[✓] ")
 	t.Focused.Title = t.Focused.Title.Bold(true)
 	t.Focused.Base = t.Focused.Base.
 		BorderLeft(false).
 		SetString("\b\b" + lipgloss.NewStyle().Foreground(primaryBright).Render("✱")).
 		PaddingLeft(2)
-	t.Focused.Description = t.Focused.Description.Foreground(gray)
+	t.Focused.Description = t.Focused.Description.Foreground(gray).Width(70)
 	t.Focused.TextInput.Placeholder = t.Focused.TextInput.Placeholder.Foreground(gray)
+	t.Focused.SelectedPrefix = lipgloss.NewStyle().SetString("[✓] ")
 
 	t.Focused.ErrorIndicator = t.Focused.ErrorIndicator.Foreground(error)
 	t.Focused.ErrorMessage = t.Focused.ErrorMessage.Foreground(error)
@@ -37,8 +37,9 @@ func GetFormTheme(indent int) *huh.Theme {
 		BorderLeft(false).
 		SetString("\b\b" + lipgloss.NewStyle().Foreground(primary).Render("✱")).
 		PaddingLeft(2)
-	t.Blurred.Description = t.Blurred.Description.Foreground(gray)
+	t.Blurred.Description = t.Blurred.Description.Foreground(gray).Width(70)
 	t.Blurred.TextInput.Placeholder = t.Blurred.TextInput.Placeholder.Foreground(gray)
+	t.Blurred.SelectedPrefix = lipgloss.NewStyle().SetString("[✓] ")
 
 	return t
 }
