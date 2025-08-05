@@ -172,47 +172,48 @@ func isTargetCompleted(status stainless.BuildTargetStatus) bool {
 }
 
 // waitForBuildCompletion polls a build until completion and shows progress updates
-func waitForBuildCompletion(ctx context.Context, client stainless.Client, buildID string, waitGroup *Group) (*stainless.BuildObject, error) {
+func waitForBuildCompletion(ctx context.Context, client stainless.Client, build *stainless.BuildObject, waitGroup *Group) (*stainless.BuildObject, error) {
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
 	targetProgress := make(map[string]string)
 
 	for {
+		targets := getBuildTargetInfo(*build)
+		allCompleted := true
+
+		for _, target := range targets {
+			prevStatus := targetProgress[target.name]
+
+			if string(target.status) != prevStatus {
+				targetProgress[target.name] = string(target.status)
+
+				if isTargetCompleted(target.status) {
+					waitGroup.Success("%s: %s", target.name, "completed")
+				} else if target.status == "failed" {
+					waitGroup.Error("%s: %s", target.name, string(target.status))
+				}
+			}
+
+			if !isTargetCompleted(target.status) && target.status != "failed" {
+				allCompleted = false
+			}
+		}
+
+		if allCompleted && len(targets) > 0 {
+			if allCompleted {
+				waitGroup.Success("Build completed successfully")
+				return build, nil
+			}
+		}
+
 		select {
 		case <-ticker.C:
-			buildRes, err := client.Builds.Get(ctx, buildID)
+			var err error
+			build, err = client.Builds.Get(ctx, build.ID)
 			if err != nil {
 				waitGroup.Error("Error polling build status: %v", err)
 				return nil, fmt.Errorf("build polling failed: %v", err)
-			}
-
-			targets := getBuildTargetInfo(*buildRes)
-			allCompleted := true
-
-			for _, target := range targets {
-				prevStatus := targetProgress[target.name]
-
-				if string(target.status) != prevStatus {
-					targetProgress[target.name] = string(target.status)
-
-					if isTargetCompleted(target.status) {
-						waitGroup.Success("%s: %s", target.name, "completed")
-					} else if target.status == "failed" {
-						waitGroup.Error("%s: %s", target.name, string(target.status))
-					}
-				}
-
-				if !isTargetCompleted(target.status) && target.status != "failed" {
-					allCompleted = false
-				}
-			}
-
-			if allCompleted && len(targets) > 0 {
-				if allCompleted {
-					waitGroup.Success("Build completed successfully")
-					return buildRes, nil
-				}
 			}
 
 		case <-ctx.Done():
@@ -462,9 +463,9 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	buildGroup.Property("build_id", res.ID)
 
 	if cmd.Bool("wait") {
-		waitGroup := Info("Waiting for build to complete...")
+		waitGroup := Info("Waiting for latest build to complete...")
 
-		res, err = waitForBuildCompletion(context.TODO(), cc.client, res.ID, &waitGroup)
+		res, err = waitForBuildCompletion(context.TODO(), cc.client, res, &waitGroup)
 		if err != nil {
 			return err
 		}
