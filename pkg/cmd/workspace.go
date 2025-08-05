@@ -9,11 +9,32 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/urfave/cli/v3"
 )
+
+// Rel returns a relative path similar to filepath.Rel but with custom behavior:
+// - If target is empty, returns empty string
+// - If relative path doesn't start with "../", it prefixes with "./"
+func Rel(basepath, targpath string) string {
+	if targpath == "" {
+		return ""
+	}
+
+	rel, err := filepath.Rel(basepath, targpath)
+	if err != nil {
+		return targpath
+	}
+
+	if !strings.HasPrefix(rel, "../") && !strings.HasPrefix(rel, "./") {
+		rel = "./" + rel
+	}
+
+	return rel
+}
 
 var workspaceInit = cli.Command{
 	Name:  "init",
@@ -80,7 +101,6 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 	openAPISpec := cmd.String("openapi-spec")
 	stainlessConfig := cmd.String("stainless-config")
 
-	// Pre-fill OpenAPI spec and Stainless config if found and not provided via flags
 	if openAPISpec == "" {
 		openAPISpec = findOpenAPISpec()
 	}
@@ -88,38 +108,32 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 		stainlessConfig = findStainlessConfig()
 	}
 
-	// Skip interactive form if all values are provided via flags or auto-detected
-	// Project name is required, but openAPISpec and stainlessConfig are optional
-	allValuesProvided := projectName != "" &&
-		(cmd.IsSet("openapi-spec") || openAPISpec != "") &&
-		(cmd.IsSet("stainless-config") || stainlessConfig != "")
+	openAPISpec = Rel(filepath.Dir(configPath), openAPISpec)
+	stainlessConfig = Rel(filepath.Dir(configPath), stainlessConfig)
 
-	if !allValuesProvided {
-		projectInfoMap := fetchUserProjects(ctx, cc.client)
+	projectInfoMap := fetchUserProjects(ctx, cc.client)
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("project").
+				Value(&projectName).
+				Suggestions(slices.Collect(maps.Keys(projectInfoMap))).
+				Description("Enter the stainless project for this workspace"),
+			huh.NewInput().
+				Title("openapi_spec (optional)").
+				Description("Relative path to your OpenAPI spec file").
+				Placeholder("./openapi.yml").
+				Value(&openAPISpec),
+			huh.NewInput().
+				Title("stainless_config (optional)").
+				Description("Relative path to your Stainless config file").
+				Placeholder("./openapi.stainless.yml").
+				Value(&stainlessConfig),
+		),
+	).WithTheme(GetFormTheme(0)).WithKeyMap(GetFormKeyMap())
 
-		form := huh.NewForm(
-			huh.NewGroup(
-				huh.NewInput().
-					Title("project").
-					Value(&projectName).
-					Suggestions(slices.Collect(maps.Keys(projectInfoMap))).
-					Description("Enter the stainless project for this workspace"),
-				huh.NewInput().
-					Title("openapi_spec (optional)").
-					Description("Relative path to your OpenAPI spec file").
-					Placeholder("./openapi.yml").
-					Value(&openAPISpec),
-				huh.NewInput().
-					Title("stainless_config (optional)").
-					Description("Relative path to your Stainless config file").
-					Placeholder("./openapi.stainless.yml").
-					Value(&stainlessConfig),
-			),
-		).WithTheme(GetFormTheme(0)).WithKeyMap(GetFormKeyMap())
-
-		if err := form.Run(); err != nil {
-			return fmt.Errorf("failed to get workspace configuration: %v", err)
-		}
+	if err := form.Run(); err != nil {
+		return fmt.Errorf("failed to get workspace configuration: %v", err)
 	}
 
 	group := Info("Initializing workspace...")
@@ -142,15 +156,29 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 
 	Spacer()
 
-	if stainlessConfig == "" {
+	hasStainlessConfig := false
+	if stainlessConfig != "" {
+		if _, err := os.Stat(filepath.Join(filepath.Dir(configPath), stainlessConfig)); err == nil {
+			hasStainlessConfig = true
+		}
+	} else {
+		hasStainlessConfig = true
+	}
+
+	if !hasStainlessConfig {
 		downloadConfig, err := Confirm(cmd, "download-config",
 			"Download Stainless config to workspace?",
-			"Manages Stainless config as part of your source code instead of in the cloud",
+			"Manages Stainless config as part of your source code instead of in the Stainless cloud",
 			true)
 		if err != nil {
 			return fmt.Errorf("failed to get stainless config preference: %v", err)
 		}
-		config.StainlessConfig = "./stainless.yml"
+
+		if stainlessConfig == "" {
+			stainlessConfig = "./stainless.yml"
+		}
+		config.StainlessConfig = stainlessConfig
+
 		err = config.Save()
 		if err != nil {
 			return fmt.Errorf("workspace update failed: %v", err)
@@ -161,37 +189,25 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 			}
 		}
 	} else {
-		Info("Using existing Stainless config: %s", stainlessConfig)
+		Info("Stainless config already exists, skipping download")
 	}
 
 	Spacer()
 
 	configureTargetsFlag, err := Confirm(cmd, "download-targets",
 		"Configure targets?",
-		"Set up output paths for SDK generation targets",
+		"Setup download paths for your SDK targets. When the workspace is configured with these targets, they are downloaded by default on every build triggered by the CLI.",
 		true)
 	if err != nil {
 		return fmt.Errorf("failed to get target configuration preference: %v", err)
 	}
-	Info("Configuring targets...")
-	var selectedTargets []string
 	if configureTargetsFlag {
 		// Get available targets from project's latest build with workspace config for defaults
-		targetInfo := getAvailableTargetInfo(ctx, cc.client, projectName, config)
-		availableTargets := targetInfoToOptions(targetInfo)
+		targetInfos := getAvailableTargetInfo(ctx, cc.client, projectName, config)
 
-		targetForm := huh.NewForm(
-			huh.NewGroup(
-				huh.NewMultiSelect[string]().
-					Title("targets").
-					Description("Select target languages for code generation").
-					Options(availableTargets...).
-					Value(&selectedTargets),
-			),
-		).WithTheme(GetFormTheme(1)).WithKeyMap(GetFormKeyMap())
-
-		if err := targetForm.Run(); err != nil {
-			return fmt.Errorf("failed to get target selection: %v", err)
+		var selectedTargets []string
+		for _, targetInfo := range targetInfos {
+			selectedTargets = append(selectedTargets, targetInfo.Name)
 		}
 
 		if len(selectedTargets) > 0 {
