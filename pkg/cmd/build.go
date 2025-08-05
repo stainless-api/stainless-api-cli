@@ -677,9 +677,25 @@ func pullOutput(output, url, ref, targetDir string, targetGroup *Group) error {
 		}
 
 		{
-			targetGroup.Property("fetching from", stripHTTPAuth(url))
-			cmd := exec.Command("git", "-C", targetDir, "fetch", url, ref)
+			// Check if origin remote exists, add it if not present
+			cmd := exec.Command("git", "-C", targetDir, "remote", "get-url", "origin")
 			var stderr bytes.Buffer
+			cmd.Stdout = nil
+			cmd.Stderr = &stderr
+			if err := cmd.Run(); err != nil {
+				// Origin doesn't exist, add it with stripped auth
+				targetGroup.Property("adding remote origin", stripHTTPAuth(url))
+				addCmd := exec.Command("git", "-C", targetDir, "remote", "add", "origin", stripHTTPAuth(url))
+				var addStderr bytes.Buffer
+				addCmd.Stdout = nil
+				addCmd.Stderr = &addStderr
+				if err := addCmd.Run(); err != nil {
+					return fmt.Errorf("git remote add failed: %v\nGit error: %s", err, addStderr.String())
+				}
+			}
+
+			targetGroup.Property("fetching from", stripHTTPAuth(url))
+			cmd = exec.Command("git", "-C", targetDir, "fetch", url, ref)
 			cmd.Stdout = nil
 			cmd.Stderr = &stderr
 			if err := cmd.Run(); err != nil {
