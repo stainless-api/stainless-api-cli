@@ -392,30 +392,13 @@ func downloadStainlessConfig(ctx context.Context, client stainless.Client, slug 
 	}
 
 	group := Info("Downloading Stainless config...")
-
 	params := stainless.ProjectConfigGetParams{
 		Project: stainless.String(slug),
 	}
 
-	var configRes *stainless.ProjectConfigGetResponse
-	var err error
-	maxRetries := 3
-
-	// I'm not sure why, but our endpoint here doesn't work immediately after the project is created, but
-	// retrying it reliably fixes it.
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		configRes, err = client.Projects.Configs.Get(ctx, params)
-		if err == nil {
-			break
-		}
-
-		if attempt < maxRetries {
-			time.Sleep(time.Duration(attempt) * time.Second)
-		}
-	}
-
+	configRes, err := client.Projects.Configs.Get(ctx, params)
 	if err != nil {
-		return fmt.Errorf("config download failed after %d attempts: %v", maxRetries, err)
+		return fmt.Errorf("config download failed: %v", err)
 	}
 
 	content := ""
