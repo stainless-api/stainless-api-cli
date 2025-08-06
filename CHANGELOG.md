@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.1.0-alpha.36 (2025-08-06)
+
+Full Changelog: [v0.1.0-alpha.35...v0.1.0-alpha.36](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.35...v0.1.0-alpha.36)
+
+### Features
+
+* make build resolve much faster ([922d86c](https://github.com/stainless-api/stainless-api-cli/commit/922d86c67c6c28a98859f5cf4b70eca9eddf9f39))
+* skip downloads for builds with fatal commit conclusions ([6cb7a29](https://github.com/stainless-api/stainless-api-cli/commit/6cb7a299fc24ca809b540489bda0d9d2e0ceb3ac))
+* skip downloads in dev mode for fatal commit conclusions ([228bd08](https://github.com/stainless-api/stainless-api-cli/commit/228bd082f08848fa40e547677f31d70ba469e812))
+
+
+### Bug Fixes
+
+* don't set openapi-spec if revision is set ([ddc3715](https://github.com/stainless-api/stainless-api-cli/commit/ddc37155f67018d8a3839acfe08aa4772b3040a4))
+
+
+### Chores
+
+* improve messaging when stainless config isn't configured ([50b5348](https://github.com/stainless-api/stainless-api-cli/commit/50b5348ccc13415e07293e07ab5c73168a2c03b3))
+
+
+### Refactors
+
+* remove retrying from config download ([af51b3c](https://github.com/stainless-api/stainless-api-cli/commit/af51b3c21e07419b3d3044a3a7d590a31c131815))
+
 ## 0.1.0-alpha.35 (2025-08-05)
 
 Full Changelog: [v0.1.0-alpha.34...v0.1.0-alpha.35](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.34...v0.1.0-alpha.35)
