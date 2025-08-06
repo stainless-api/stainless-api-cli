@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"golang.org/x/term"
 	"io"
 	"log"
@@ -23,6 +24,7 @@ import (
 
 func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 	opts := []option.RequestOption{
+		option.WithHeader("User-Agent", fmt.Sprintf("Stainless/CLI %s", Version)),
 		option.WithHeader("X-Stainless-Lang", "cli"),
 		option.WithHeader("X-Stainless-Package-Version", Version),
 		option.WithHeader("X-Stainless-Runtime", "cli"),
