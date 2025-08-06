@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"os/exec"
@@ -257,18 +259,30 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("failed to get git username: %v", err)
 	}
 
-	// Phase 1: Branch selection
 	var selectedBranch string
-	branchOptions := []huh.Option[string]{
-		huh.NewOption(fmt.Sprintf("%s/dev", gitUser), fmt.Sprintf("%s/dev", gitUser)),
-		huh.NewOption("Random", "random"),
+
+	now := time.Now()
+	randomBytes := make([]byte, 3)
+	rand.Read(randomBytes)
+	randomSuffix := base64.RawURLEncoding.EncodeToString(randomBytes)
+	randomBranch := fmt.Sprintf("%s/%d%02d%02d-%s", gitUser, now.Year(), now.Month(), now.Day(), randomSuffix)
+
+	branchOptions := []huh.Option[string]{}
+	if currentBranch, err := getCurrentGitBranch(); err == nil && currentBranch != "main" && currentBranch != "master" {
+		branchOptions = append(branchOptions,
+			huh.NewOption(currentBranch, currentBranch),
+		)
 	}
+	branchOptions = append(branchOptions,
+		huh.NewOption(fmt.Sprintf("%s/dev", gitUser), fmt.Sprintf("%s/dev", gitUser)),
+		huh.NewOption(fmt.Sprintf("%s/<random>", gitUser), randomBranch),
+	)
 
 	branchForm := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
 				Title("branch").
-				Description("Select a branch to use for development:").
+				Description("Select a Stainless project branch to use for development").
 				Options(branchOptions...).
 				Value(&selectedBranch),
 		),
@@ -378,6 +392,21 @@ func getGitUsername() (string, error) {
 
 	// Convert to lowercase and replace spaces with hyphens for branch name
 	return strings.ToLower(strings.ReplaceAll(username, " ", "-")), nil
+}
+
+func getCurrentGitBranch() (string, error) {
+	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	branch := strings.TrimSpace(string(output))
+	if branch == "" {
+		return "", fmt.Errorf("could not determine current git branch")
+	}
+
+	return branch, nil
 }
 
 func getBuildTarget(build *stainless.BuildObject, target stainless.Target) *stainless.BuildTarget {
