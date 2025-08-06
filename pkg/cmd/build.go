@@ -573,17 +573,13 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 
 // hasFailedCommitStep checks if a target has a fatal commit conclusion
 func hasFailedCommitStep(build stainless.BuildObject, target stainless.Target) bool {
-	buildTarget := getBuildTarget(&build, target)
+	buildObj := NewBuildObject(&build)
+	buildTarget := buildObj.BuildTarget(target)
 	if buildTarget == nil {
 		return false
 	}
 	
-	commitUnion := getStepUnion(buildTarget, "commit")
-	if commitUnion == nil {
-		return false
-	}
-	
-	status, _, conclusion := extractStepInfo(commitUnion)
+	status, _, conclusion := buildTarget.StepInfo("commit")
 	if status == "completed" && conclusion == "fatal" {
 		return true
 	}
