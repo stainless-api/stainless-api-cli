@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
-	"github.com/stainless-api/stainless-api-go"
 	"github.com/urfave/cli/v3"
 )
 

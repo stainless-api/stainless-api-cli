@@ -4,12 +4,10 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -65,85 +63,14 @@ func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
 	return nil
 }
 
-// AuthConfig stores the OAuth credentials
-type AuthConfig struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-	TokenType    string `json:"token_type"`
-}
-
-// ConfigDir returns the directory where config files are stored
-func ConfigDir() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	configDir := filepath.Join(homeDir, ".config", "stainless")
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		return "", err
-	}
-	return configDir, nil
-}
-
-// LoadAuthConfig loads the auth config from disk
-func LoadAuthConfig() (*AuthConfig, error) {
-	configDir, err := ConfigDir()
-	if err != nil {
-		return nil, err
-	}
-
-	configPath := filepath.Join(configDir, "auth.json")
-	file, err := os.Open(configPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	defer file.Close()
-
-	var config AuthConfig
-	if err := json.NewDecoder(file).Decode(&config); err != nil {
-		return nil, err
-	}
-
-	return &config, nil
-}
-
-func AuthConfigPath() (string, error) {
-	configDir, err := ConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(configDir, "auth.json"), nil
-}
-
-// SaveAuthConfig saves the auth config to disk
-func SaveAuthConfig(config *AuthConfig, configPath string) error {
-	file, err := os.Create(configPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ")
-	return encoder.Encode(config)
-}
 
 func handleAuthLogout(ctx context.Context, cmd *cli.Command) error {
-	configDir, err := ConfigDir()
-	if err != nil {
-		return fmt.Errorf("failed to get config directory: %v", err)
-	}
-
-	configPath := filepath.Join(configDir, "auth.json")
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+	if !HasAuthConfig() {
 		Warn("No active session found.")
 		return nil
 	}
 
-	if err := os.Remove(configPath); err != nil {
+	if err := RemoveAuthConfig(); err != nil {
 		return fmt.Errorf("failed to remove auth file: %v", err)
 	}
 
