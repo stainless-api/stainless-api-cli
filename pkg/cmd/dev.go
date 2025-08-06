@@ -14,7 +14,6 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
-	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
 
@@ -118,21 +117,29 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.build = msg
-		if !m.isCompleted && isCommitStepsCompleted(m.build) {
-			m.isCompleted = true
-			cmds = append(cmds, m.fetchDiagnostics())
+		buildObj := NewBuildObject(m.build)
+		if !m.isCompleted {
+			// Check if all commit steps are completed
+			allCommitsCompleted := true
+			for _, target := range buildObj.Languages() {
+				buildTarget := buildObj.BuildTarget(target)
+				if buildTarget != nil && !buildTarget.IsCommitCompleted() {
+					allCommitsCompleted = false
+					break
+				}
+			}
+			if allCommitsCompleted {
+				m.isCompleted = true
+				cmds = append(cmds, m.fetchDiagnostics())
+			}
 		}
-		languages := getBuildLanguages(m.build)
+		languages := buildObj.Languages()
 		for _, target := range languages {
-			buildTarget := getBuildTarget(m.build, target)
+			buildTarget := buildObj.BuildTarget(target)
 			if buildTarget == nil {
 				continue
 			}
-			commitUnion := getStepUnion(buildTarget, "commit")
-			if commitUnion == nil {
-				continue
-			}
-			status, _, conclusion := extractStepInfo(commitUnion)
+			status, _, conclusion := buildTarget.StepInfo("commit")
 			if status == "completed" && conclusion != "fatal" {
 				if download, ok := m.downloads[target]; ok && download.status == "not started" {
 					download.status = "started"
@@ -215,7 +222,8 @@ func (m *BuildModel) getBuildDuration() time.Duration {
 		return time.Since(m.started)
 	}
 
-	if isBuildCompleted(m.build) {
+	buildObj := NewBuildObject(m.build)
+	if buildObj.IsCompleted() {
 		if m.ended == nil {
 			now := time.Now()
 			m.ended = &now
@@ -409,236 +417,10 @@ func getCurrentGitBranch() (string, error) {
 	return branch, nil
 }
 
-func getBuildTarget(build *stainless.BuildObject, target stainless.Target) *stainless.BuildTarget {
-	switch target {
-	case "node":
-		if build.Targets.JSON.Node.Valid() {
-			return &build.Targets.Node
-		}
-	case "typescript":
-		if build.Targets.JSON.Typescript.Valid() {
-			return &build.Targets.Typescript
-		}
-	case "python":
-		if build.Targets.JSON.Python.Valid() {
-			return &build.Targets.Python
-		}
-	case "go":
-		if build.Targets.JSON.Go.Valid() {
-			return &build.Targets.Go
-		}
-	case "java":
-		if build.Targets.JSON.Java.Valid() {
-			return &build.Targets.Java
-		}
-	case "kotlin":
-		if build.Targets.JSON.Kotlin.Valid() {
-			return &build.Targets.Kotlin
-		}
-	case "ruby":
-		if build.Targets.JSON.Ruby.Valid() {
-			return &build.Targets.Ruby
-		}
-	case "terraform":
-		if build.Targets.JSON.Terraform.Valid() {
-			return &build.Targets.Terraform
-		}
-	case "cli":
-		if build.Targets.JSON.Cli.Valid() {
-			return &build.Targets.Cli
-		}
-	case "php":
-		if build.Targets.JSON.Php.Valid() {
-			return &build.Targets.Php
-		}
-	case "csharp":
-		if build.Targets.JSON.Csharp.Valid() {
-			return &build.Targets.Csharp
-		}
-	}
-	return nil
-}
 
-func getStepUnion(target *stainless.BuildTarget, step string) any {
-	switch step {
-	case "commit":
-		if target.JSON.Commit.Valid() {
-			return target.Commit
-		}
-	case "lint":
-		if target.JSON.Lint.Valid() {
-			return target.Lint
-		}
-	case "build":
-		if target.JSON.Build.Valid() {
-			return target.Build
-		}
-	case "test":
-		if target.JSON.Test.Valid() {
-			return target.Test
-		}
-	}
-	return nil
-}
 
-func extractStepInfo(stepUnion any) (status, url, conclusion string) {
-	if u, ok := stepUnion.(stainless.BuildTargetCommitUnion); ok {
-		status = u.Status
-		if u.Status == "completed" {
-			conclusion = u.Completed.Conclusion
-			url = fmt.Sprintf("https://github.com/%s/%s/commit/%s", u.Completed.Commit.Repo.Owner, u.Completed.Commit.Repo.Name, u.Completed.Commit.Sha)
-		}
-	}
-	if u, ok := stepUnion.(stainless.CheckStepUnion); ok {
-		status = u.Status
-		if u.Status == "completed" {
-			conclusion = u.Completed.Conclusion
-			url = u.Completed.URL
-		}
-	}
-	return
-}
 
-func isBuildTargetCompleted(build *stainless.BuildObject, target stainless.Target) bool {
-	buildTarget := getBuildTarget(build, target)
-	if buildTarget == nil {
-		return false
-	}
 
-	steps := []string{"commit", "lint", "build", "test"}
-	for _, step := range steps {
-		if !gjson.Get(buildTarget.RawJSON(), step).Exists() {
-			continue
-		}
-		stepUnion := getStepUnion(buildTarget, step)
-		if stepUnion == nil {
-			continue
-		}
-		status, _, _ := extractStepInfo(stepUnion)
-		if status != "completed" {
-			return false
-		}
-	}
-	return true
-}
 
-func isBuildTargetInProgress(build *stainless.BuildObject, target stainless.Target) bool {
-	buildTarget := getBuildTarget(build, target)
-	if buildTarget == nil {
-		return false
-	}
 
-	steps := []string{"commit", "lint", "build", "test", "upload"}
-	for _, step := range steps {
-		stepUnion := getStepUnion(buildTarget, step)
-		if stepUnion == nil {
-			continue
-		}
-		status, _, _ := extractStepInfo(stepUnion)
-		if status == "in_progress" {
-			return true
-		}
-	}
-	return false
-}
 
-func isCommitStepsCompleted(build *stainless.BuildObject) bool {
-	languages := getBuildLanguages(build)
-
-	for _, target := range languages {
-		buildTarget := getBuildTarget(build, target)
-		if buildTarget == nil {
-			return false
-		}
-
-		// Check if commit step is completed
-		commitUnion := getStepUnion(buildTarget, "commit")
-		if commitUnion == nil {
-			continue
-		}
-		status, _, _ := extractStepInfo(commitUnion)
-		if status != "completed" {
-			return false
-		}
-	}
-	return true
-}
-
-func isBuildCompleted(build *stainless.BuildObject) bool {
-	languages := getBuildLanguages(build)
-	for _, target := range languages {
-		if !isBuildTargetCompleted(build, target) {
-			return false
-		}
-	}
-	return true
-}
-
-func getBuildSteps(buildTarget *stainless.BuildTarget) []string {
-	if buildTarget == nil {
-		return []string{}
-	}
-
-	var steps []string
-
-	if gjson.Get(buildTarget.RawJSON(), "commit").Exists() {
-		steps = append(steps, "commit")
-	}
-	if gjson.Get(buildTarget.RawJSON(), "lint").Exists() {
-		steps = append(steps, "lint")
-	}
-	if gjson.Get(buildTarget.RawJSON(), "build").Exists() {
-		steps = append(steps, "build")
-	}
-	if gjson.Get(buildTarget.RawJSON(), "test").Exists() {
-		steps = append(steps, "test")
-	}
-
-	return steps
-}
-
-func getBuildLanguages(build *stainless.BuildObject) []stainless.Target {
-	if build == nil {
-		return []stainless.Target{}
-	}
-
-	var languages []stainless.Target
-	targets := build.Targets
-
-	if targets.JSON.Node.Valid() {
-		languages = append(languages, "node")
-	}
-	if targets.JSON.Typescript.Valid() {
-		languages = append(languages, "typescript")
-	}
-	if targets.JSON.Python.Valid() {
-		languages = append(languages, "python")
-	}
-	if targets.JSON.Go.Valid() {
-		languages = append(languages, "go")
-	}
-	if targets.JSON.Java.Valid() {
-		languages = append(languages, "java")
-	}
-	if targets.JSON.Kotlin.Valid() {
-		languages = append(languages, "kotlin")
-	}
-	if targets.JSON.Ruby.Valid() {
-		languages = append(languages, "ruby")
-	}
-	if targets.JSON.Terraform.Valid() {
-		languages = append(languages, "terraform")
-	}
-	if targets.JSON.Cli.Valid() {
-		languages = append(languages, "cli")
-	}
-	if targets.JSON.Php.Valid() {
-		languages = append(languages, "php")
-	}
-	if targets.JSON.Csharp.Valid() {
-		languages = append(languages, "csharp")
-	}
-
-	return languages
-
-}

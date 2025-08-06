@@ -133,7 +133,8 @@ var parts = []struct {
 		view: func(m BuildModel, s *strings.Builder) {
 			s.WriteString("\n")
 			if m.build != nil {
-				languages := getBuildLanguages(m.build)
+				buildObj := NewBuildObject(m.build)
+				languages := buildObj.Languages()
 				// Target rows with colors
 				for _, target := range languages {
 					pipeline := ViewBuildPipeline(m.build, target, m.downloads)
@@ -146,10 +147,13 @@ var parts = []struct {
 				completed := 0
 				building := 0
 				for _, target := range languages {
-					if isBuildTargetCompleted(m.build, target) {
-						completed++
-					} else if isBuildTargetInProgress(m.build, target) {
-						building++
+					buildTarget := buildObj.BuildTarget(target)
+					if buildTarget != nil {
+						if buildTarget.IsCompleted() {
+							completed++
+						} else if buildTarget.IsInProgress() {
+							building++
+						}
 					}
 				}
 
@@ -173,20 +177,20 @@ func ViewBuildPipeline(build *stainless.BuildObject, target stainless.Target, do
 	status string
 	path   string
 }) string {
-	buildTarget := getBuildTarget(build, target)
+	buildObj := NewBuildObject(build)
+	buildTarget := buildObj.BuildTarget(target)
 	if buildTarget == nil {
 		return ""
 	}
 
-	stepOrder := getBuildSteps(buildTarget)
+	stepOrder := buildTarget.Steps()
 	var pipeline strings.Builder
 
 	for _, step := range stepOrder {
-		stepUnion := getStepUnion(buildTarget, step)
-		if stepUnion == nil {
+		status, url, conclusion := buildTarget.StepInfo(step)
+		if status == "" {
 			continue // Skip steps that don't exist for this target
 		}
-		status, url, conclusion := extractStepInfo(stepUnion)
 		symbol := ViewStepSymbol(status, conclusion)
 		if pipeline.Len() > 0 {
 			pipeline.WriteString(" → ")
