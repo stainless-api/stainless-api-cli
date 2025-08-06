@@ -130,8 +130,8 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if commitUnion == nil {
 				continue
 			}
-			status, _, _ := extractStepInfo(commitUnion)
-			if status == "completed" {
+			status, _, conclusion := extractStepInfo(commitUnion)
+			if status == "completed" && conclusion != "fatal" {
 				if download, ok := m.downloads[target]; ok && download.status == "not started" {
 					download.status = "started"
 					cmds = append(cmds, m.downloadTarget(target))
