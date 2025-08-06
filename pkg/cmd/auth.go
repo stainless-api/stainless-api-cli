@@ -50,27 +50,43 @@ func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	clientID := cmd.String("client-id")
 	scope := "openapi:read project:write project:read"
-	config, err := startDeviceFlow(ctx, cmd, cc.client, clientID, scope)
+	authResult, err := startDeviceFlow(ctx, cmd, cc.client, clientID, scope)
 	if err != nil {
 		return err
 	}
-	path, err := AuthConfigPath()
-	if err := SaveAuthConfig(config, path); err != nil {
+	
+	config, err := NewAuthConfig()
+	if err != nil {
+		Error("Failed to create config: %v", err)
+		return fmt.Errorf("authentication failed")
+	}
+	
+	config.AccessToken = authResult.AccessToken
+	config.RefreshToken = authResult.RefreshToken
+	config.TokenType = authResult.TokenType
+	
+	if err := config.Save(); err != nil {
 		Error("Failed to save authentication: %v", err)
 		return fmt.Errorf("authentication failed")
 	}
-	Success("Authentication successful! Your credentials have been saved to " + path)
+	Success("Authentication successful! Your credentials have been saved to " + config.ConfigPath)
 	return nil
 }
 
 
 func handleAuthLogout(ctx context.Context, cmd *cli.Command) error {
-	if !HasAuthConfig() {
+	config := &AuthConfig{}
+	found, err := config.Find()
+	if err != nil {
+		return fmt.Errorf("failed to find auth config: %v", err)
+	}
+	
+	if !found {
 		Warn("No active session found.")
 		return nil
 	}
 
-	if err := RemoveAuthConfig(); err != nil {
+	if err := config.Remove(); err != nil {
 		return fmt.Errorf("failed to remove auth file: %v", err)
 	}
 
@@ -86,12 +102,13 @@ func handleAuthStatus(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	// Check for token in config file
-	config, err := LoadAuthConfig()
+	config := &AuthConfig{}
+	found, err := config.Find()
 	if err != nil {
-		return fmt.Errorf("failed to load auth config: %v", err)
+		return fmt.Errorf("failed to find auth config: %v", err)
 	}
 
-	if config == nil {
+	if !found || config.AccessToken == "" {
 		Warn("Not logged in.")
 		return nil
 	}
