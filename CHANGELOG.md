@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.0-alpha.37 (2025-08-07)
+
+Full Changelog: [v0.1.0-alpha.36...v0.1.0-alpha.37](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.36...v0.1.0-alpha.37)
+
+### Features
+
+* add User-Agent ([5e14044](https://github.com/stainless-api/stainless-api-cli/commit/5e140445516ab732da0290c46f6d185df933d258))
+* infer branch better ([06eb8ab](https://github.com/stainless-api/stainless-api-cli/commit/06eb8ab1098dc2fc6d66bf44021a5e5ed4f5217f))
+
+
+### Chores
+
+* internal change ([7acb27b](https://github.com/stainless-api/stainless-api-cli/commit/7acb27b713b5530d017ef8fa1f04c1edaf8bb636))
+
+
+### Refactors
+
+* extract logic out to stainlessutils.go ([a23a33a](https://github.com/stainless-api/stainless-api-cli/commit/a23a33aaa08129f6a00d0423d2660d91aaaf6d3a))
+* extract logic to authconfig.go ([c140592](https://github.com/stainless-api/stainless-api-cli/commit/c14059238b6e9c43fbc55f98271d7ae608a8e6d0))
+* extract logic to workspaceconfig.go ([8735957](https://github.com/stainless-api/stainless-api-cli/commit/87359570d62e6567d2d9c9288e82af22fecd6142))
+* simplify AuthConfig interface ([27572ad](https://github.com/stainless-api/stainless-api-cli/commit/27572ad0621b45d610978083880f2a46a9388378))
+
 ## 0.1.0-alpha.36 (2025-08-06)
 
 Full Changelog: [v0.1.0-alpha.35...v0.1.0-alpha.36](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.35...v0.1.0-alpha.36)
