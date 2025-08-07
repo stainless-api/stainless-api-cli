@@ -334,24 +334,6 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	return nil
 }
 
-// fetchUserOrgs retrieves the list of organizations the user has access to
-func fetchUserOrgs(client stainless.Client, ctx context.Context) []string {
-	res, err := client.Orgs.List(ctx)
-	if err != nil {
-		// Return empty slice if we can't fetch orgs
-		return []string{}
-	}
-
-	var orgs []string
-	for _, org := range res.Data {
-		if org.Slug != "" {
-			orgs = append(orgs, org.Slug)
-		}
-	}
-
-	return orgs
-}
-
 // nameToSlug converts a project name to a URL-friendly slug
 func nameToSlug(name string) string {
 	// Convert to lowercase

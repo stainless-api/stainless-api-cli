@@ -34,8 +34,8 @@ func handleMCP(ctx context.Context, cmd *cli.Command) error {
 
 	// Set STAINLESS_API_KEY if not already in environment
 	if apiKey := os.Getenv("STAINLESS_API_KEY"); apiKey == "" {
-		authConfig, err := LoadAuthConfig()
-		if err == nil && authConfig != nil && authConfig.AccessToken != "" {
+		authConfig := &AuthConfig{}
+		if found, err := authConfig.Find(); err == nil && found && authConfig.AccessToken != "" {
 			env = append(env, fmt.Sprintf("STAINLESS_API_KEY=%s", authConfig.AccessToken))
 		}
 	}
