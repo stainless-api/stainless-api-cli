@@ -250,6 +250,11 @@ var buildsCreate = cli.Command{
 			Aliases: []string{"config"},
 			Usage:   "Path to Stainless config file",
 		},
+		&cli.StringSliceFlag{
+			Name:    "shard",
+			Aliases: []string{"s"},
+			Usage:   "Path to OpenAPI shard file(s) to include in the revision",
+		},
 		&cli.BoolFlag{
 			Name:  "wait",
 			Value: true,
@@ -444,6 +449,10 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 	if err := applyFileFlag(cmd, "stainless-config", "revision.openapi\\.stainless\\.yml.content"); err != nil {
+		return err
+	}
+	// Handle shard flags
+	if err := applyShardFlags(cmd); err != nil {
 		return err
 	}
 
@@ -804,5 +813,34 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
+	return nil
+}
+
+// applyShardFlags processes shard file flags and constructs the revision object
+func applyShardFlags(cmd *cli.Command) error {
+	// Get all shard values (can be multiple)
+	shardPaths := cmd.StringSlice("shard")
+	if len(shardPaths) == 0 {
+		return nil
+	}
+
+	for _, shardPath := range shardPaths {
+		// Read the file content
+		content, err := os.ReadFile(shardPath)
+		if err != nil {
+			return fmt.Errorf("failed to read shard file %s: %v", shardPath, err)
+		}
+
+		// Extract just the filename from the path
+		filename := filepath.Base(shardPath)
+		
+		// Construct the key path for the revision object
+		// e.g., "revision.openapi-shards/api-zones.yaml.content"
+		keyPath := fmt.Sprintf("revision.openapi-shards/%s.content", filename)
+		
+		// Apply the mutation
+		jsonflag.Mutate(jsonflag.Body, keyPath, string(content))
+	}
+
 	return nil
 }
