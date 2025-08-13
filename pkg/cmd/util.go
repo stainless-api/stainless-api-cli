@@ -29,6 +29,7 @@ import (
 
 func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 	opts := []option.RequestOption{
+		option.WithHeader("User-Agent", fmt.Sprintf("Stainless/CLI %s", Version)),
 		option.WithHeader("X-Stainless-Lang", "cli"),
 		option.WithHeader("X-Stainless-Package-Version", Version),
 		option.WithHeader("X-Stainless-Runtime", "cli"),
@@ -53,8 +54,8 @@ func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 	}
 
 	if apiKey := os.Getenv("STAINLESS_API_KEY"); apiKey == "" {
-		config, err := LoadAuthConfig()
-		if err == nil && config != nil {
+		config := &AuthConfig{}
+		if found, err := config.Find(); err == nil && found && config.AccessToken != "" {
 			opts = append(opts, option.WithAPIKey(config.AccessToken))
 		}
 	}

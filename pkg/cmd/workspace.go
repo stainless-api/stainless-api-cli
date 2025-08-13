@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
-	"github.com/stainless-api/stainless-api-go"
 	"github.com/urfave/cli/v3"
 )
 
@@ -235,71 +234,6 @@ func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	return nil
-}
-
-type projectInfo struct {
-	Name string
-	Org  string
-}
-
-// fetchUserProjects retrieves the list of projects the user has access to
-func fetchUserProjects(ctx context.Context, client stainless.Client) map[string]projectInfo {
-	params := stainless.ProjectListParams{}
-
-	res, err := client.Projects.List(ctx, params)
-	if err != nil {
-		// Return empty map if we can't fetch projects
-		return map[string]projectInfo{}
-	}
-
-	projectInfoMap := make(map[string]projectInfo)
-	for _, project := range res.Data {
-		if project.Slug != "" {
-			projectInfoMap[project.Slug] = projectInfo{
-				Name: project.Slug,
-				Org:  project.Org,
-			}
-		}
-	}
-
-	return projectInfoMap
-}
-
-// findOpenAPISpec searches for common OpenAPI spec files in the current directory
-func findOpenAPISpec() string {
-	commonOpenAPIFiles := []string{
-		"openapi.json",
-		"openapi.yml",
-		"openapi.yaml",
-		"api.yml",
-		"api.yaml",
-		"spec.yml",
-		"spec.yaml",
-	}
-
-	for _, filename := range commonOpenAPIFiles {
-		if _, err := os.Stat(filename); err == nil {
-			return "./" + filename
-		}
-	}
-	return ""
-}
-
-// findStainlessConfig searches for common Stainless config files in the current directory
-func findStainlessConfig() string {
-	commonStainlessFiles := []string{
-		"openapi.stainless.yml",
-		"openapi.stainless.yaml",
-		"stainless.yml",
-		"stainless.yaml",
-	}
-
-	for _, filename := range commonStainlessFiles {
-		if _, err := os.Stat(filename); err == nil {
-			return "./" + filename
-		}
-	}
-	return ""
 }
 
 func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {

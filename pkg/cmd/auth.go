@@ -4,12 +4,10 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -52,98 +50,43 @@ func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	clientID := cmd.String("client-id")
 	scope := "openapi:read project:write project:read"
-	config, err := startDeviceFlow(ctx, cmd, cc.client, clientID, scope)
+	authResult, err := startDeviceFlow(ctx, cmd, cc.client, clientID, scope)
 	if err != nil {
 		return err
 	}
-	path, err := AuthConfigPath()
-	if err := SaveAuthConfig(config, path); err != nil {
+	
+	config, err := NewAuthConfig()
+	if err != nil {
+		Error("Failed to create config: %v", err)
+		return fmt.Errorf("authentication failed")
+	}
+	
+	config.AccessToken = authResult.AccessToken
+	config.RefreshToken = authResult.RefreshToken
+	config.TokenType = authResult.TokenType
+	
+	if err := config.Save(); err != nil {
 		Error("Failed to save authentication: %v", err)
 		return fmt.Errorf("authentication failed")
 	}
-	Success("Authentication successful! Your credentials have been saved to " + path)
+	Success("Authentication successful! Your credentials have been saved to " + config.ConfigPath)
 	return nil
 }
 
-// AuthConfig stores the OAuth credentials
-type AuthConfig struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token,omitempty"`
-	TokenType    string `json:"token_type"`
-}
-
-// ConfigDir returns the directory where config files are stored
-func ConfigDir() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	configDir := filepath.Join(homeDir, ".config", "stainless")
-	if err := os.MkdirAll(configDir, 0755); err != nil {
-		return "", err
-	}
-	return configDir, nil
-}
-
-// LoadAuthConfig loads the auth config from disk
-func LoadAuthConfig() (*AuthConfig, error) {
-	configDir, err := ConfigDir()
-	if err != nil {
-		return nil, err
-	}
-
-	configPath := filepath.Join(configDir, "auth.json")
-	file, err := os.Open(configPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	defer file.Close()
-
-	var config AuthConfig
-	if err := json.NewDecoder(file).Decode(&config); err != nil {
-		return nil, err
-	}
-
-	return &config, nil
-}
-
-func AuthConfigPath() (string, error) {
-	configDir, err := ConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(configDir, "auth.json"), nil
-}
-
-// SaveAuthConfig saves the auth config to disk
-func SaveAuthConfig(config *AuthConfig, configPath string) error {
-	file, err := os.Create(configPath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	encoder := json.NewEncoder(file)
-	encoder.SetIndent("", "  ")
-	return encoder.Encode(config)
-}
 
 func handleAuthLogout(ctx context.Context, cmd *cli.Command) error {
-	configDir, err := ConfigDir()
+	config := &AuthConfig{}
+	found, err := config.Find()
 	if err != nil {
-		return fmt.Errorf("failed to get config directory: %v", err)
+		return fmt.Errorf("failed to find auth config: %v", err)
 	}
-
-	configPath := filepath.Join(configDir, "auth.json")
-	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+	
+	if !found {
 		Warn("No active session found.")
 		return nil
 	}
 
-	if err := os.Remove(configPath); err != nil {
+	if err := config.Remove(); err != nil {
 		return fmt.Errorf("failed to remove auth file: %v", err)
 	}
 
@@ -159,12 +102,13 @@ func handleAuthStatus(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	// Check for token in config file
-	config, err := LoadAuthConfig()
+	config := &AuthConfig{}
+	found, err := config.Find()
 	if err != nil {
-		return fmt.Errorf("failed to load auth config: %v", err)
+		return fmt.Errorf("failed to find auth config: %v", err)
 	}
 
-	if config == nil {
+	if !found || config.AccessToken == "" {
 		Warn("Not logged in.")
 		return nil
 	}
