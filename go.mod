@@ -2,7 +2,7 @@ module github.com/stainless-api/stainless-api-cli
 
 go 1.23.0
 
-toolchain go1.23.12
+toolchain go1.24.6
 
 require (
 	github.com/stainless-api/stainless-api-go v0.22.0
