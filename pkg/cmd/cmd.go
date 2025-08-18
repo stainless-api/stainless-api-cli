@@ -44,6 +44,7 @@ var Command = cli.Command{
 				&projectsBranchesRetrieve,
 				&projectsBranchesList,
 				&projectsBranchesDelete,
+				&projectsBranchesRebase,
 			},
 		},
 

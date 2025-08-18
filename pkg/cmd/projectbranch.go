@@ -103,6 +103,28 @@ var projectsBranchesDelete = cli.Command{
 	HideHelpCommand: true,
 }
 
+var projectsBranchesRebase = cli.Command{
+	Name:  "rebase",
+	Usage: "Rebase a project branch",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name: "project",
+		},
+		&cli.StringFlag{
+			Name: "branch",
+		},
+		&jsonflag.JSONStringFlag{
+			Name: "base",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "base",
+			},
+		},
+	},
+	Action:          handleProjectsBranchesRebase,
+	HideHelpCommand: true,
+}
+
 func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	params := stainless.ProjectBranchNewParams{}
@@ -180,5 +202,25 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	fmt.Printf("%s\n", ColorizeJSON(string(res), os.Stdout))
+	return nil
+}
+
+func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(cmd)
+	params := stainless.ProjectBranchRebaseParams{}
+	if cmd.IsSet("project") {
+		params.Project = stainless.String(cmd.Value("project").(string))
+	}
+	res, err := cc.client.Projects.Branches.Rebase(
+		context.TODO(),
+		cmd.Value("branch").(string),
+		params,
+		option.WithMiddleware(cc.AsMiddleware()),
+	)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
 	return nil
 }
