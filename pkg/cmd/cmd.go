@@ -67,6 +67,7 @@ stl builds create --branch <branch>`,
 				&projectsBranchesRetrieve,
 				&projectsBranchesList,
 				&projectsBranchesDelete,
+				&projectsBranchesRebase,
 			},
 		},
 
