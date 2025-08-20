@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.0-alpha.38 (2025-08-20)
+
+Full Changelog: [v0.1.0-alpha.37...v0.1.0-alpha.38](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.37...v0.1.0-alpha.38)
+
+### Features
+
+* [WIP] add branch rebasing to the API ([0ffdf30](https://github.com/stainless-api/stainless-api-cli/commit/0ffdf303808ea76b14c80280ab36d94a9f6d739d))
+* **api:** update go_sdk_version ([dcb1497](https://github.com/stainless-api/stainless-api-cli/commit/dcb14971ba57548535646186d3ccd1a0ec8830d1))
+* make --branch no longer required ([ecea04a](https://github.com/stainless-api/stainless-api-cli/commit/ecea04aae24b722fd046fa80a39f380157e7e3e0))
+
 ## 0.1.0-alpha.37 (2025-08-13)
 
 Full Changelog: [v0.1.0-alpha.36...v0.1.0-alpha.37](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.36...v0.1.0-alpha.37)
