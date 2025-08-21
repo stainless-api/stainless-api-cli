@@ -1,6 +1,6 @@
 # Stainless CLI
 
-The official CLI for the Stainless REST API.
+The official CLI for the [Stainless REST API](https://www.stainless.com/docs/getting-started/quickstart-cli).
 
 It is generated with [Stainless](https://www.stainless.com/).
 
