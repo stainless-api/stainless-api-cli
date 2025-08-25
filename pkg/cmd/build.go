@@ -368,17 +368,17 @@ var buildsCompare = cli.Command{
 	Usage: "Creates two builds whose outputs can be compared directly",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
-			Name: "base.revision",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "base.revision",
-			},
-		},
-		&jsonflag.JSONStringFlag{
 			Name: "base.branch",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "base.branch",
+			},
+		},
+		&jsonflag.JSONStringFlag{
+			Name: "base.revision",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "base.revision",
 			},
 		},
 		&jsonflag.JSONStringFlag{
@@ -389,17 +389,17 @@ var buildsCompare = cli.Command{
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "head.revision",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "head.revision",
-			},
-		},
-		&jsonflag.JSONStringFlag{
 			Name: "head.branch",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "head.branch",
+			},
+		},
+		&jsonflag.JSONStringFlag{
+			Name: "head.revision",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Body,
+				Path: "head.revision",
 			},
 		},
 		&jsonflag.JSONStringFlag{
