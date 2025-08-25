@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.0-alpha.39 (2025-08-25)
+
+Full Changelog: [v0.1.0-alpha.38...v0.1.0-alpha.39](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.38...v0.1.0-alpha.39)
+
+### Features
+
+* **api:** manual updates ([351b067](https://github.com/stainless-api/stainless-api-cli/commit/351b067c40ae8dde9369a6557b1a98b42dde835e))
+
+
+### Documentation
+
+* add contact email and link to docs ([f382570](https://github.com/stainless-api/stainless-api-cli/commit/f382570eb1016f346ada5fa64a0c668a2b01b52d))
+
 ## 0.1.0-alpha.38 (2025-08-20)
 
 Full Changelog: [v0.1.0-alpha.37...v0.1.0-alpha.38](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.37...v0.1.0-alpha.38)
