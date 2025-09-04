@@ -21,6 +21,14 @@ brew install stl
 go install 'github.com/stainless-api/stainless-api-cli/cmd/stl@latest'
 ```
 
+### Running Locally
+
+<!-- x-release-please-start-version -->
+
+```sh
+go run cmd/stl/main.go
+```
+
 <!-- x-release-please-end -->
 
 ## Usage
