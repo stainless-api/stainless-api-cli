@@ -68,7 +68,6 @@ stl builds create --branch <branch>`,
 					&projectsList,
 				},
 			},
-
 			{
 				Name:     "projects:branches",
 				Category: "API RESOURCE",
@@ -80,7 +79,6 @@ stl builds create --branch <branch>`,
 					&projectsBranchesRebase,
 				},
 			},
-
 			{
 				Name:     "projects:configs",
 				Category: "API RESOURCE",
@@ -89,7 +87,6 @@ stl builds create --branch <branch>`,
 					&projectsConfigsGuess,
 				},
 			},
-
 			{
 				Name:     "builds",
 				Category: "API RESOURCE",
@@ -100,7 +97,6 @@ stl builds create --branch <branch>`,
 					&buildsCompare,
 				},
 			},
-
 			{
 				Name:     "builds:diagnostics",
 				Category: "API RESOURCE",
@@ -108,7 +104,6 @@ stl builds create --branch <branch>`,
 					&buildsDiagnosticsList,
 				},
 			},
-
 			{
 				Name:     "builds:target-outputs",
 				Category: "API RESOURCE",
@@ -116,7 +111,6 @@ stl builds create --branch <branch>`,
 					&buildsTargetOutputsRetrieve,
 				},
 			},
-
 			{
 				Name:     "orgs",
 				Category: "API RESOURCE",
