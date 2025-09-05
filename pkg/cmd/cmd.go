@@ -45,7 +45,6 @@ func init() {
 					&projectsList,
 				},
 			},
-
 			{
 				Name:     "projects:branches",
 				Category: "API RESOURCE",
@@ -57,7 +56,6 @@ func init() {
 					&projectsBranchesRebase,
 				},
 			},
-
 			{
 				Name:     "projects:configs",
 				Category: "API RESOURCE",
@@ -66,7 +64,6 @@ func init() {
 					&projectsConfigsGuess,
 				},
 			},
-
 			{
 				Name:     "builds",
 				Category: "API RESOURCE",
@@ -77,7 +74,6 @@ func init() {
 					&buildsCompare,
 				},
 			},
-
 			{
 				Name:     "builds:diagnostics",
 				Category: "API RESOURCE",
@@ -85,7 +81,6 @@ func init() {
 					&buildsDiagnosticsList,
 				},
 			},
-
 			{
 				Name:     "builds:target-outputs",
 				Category: "API RESOURCE",
@@ -93,7 +88,6 @@ func init() {
 					&buildsTargetOutputsRetrieve,
 				},
 			},
-
 			{
 				Name:     "orgs",
 				Category: "API RESOURCE",
