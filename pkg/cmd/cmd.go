@@ -87,7 +87,7 @@ func init() {
 			},
 
 			{
-				Name:     "builds:target_outputs",
+				Name:     "builds:target-outputs",
 				Category: "API RESOURCE",
 				Commands: []*cli.Command{
 					&buildsTargetOutputsRetrieve,
