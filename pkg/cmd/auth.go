@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -54,17 +55,17 @@ func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-	
+
 	config, err := NewAuthConfig()
 	if err != nil {
 		Error("Failed to create config: %v", err)
 		return fmt.Errorf("authentication failed")
 	}
-	
+
 	config.AccessToken = authResult.AccessToken
 	config.RefreshToken = authResult.RefreshToken
 	config.TokenType = authResult.TokenType
-	
+
 	if err := config.Save(); err != nil {
 		Error("Failed to save authentication: %v", err)
 		return fmt.Errorf("authentication failed")
@@ -73,14 +74,13 @@ func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
 	return nil
 }
 
-
 func handleAuthLogout(ctx context.Context, cmd *cli.Command) error {
 	config := &AuthConfig{}
 	found, err := config.Find()
 	if err != nil {
 		return fmt.Errorf("failed to find auth config: %v", err)
 	}
-	
+
 	if !found {
 		Warn("No active session found.")
 		return nil
@@ -137,8 +137,9 @@ func startDeviceFlow(ctx context.Context, cmd *cli.Command, client stainless.Cli
 	}
 
 	err := client.Post(ctx, "api/oauth/device", map[string]string{
-		"client_id": clientID,
-		"scope":     scope,
+		"client_id":   clientID,
+		"scope":       scope,
+		"device_name": getDeviceName(),
 	}, &deviceResponse)
 
 	if err != nil {
@@ -219,4 +220,36 @@ func pollForToken(ctx context.Context, client stainless.Client, clientID, device
 		}, nil
 	}
 	return nil, fmt.Errorf("auth: timed out")
+}
+
+// getDeviceName generates a descriptive device name for OAuth device flow
+func getDeviceName() string {
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "Unknown Device"
+	}
+
+	username := os.Getenv("USER")
+	if username == "" {
+		username = os.Getenv("USERNAME") // Windows fallback
+	}
+
+	// Get OS name in a more human-readable format
+	osName := runtime.GOOS
+	switch osName {
+	case "darwin":
+		osName = "macOS"
+	case "windows":
+		osName = "Windows"
+	case "linux":
+		osName = "Linux"
+	default:
+		osName = strings.Title(osName)
+	}
+
+	if username != "" {
+		return fmt.Sprintf("Stainless CLI on %s (%s, %s)", hostname, username, osName)
+	}
+
+	return fmt.Sprintf("Stainless CLI on %s (%s)", hostname, osName)
 }
