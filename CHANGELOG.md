@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.41 (2025-09-09)
+
+Full Changelog: [v0.1.0-alpha.40...v0.1.0-alpha.41](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.40...v0.1.0-alpha.41)
+
+### Bug Fixes
+
+* **homebrew:** homebrew distribution should work now ([db54fbd](https://github.com/stainless-api/stainless-api-cli/commit/db54fbd09b4b259e054300a5d711f5798e425cde))
+
 ## 0.1.0-alpha.40 (2025-09-09)
 
 Full Changelog: [v0.1.0-alpha.39...v0.1.0-alpha.40](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.39...v0.1.0-alpha.40)
