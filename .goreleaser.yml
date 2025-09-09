@@ -43,24 +43,24 @@ archives:
   - id: linux-archive
     ids: [linux]
     name_template: '{{ .ProjectName }}_{{ .Version }}_linux_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
-    wrap_in_directory: true
     formats: [tar.gz]
     files:
       - completions/*
+      - man/*/*
   - id: macos-archive
     ids: [macos]
     name_template: '{{ .ProjectName }}_{{ .Version }}_macos_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
-    wrap_in_directory: true
     formats: [zip]
     files:
       - completions/*
+      - man/*/*
   - id: windows-archive
     ids: [windows]
     name_template: '{{ .ProjectName }}_{{ .Version }}_windows_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
-    wrap_in_directory: false
     formats: [zip]
     files:
       - completions/*
+      - man/*/*
 
 snapshot:
   version_template: '{{ .Tag }}-next'
