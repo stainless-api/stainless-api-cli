@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.0-alpha.40 (2025-09-09)
+
+Full Changelog: [v0.1.0-alpha.39...v0.1.0-alpha.40](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.39...v0.1.0-alpha.40)
+
+### Features
+
+* **api:** resources and methods now use kebab-case instead of snake_case ([30eb64b](https://github.com/stainless-api/stainless-api-cli/commit/30eb64bd5450582b8a15d12720550574f9f6567e))
+* **auth:** add descriptive device names with hostname and OS info ([b36e2d0](https://github.com/stainless-api/stainless-api-cli/commit/b36e2d02d7f34b97aa44cea21993e74791d4d43e))
+* now ships with manpages ([1f312b4](https://github.com/stainless-api/stainless-api-cli/commit/1f312b4930b5245866fd8fce1f5266962f7ee65d))
+
+
+### Bug Fixes
+
+* some methods no longer require a prefix ([4251212](https://github.com/stainless-api/stainless-api-cli/commit/425121255ec5f7abcb909a919fa0b20bc1ab18f9))
+
+
+### Chores
+
+* bump go sdk version ([9669c15](https://github.com/stainless-api/stainless-api-cli/commit/9669c158faf4f88861b2c4016c54d453d42c698f))
+* **internal:** codegen related update ([291d111](https://github.com/stainless-api/stainless-api-cli/commit/291d111fa1512ddb47cab59d94a0524b440f4ed2))
+
 ## 0.1.0-alpha.39 (2025-08-25)
 
 Full Changelog: [v0.1.0-alpha.38...v0.1.0-alpha.39](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.38...v0.1.0-alpha.39)
