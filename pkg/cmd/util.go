@@ -14,7 +14,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/itchyny/json2yaml"
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
+	"github.com/stainless-api/stainless-api-cli/pkg/jsonview"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -221,16 +223,38 @@ func shouldUseColors(w io.Writer) bool {
 		}
 	}
 
-	if isTerminal(w) {
-		return true
-	}
-	return false
-
+	return isTerminal(w)
 }
 
-func ColorizeJSON(input string, w io.Writer) string {
-	if !shouldUseColors(w) {
-		return input
+func ShowJSON(title, jsonText, format string) error {
+	switch strings.ToLower(format) {
+	case "auto":
+		return ShowJSON(title, jsonText, "json")
+	case "explore":
+		return jsonview.ExploreJSON(title, jsonText)
+	case "pretty":
+		jsonview.DisplayJSON(title, jsonText)
+		return nil
+	case "json":
+		prettyJSON := pretty.Pretty([]byte(jsonText))
+		if shouldUseColors(os.Stdout) {
+			fmt.Print(string(pretty.Color(prettyJSON, pretty.TerminalStyle)))
+		} else {
+			fmt.Print(string(prettyJSON))
+		}
+		return nil
+	case "raw":
+		fmt.Println(jsonText)
+		return nil
+	case "yaml":
+		input := strings.NewReader(jsonText)
+		var yaml strings.Builder
+		if err := json2yaml.Convert(&yaml, input); err != nil {
+			return err
+		}
+		fmt.Print(yaml.String())
+		return nil
+	default:
+		return fmt.Errorf("Invalid format: %s, valid formats are: %s", format, strings.Join(OutputFormats[:], ", "))
 	}
-	return string(pretty.Color(pretty.Pretty([]byte(input)), nil))
 }

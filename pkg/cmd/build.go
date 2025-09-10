@@ -4,8 +4,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
@@ -212,8 +210,8 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("builds create", res.RawJSON(), format)
 }
 
 func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
@@ -227,8 +225,8 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("builds retrieve", res.RawJSON(), format)
 }
 
 func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
@@ -243,8 +241,8 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("builds list", res.RawJSON(), format)
 }
 
 func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
@@ -259,6 +257,6 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("builds compare", res.RawJSON(), format)
 }

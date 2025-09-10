@@ -4,8 +4,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
@@ -62,6 +60,6 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("builds:target-outputs retrieve", res.RawJSON(), format)
 }
