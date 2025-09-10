@@ -5,16 +5,20 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"github.com/urfave/cli/v3"
@@ -574,12 +578,12 @@ func hasFailedCommitStep(build stainless.BuildObject, target stainless.Target) b
 	if buildTarget == nil {
 		return false
 	}
-	
+
 	status, _, conclusion := buildTarget.StepInfo("commit")
 	if status == "completed" && conclusion == "fatal" {
 		return true
 	}
-	
+
 	return false
 }
 
