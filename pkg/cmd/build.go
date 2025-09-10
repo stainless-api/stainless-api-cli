@@ -18,6 +18,7 @@ import (
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"github.com/urfave/cli/v3"
@@ -482,8 +483,8 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("builds create", res.RawJSON(), format)
 }
 
 func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
@@ -497,8 +498,8 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("builds retrieve", res.RawJSON(), format)
 }
 
 // pullBuildOutputs pulls the outputs for a completed build
@@ -577,12 +578,12 @@ func hasFailedCommitStep(build stainless.BuildObject, target stainless.Target) b
 	if buildTarget == nil {
 		return false
 	}
-	
+
 	status, _, conclusion := buildTarget.StepInfo("commit")
 	if status == "completed" && conclusion == "fatal" {
 		return true
 	}
-	
+
 	return false
 }
 
@@ -782,8 +783,8 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("builds list", res.RawJSON(), format)
 }
 
 func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
@@ -798,6 +799,6 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("builds compare", res.RawJSON(), format)
 }

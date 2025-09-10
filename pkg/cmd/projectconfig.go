@@ -4,8 +4,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
@@ -82,8 +80,8 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(string(res), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("projects:configs retrieve", string(res), format)
 }
 
 func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
@@ -103,6 +101,6 @@ func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(string(res), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("projects:configs guess", string(res), format)
 }

@@ -4,8 +4,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
@@ -130,8 +128,8 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("projects create", res.RawJSON(), format)
 }
 
 func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
@@ -149,8 +147,8 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("projects retrieve", res.RawJSON(), format)
 }
 
 func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
@@ -168,8 +166,8 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("projects update", res.RawJSON(), format)
 }
 
 func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
@@ -184,6 +182,6 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
-	return nil
+	format := cmd.Root().String("format")
+	return ShowJSON("projects list", res.RawJSON(), format)
 }
