@@ -264,7 +264,8 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 
 	gitUser, err := getGitUsername()
 	if err != nil {
-		return fmt.Errorf("failed to get git username: %v", err)
+		Warn("Couldn't get a git user: %s", err)
+		gitUser = "user"
 	}
 
 	var selectedBranch string
@@ -416,11 +417,3 @@ func getCurrentGitBranch() (string, error) {
 
 	return branch, nil
 }
-
-
-
-
-
-
-
-
