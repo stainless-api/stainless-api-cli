@@ -85,7 +85,8 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 		return err
 	}
 
-	fmt.Printf("%s\n", ColorizeJSON(res.RawJSON(), os.Stdout))
+	format := cmd.Root().String("format")
+	fmt.Printf("%s\n", ShowJSON("builds:target_outputs retrieve", res.RawJSON(), format))
 
 	group := Info("Downloading output")
 	if cmd.Bool("pull") {
