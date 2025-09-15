@@ -121,7 +121,6 @@ func (b *BuildObject) Languages() []stainless.Target {
 	return languages
 }
 
-
 // IsCompleted checks if the entire build is completed (all targets)
 func (b *BuildObject) IsCompleted() bool {
 	languages := b.Languages()
@@ -133,7 +132,6 @@ func (b *BuildObject) IsCompleted() bool {
 	}
 	return true
 }
-
 
 // BuildTarget wraps stainless.BuildTarget to provide convenience methods
 type BuildTarget struct {

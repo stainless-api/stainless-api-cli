@@ -171,11 +171,10 @@ stl builds create --branch <branch>`,
 					},
 				},
 			},
-
 		},
 		EnableShellCompletion:      true,
 		ShellCompletionCommandName: "@completion",
-		HideHelpCommand:       true,
+		HideHelpCommand:            true,
 	}
 }
 
