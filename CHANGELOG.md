@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.0-alpha.42 (2025-09-15)
+
+Full Changelog: [v0.1.0-alpha.41...v0.1.0-alpha.42](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.41...v0.1.0-alpha.42)
+
+### Features
+
+* improved formatting options for command outputs ([0fef47d](https://github.com/stainless-api/stainless-api-cli/commit/0fef47d958d79dea5d71674bf6eee5109a14743d))
+* skip ignored diagnostics ([1edf832](https://github.com/stainless-api/stainless-api-cli/commit/1edf8322fe459c6c2fdf524e3501e5efd03bc97e))
+
+
+### Bug Fixes
+
+* dont crash when git user is not available ([7012171](https://github.com/stainless-api/stainless-api-cli/commit/701217124580a992cc47fdd8c4762f70c1130105))
+* lint error ([7eda049](https://github.com/stainless-api/stainless-api-cli/commit/7eda0495e88be8348edf9c789ce60f0cac6eab3f))
+* more merge conflict issues ([2416212](https://github.com/stainless-api/stainless-api-cli/commit/2416212db96b9f3fb15edc5c08ff7a9af8bb1d0f))
+
 ## 0.1.0-alpha.41 (2025-09-09)
 
 Full Changelog: [v0.1.0-alpha.40...v0.1.0-alpha.41](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.40...v0.1.0-alpha.41)
