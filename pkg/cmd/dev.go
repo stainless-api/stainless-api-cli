@@ -211,7 +211,10 @@ func (m BuildModel) fetchDiagnostics() tea.Cmd {
 			Limit: stainless.Float(100),
 		})
 		if diagnostics.Next() {
-			diags = append(diags, diagnostics.Current())
+			diag := diagnostics.Current()
+			if !diag.Ignored {
+				diags = append(diags, diag)
+			}
 		}
 		return fetchDiagnosticsMsg(diags)
 	}
