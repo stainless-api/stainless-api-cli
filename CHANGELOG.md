@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.43 (2025-09-16)
+
+Full Changelog: [v0.1.0-alpha.42...v0.1.0-alpha.43](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.42...v0.1.0-alpha.43)
+
+### Bug Fixes
+
+* fix diagnostic iteration ([bd8ce45](https://github.com/stainless-api/stainless-api-cli/commit/bd8ce45278e05dcc90ee88bdb9dfb9225345c0f9))
+
 ## 0.1.0-alpha.42 (2025-09-15)
 
 Full Changelog: [v0.1.0-alpha.41...v0.1.0-alpha.42](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.41...v0.1.0-alpha.42)
