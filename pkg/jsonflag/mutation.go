@@ -20,7 +20,7 @@ const (
 type Mutation struct {
 	Kind  MutationKind
 	Path  string
-	Value interface{}
+	Value any
 }
 
 type registry struct {
@@ -29,7 +29,7 @@ type registry struct {
 
 var globalRegistry = &registry{}
 
-func (r *registry) Mutate(kind MutationKind, path string, value interface{}) {
+func (r *registry) Mutate(kind MutationKind, path string, value any) {
 	r.mutations = append(r.mutations, Mutation{
 		Kind:  kind,
 		Path:  path,
@@ -68,7 +68,7 @@ func (r *registry) List() []Mutation {
 }
 
 // Mutate adds a mutation that will be applied to the specified kind of data
-func Mutate(kind MutationKind, path string, value interface{}) {
+func Mutate(kind MutationKind, path string, value any) {
 	globalRegistry.Mutate(kind, path, value)
 }
 
@@ -87,11 +87,10 @@ func ListMutations() []Mutation {
 	return globalRegistry.List()
 }
 
-func jsonSet(json []byte, path string, value interface{}) ([]byte, error) {
+func jsonSet(json []byte, path string, value any) ([]byte, error) {
 	keys := strings.Split(path, ".")
 	path = ""
-	for i := 0; i < len(keys); i++ {
-		key := keys[i]
+	for _, key := range keys {
 		if key == "#" {
 			key = strconv.Itoa(len(gjson.GetBytes(json, path).Array()) - 1)
 		}

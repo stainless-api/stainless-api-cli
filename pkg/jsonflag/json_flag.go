@@ -12,7 +12,7 @@ type JSONConfig struct {
 	Kind MutationKind
 	Path string
 	// For boolean flags that set a specific value when present
-	SetValue interface{}
+	SetValue any
 }
 
 type JSONValueCreator[T any] struct{}
@@ -63,11 +63,9 @@ func (v *jsonValue[T]) Set(val string) error {
 			return nil
 		}
 		// For any flags with SetValue, register the configured value
-		if _, isAny := any(parsed).(interface{}); isAny {
-			globalRegistry.Mutate(v.config.Kind, v.config.Path, v.config.SetValue)
-			*v.destination = any(v.config.SetValue).(T)
-			return nil
-		}
+		globalRegistry.Mutate(v.config.Kind, v.config.Path, v.config.SetValue)
+		*v.destination = any(v.config.SetValue).(T)
+		return nil
 	}
 
 	switch any(parsed).(type) {
@@ -114,8 +112,8 @@ func (v *jsonValue[T]) Set(val string) error {
 			return fmt.Errorf("invalid datetime value %q: %w", val, parseErr)
 		}
 		parsed = any(timeVal).(T)
-	case interface{}:
-		// For interface{}, store the string value directly
+	case any:
+		// For `any`, store the string value directly
 		parsed = any(val).(T)
 	default:
 		return fmt.Errorf("unsupported type for JSON flag")
@@ -247,4 +245,4 @@ type JSONIntFlag = cli.FlagBase[int, JSONConfig, JSONValueCreator[int]]
 type JSONFloatFlag = cli.FlagBase[float64, JSONConfig, JSONValueCreator[float64]]
 type JSONDatetimeFlag = cli.FlagBase[time.Time, JSONConfig, JSONValueCreator[time.Time]]
 type JSONDateFlag = cli.FlagBase[time.Time, JSONConfig, JSONDateValueCreator]
-type JSONAnyFlag = cli.FlagBase[interface{}, JSONConfig, JSONValueCreator[interface{}]]
+type JSONAnyFlag = cli.FlagBase[any, JSONConfig, JSONValueCreator[any]]
