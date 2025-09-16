@@ -13,7 +13,7 @@ import (
 
 var projectsCreate = cli.Command{
 	Name:  "create",
-	Usage: "Create a new project",
+	Usage: "Create a new project.",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
 			Name: "display-name",
@@ -57,7 +57,7 @@ var projectsCreate = cli.Command{
 
 var projectsRetrieve = cli.Command{
 	Name:  "retrieve",
-	Usage: "Retrieve a project by name",
+	Usage: "Retrieve a project by name.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project",
@@ -69,7 +69,7 @@ var projectsRetrieve = cli.Command{
 
 var projectsUpdate = cli.Command{
 	Name:  "update",
-	Usage: "Update a project's properties",
+	Usage: "Update a project's properties.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project",
@@ -88,7 +88,7 @@ var projectsUpdate = cli.Command{
 
 var projectsList = cli.Command{
 	Name:  "list",
-	Usage: "List projects in an organization, from oldest to newest",
+	Usage: "List projects in an organization, from oldest to newest.",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
 			Name: "cursor",
