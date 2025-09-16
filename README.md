@@ -45,8 +45,8 @@ stl [resource] [command] [flags]
 
 ```sh
 stl builds create \
-  --project project \
-  --revision string
+  --project stainless \
+  --revision main
 ```
 
 For details about specific commands, use the `--help` flag.
