@@ -51,15 +51,17 @@ var buildsTargetOutputsRetrieve = cli.Command{
 func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	params := stainless.BuildTargetOutputGetParams{}
-	res, err := cc.client.Builds.TargetOutputs.Get(
+	var res []byte
+	_, err := cc.client.Builds.TargetOutputs.Get(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("builds:target-outputs retrieve", res.RawJSON(), format)
+	return ShowJSON("builds:target-outputs retrieve", string(res), format)
 }

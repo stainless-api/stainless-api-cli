@@ -69,7 +69,7 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
 	}
-	res := []byte{}
+	var res []byte
 	_, err := cc.client.Projects.Configs.Get(
 		context.TODO(),
 		params,
@@ -90,7 +90,7 @@ func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
 	}
-	res := []byte{}
+	var res []byte
 	_, err := cc.client.Projects.Configs.Guess(
 		context.TODO(),
 		params,

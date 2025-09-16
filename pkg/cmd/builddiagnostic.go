@@ -61,16 +61,18 @@ var buildsDiagnosticsList = cli.Command{
 func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	params := stainless.BuildDiagnosticListParams{}
-	res, err := cc.client.Builds.Diagnostics.List(
+	var res []byte
+	_, err := cc.client.Builds.Diagnostics.List(
 		context.TODO(),
 		cmd.Value("build-id").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("builds:diagnostics list", res.RawJSON(), format)
+	return ShowJSON("builds:diagnostics list", string(res), format)
 }
