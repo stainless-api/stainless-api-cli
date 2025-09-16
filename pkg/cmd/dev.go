@@ -210,7 +210,7 @@ func (m BuildModel) fetchDiagnostics() tea.Cmd {
 		diagnostics := m.cc.client.Builds.Diagnostics.ListAutoPaging(m.ctx, m.build.ID, stainless.BuildDiagnosticListParams{
 			Limit: stainless.Float(100),
 		})
-		if diagnostics.Next() {
+		for diagnostics.Next() {
 			diag := diagnostics.Current()
 			if !diag.Ignored {
 				diags = append(diags, diag)
