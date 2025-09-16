@@ -13,7 +13,7 @@ import (
 
 var buildsCreate = cli.Command{
 	Name:  "create",
-	Usage: "Create a new build",
+	Usage: "Create a build, on top of a project branch, against a given input revision.",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
 			Name: "project",
@@ -72,7 +72,7 @@ var buildsCreate = cli.Command{
 
 var buildsRetrieve = cli.Command{
 	Name:  "retrieve",
-	Usage: "Retrieve a build by ID",
+	Usage: "Retrieve a build by its ID.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "build-id",
@@ -84,7 +84,7 @@ var buildsRetrieve = cli.Command{
 
 var buildsList = cli.Command{
 	Name:  "list",
-	Usage: "List builds for a project",
+	Usage: "List user-triggered builds for a given project.",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
 			Name: "project",
@@ -128,7 +128,7 @@ var buildsList = cli.Command{
 
 var buildsCompare = cli.Command{
 	Name:  "compare",
-	Usage: "Creates two builds whose outputs can be compared directly",
+	Usage: "Create two builds whose outputs can be directly compared with each other.",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
 			Name: "base.branch",

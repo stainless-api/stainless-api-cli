@@ -13,7 +13,7 @@ import (
 
 var buildsTargetOutputsRetrieve = cli.Command{
 	Name:  "retrieve",
-	Usage: "Download the output of a build target",
+	Usage: "Retrieve a method to download an output for a given build target.",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
 			Name: "build-id",

@@ -13,7 +13,7 @@ import (
 
 var buildsDiagnosticsList = cli.Command{
 	Name:  "list",
-	Usage: "Get diagnostics for a build",
+	Usage: "Get the list of diagnostics for a given build.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "build-id",

@@ -13,7 +13,7 @@ import (
 
 var projectsBranchesCreate = cli.Command{
 	Name:  "create",
-	Usage: "Create a new branch for a project",
+	Usage: "Create a new branch for a project.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project",
@@ -47,7 +47,7 @@ var projectsBranchesCreate = cli.Command{
 
 var projectsBranchesRetrieve = cli.Command{
 	Name:  "retrieve",
-	Usage: "Retrieve a project branch",
+	Usage: "Retrieve a project branch by name.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project",
@@ -62,7 +62,7 @@ var projectsBranchesRetrieve = cli.Command{
 
 var projectsBranchesList = cli.Command{
 	Name:  "list",
-	Usage: "List project branches",
+	Usage: "Retrieve a project branch by name.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project",
@@ -88,7 +88,7 @@ var projectsBranchesList = cli.Command{
 
 var projectsBranchesDelete = cli.Command{
 	Name:  "delete",
-	Usage: "Delete a project branch",
+	Usage: "Delete a project branch by name.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project",
@@ -103,7 +103,7 @@ var projectsBranchesDelete = cli.Command{
 
 var projectsBranchesRebase = cli.Command{
 	Name:  "rebase",
-	Usage: "Rebase a project branch",
+	Usage: "Rebase a project branch.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name: "project",
