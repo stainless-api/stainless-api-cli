@@ -119,17 +119,19 @@ var projectsList = cli.Command{
 func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	params := stainless.ProjectNewParams{}
-	res, err := cc.client.Projects.New(
+	var res []byte
+	_, err := cc.client.Projects.New(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("projects create", res.RawJSON(), format)
+	return ShowJSON("projects create", string(res), format)
 }
 
 func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
@@ -138,17 +140,19 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
 	}
-	res, err := cc.client.Projects.Get(
+	var res []byte
+	_, err := cc.client.Projects.Get(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("projects retrieve", res.RawJSON(), format)
+	return ShowJSON("projects retrieve", string(res), format)
 }
 
 func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
@@ -157,31 +161,35 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
 	}
-	res, err := cc.client.Projects.Update(
+	var res []byte
+	_, err := cc.client.Projects.Update(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("projects update", res.RawJSON(), format)
+	return ShowJSON("projects update", string(res), format)
 }
 
 func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	params := stainless.ProjectListParams{}
-	res, err := cc.client.Projects.List(
+	var res []byte
+	_, err := cc.client.Projects.List(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("projects list", res.RawJSON(), format)
+	return ShowJSON("projects list", string(res), format)
 }
