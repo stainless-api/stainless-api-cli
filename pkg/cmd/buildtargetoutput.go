@@ -97,7 +97,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 	return nil
 }
 
-func getLatestBuild(ctx context.Context, client stainless.Client, project, branch string) (*stainless.BuildObject, error) {
+func getLatestBuild(ctx context.Context, client stainless.Client, project, branch string) (*stainless.Build, error) {
 	if project == "" {
 		return nil, fmt.Errorf("project is required when build-id is not provided")
 	}

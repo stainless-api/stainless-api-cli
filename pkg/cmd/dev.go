@@ -21,12 +21,12 @@ var ErrUserCancelled = errors.New("user cancelled")
 
 // BuildModel represents the bubbletea model for build monitoring
 type BuildModel struct {
-	start       func() (*stainless.BuildObject, error)
+	start       func() (*stainless.Build, error)
 	started     time.Time
 	ended       *time.Time
-	build       *stainless.BuildObject
+	build       *stainless.Build
 	branch      string
-	diagnostics []stainless.BuildDiagnosticListResponse
+	diagnostics []stainless.BuildDiagnostic
 	downloads   map[stainless.Target]struct {
 		status string
 		path   string
@@ -40,13 +40,13 @@ type BuildModel struct {
 }
 
 type tickMsg time.Time
-type fetchBuildMsg *stainless.BuildObject
-type fetchDiagnosticsMsg []stainless.BuildDiagnosticListResponse
+type fetchBuildMsg *stainless.Build
+type fetchDiagnosticsMsg []stainless.BuildDiagnostic
 type errorMsg error
 type downloadMsg stainless.Target
 type triggerNewBuildMsg struct{}
 
-func NewBuildModel(cc *apiCommandContext, ctx context.Context, branch string, fn func() (*stainless.BuildObject, error)) BuildModel {
+func NewBuildModel(cc *apiCommandContext, ctx context.Context, branch string, fn func() (*stainless.Build, error)) BuildModel {
 	return BuildModel{
 		start:   fn,
 		started: time.Now(),
@@ -117,7 +117,7 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.build = msg
-		buildObj := NewBuildObject(m.build)
+		buildObj := NewBuild(m.build)
 		if !m.isCompleted {
 			// Check if all commit steps are completed
 			allCommitsCompleted := true
@@ -206,7 +206,7 @@ func (m BuildModel) fetchDiagnostics() tea.Cmd {
 		if m.build == nil {
 			return errorMsg(fmt.Errorf("no current build to fetch diagnostics for"))
 		}
-		diags := []stainless.BuildDiagnosticListResponse{}
+		diags := []stainless.BuildDiagnostic{}
 		diagnostics := m.cc.client.Builds.Diagnostics.ListAutoPaging(m.ctx, m.build.ID, stainless.BuildDiagnosticListParams{
 			Limit: stainless.Float(100),
 		})
@@ -225,7 +225,7 @@ func (m *BuildModel) getBuildDuration() time.Duration {
 		return time.Since(m.started)
 	}
 
-	buildObj := NewBuildObject(m.build)
+	buildObj := NewBuild(m.build)
 	if buildObj.IsCompleted() {
 		if m.ended == nil {
 			now := time.Now()
@@ -370,7 +370,7 @@ func runDevBuild(ctx context.Context, cc *apiCommandContext, cmd *cli.Command, b
 		AllowEmpty: stainless.Bool(true),
 	}
 
-	model := NewBuildModel(cc, ctx, branch, func() (*stainless.BuildObject, error) {
+	model := NewBuildModel(cc, ctx, branch, func() (*stainless.Build, error) {
 		build, err := cc.client.Builds.New(ctx, buildReq, option.WithMiddleware(cc.AsMiddleware()))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create build: %v", err)

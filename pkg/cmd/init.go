@@ -459,7 +459,7 @@ func configureTargets(slug string, selectedTargets []string, config *WorkspaceCo
 }
 
 // waitForLatestBuild waits for the latest build to complete
-func waitForLatestBuild(ctx context.Context, client stainless.Client, slug string) (*stainless.BuildObject, error) {
+func waitForLatestBuild(ctx context.Context, client stainless.Client, slug string) (*stainless.Build, error) {
 	waitGroup := Info("Waiting for build to complete...")
 
 	// Try to get the latest build for this project (which should have been created automatically)
@@ -478,7 +478,7 @@ func waitForLatestBuild(ctx context.Context, client stainless.Client, slug strin
 }
 
 // pullConfiguredTargets pulls build outputs for configured targets
-func pullConfiguredTargets(ctx context.Context, client stainless.Client, build stainless.BuildObject, config WorkspaceConfig) error {
+func pullConfiguredTargets(ctx context.Context, client stainless.Client, build stainless.Build, config WorkspaceConfig) error {
 	if config.Targets == nil || len(config.Targets) == 0 {
 		return nil
 	}

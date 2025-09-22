@@ -133,7 +133,7 @@ var parts = []struct {
 		view: func(m BuildModel, s *strings.Builder) {
 			s.WriteString("\n")
 			if m.build != nil {
-				buildObj := NewBuildObject(m.build)
+				buildObj := NewBuild(m.build)
 				languages := buildObj.Languages()
 				// Target rows with colors
 				for _, target := range languages {
@@ -173,11 +173,11 @@ var parts = []struct {
 	},
 }
 
-func ViewBuildPipeline(build *stainless.BuildObject, target stainless.Target, downloads map[stainless.Target]struct {
+func ViewBuildPipeline(build *stainless.Build, target stainless.Target, downloads map[stainless.Target]struct {
 	status string
 	path   string
 }) string {
-	buildObj := NewBuildObject(build)
+	buildObj := NewBuild(build)
 	buildTarget := buildObj.BuildTarget(target)
 	if buildTarget == nil {
 		return ""
@@ -240,15 +240,15 @@ func ViewStepSymbol(status, conclusion string) string {
 	}
 }
 
-func ViewDiagnosticIcon(level stainless.BuildDiagnosticListResponseLevel) string {
+func ViewDiagnosticIcon(level stainless.BuildDiagnosticLevel) string {
 	switch level {
-	case stainless.BuildDiagnosticListResponseLevelFatal:
+	case stainless.BuildDiagnosticLevelFatal:
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true).Render("💀")
-	case stainless.BuildDiagnosticListResponseLevelError:
+	case stainless.BuildDiagnosticLevelError:
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render("❌")
-	case stainless.BuildDiagnosticListResponseLevelWarning:
+	case stainless.BuildDiagnosticLevelWarning:
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render("⚠️")
-	case stainless.BuildDiagnosticListResponseLevelNote:
+	case stainless.BuildDiagnosticLevelNote:
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Render("ℹ️")
 	default:
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("•")
@@ -309,23 +309,23 @@ func renderMarkdown(content string) string {
 	return strings.Trim(rendered, "\n ")
 }
 
-func countDiagnosticsBySeverity(diagnostics []stainless.BuildDiagnosticListResponse) (fatal, errors, warnings, notes int) {
+func countDiagnosticsBySeverity(diagnostics []stainless.BuildDiagnostic) (fatal, errors, warnings, notes int) {
 	for _, diag := range diagnostics {
 		switch diag.Level {
-		case stainless.BuildDiagnosticListResponseLevelFatal:
+		case stainless.BuildDiagnosticLevelFatal:
 			fatal++
-		case stainless.BuildDiagnosticListResponseLevelError:
+		case stainless.BuildDiagnosticLevelError:
 			errors++
-		case stainless.BuildDiagnosticListResponseLevelWarning:
+		case stainless.BuildDiagnosticLevelWarning:
 			warnings++
-		case stainless.BuildDiagnosticListResponseLevelNote:
+		case stainless.BuildDiagnosticLevelNote:
 			notes++
 		}
 	}
 	return
 }
 
-func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnosticListResponse) string {
+func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic) string {
 	var s strings.Builder
 
 	if len(diagnostics) > 0 {
@@ -371,6 +371,8 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnosticListResponse) s
 				sub.WriteString("\n")
 			}
 			sub.WriteString(fmt.Sprintf("%s %s\n", levelIcon, codeStyle.Render(diag.Code)))
+			sub.WriteString(fmt.Sprintf("%s\n", renderMarkdown(diag.Message)))
+
 			sub.WriteString(fmt.Sprintf("%s\n", renderMarkdown(diag.Message)))
 
 			// Show source references if available
