@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.0-alpha.44 (2025-09-22)
+
+Full Changelog: [v0.1.0-alpha.43...v0.1.0-alpha.44](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.43...v0.1.0-alpha.44)
+
+### Features
+
+* **api:** docs ([f0762b0](https://github.com/stainless-api/stainless-api-cli/commit/f0762b08842d63a55f28afc18a77907c24f2513b))
+* improved formatting options for command outputs ([f5e6481](https://github.com/stainless-api/stainless-api-cli/commit/f5e6481706b882eaa0c84a3bf8aea2a088087402))
+* show full error message on fatal error ([00621a1](https://github.com/stainless-api/stainless-api-cli/commit/00621a1ba20a392670dc8a7bf991c1d0507efc12))
+
+
+### Bug Fixes
+
+* fix for issue with nil responses ([14f22bf](https://github.com/stainless-api/stainless-api-cli/commit/14f22bfbe6318e849a57b2243c958e3af869b18c))
+* fix go client version bump issues ([d59e6ea](https://github.com/stainless-api/stainless-api-cli/commit/d59e6ea0f8363c1ad7ace9c97e243ec972f75c24))
+
+
+### Chores
+
+* code cleanup for `interface{}` ([30cd6f1](https://github.com/stainless-api/stainless-api-cli/commit/30cd6f10ce33163f4f6b7f13085a259cf738ca49))
+* do not install brew dependencies in ./scripts/bootstrap by default ([ff84f98](https://github.com/stainless-api/stainless-api-cli/commit/ff84f986702f63a60e1f5343e180c305877f6171))
+* update go dependency ([22a15b8](https://github.com/stainless-api/stainless-api-cli/commit/22a15b85720596afe3dd95d3be4f2ce4ddf1341a))
+
 ## 0.1.0-alpha.43 (2025-09-16)
 
 Full Changelog: [v0.1.0-alpha.42...v0.1.0-alpha.43](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.42...v0.1.0-alpha.43)
