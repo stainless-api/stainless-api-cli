@@ -373,7 +373,14 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic) string {
 			sub.WriteString(fmt.Sprintf("%s %s\n", levelIcon, codeStyle.Render(diag.Code)))
 			sub.WriteString(fmt.Sprintf("%s\n", renderMarkdown(diag.Message)))
 
-			sub.WriteString(fmt.Sprintf("%s\n", renderMarkdown(diag.Message)))
+			if diag.Code == "FatalError" {
+				switch more := diag.More.AsAny().(type) {
+				case stainless.BuildDiagnosticMoreMarkdown:
+					sub.WriteString(fmt.Sprintf("%s\n", renderMarkdown(more.Markdown)))
+				case stainless.BuildDiagnosticMoreRaw:
+					sub.WriteString(fmt.Sprintf("%s\n", more.Raw))
+				}
+			}
 
 			// Show source references if available
 			if diag.OasRef != "" {
