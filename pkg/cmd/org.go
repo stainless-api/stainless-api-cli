@@ -31,26 +31,33 @@ var orgsList = cli.Command{
 
 func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	res, err := cc.client.Orgs.Get(
+	var res []byte
+	_, err := cc.client.Orgs.Get(
 		context.TODO(),
 		cmd.Value("org").(string),
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("orgs retrieve", res.RawJSON(), format)
+	return ShowJSON("orgs retrieve", string(res), format)
 }
 
 func handleOrgsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	res, err := cc.client.Orgs.List(context.TODO(), option.WithMiddleware(cc.AsMiddleware()))
+	var res []byte
+	_, err := cc.client.Orgs.List(
+		context.TODO(),
+		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
+	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("orgs list", res.RawJSON(), format)
+	return ShowJSON("orgs list", string(res), format)
 }

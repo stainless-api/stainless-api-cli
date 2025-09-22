@@ -451,10 +451,12 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	targetPaths := parseTargetPaths(cc.workspaceConfig)
 	buildGroup := Info("Creating build...")
 	params := stainless.BuildNewParams{}
-	res, err := cc.client.Builds.New(
+	var res []byte
+	_, err := cc.client.Builds.New(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
@@ -484,22 +486,24 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("builds create", res.RawJSON(), format)
+	return ShowJSON("builds create", string(res), format)
 }
 
 func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	res, err := cc.client.Builds.Get(
+	var res []byte
+	_, err := cc.client.Builds.Get(
 		context.TODO(),
 		cmd.Value("build-id").(string),
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("builds retrieve", res.RawJSON(), format)
+	return ShowJSON("builds retrieve", string(res), format)
 }
 
 // pullBuildOutputs pulls the outputs for a completed build
@@ -774,31 +778,35 @@ func pullOutput(output, url, ref, targetDir string, targetGroup *Group) error {
 func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	params := stainless.BuildListParams{}
-	res, err := cc.client.Builds.List(
+	var res []byte
+	_, err := cc.client.Builds.List(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("builds list", res.RawJSON(), format)
+	return ShowJSON("builds list", string(res), format)
 }
 
 func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	params := stainless.BuildCompareParams{}
-	res, err := cc.client.Builds.Compare(
+	var res []byte
+	_, err := cc.client.Builds.Compare(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("builds compare", res.RawJSON(), format)
+	return ShowJSON("builds compare", string(res), format)
 }

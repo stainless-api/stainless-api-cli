@@ -129,17 +129,19 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
 	}
-	res, err := cc.client.Projects.Branches.New(
+	var res []byte
+	_, err := cc.client.Projects.Branches.New(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("projects:branches create", res.RawJSON(), format)
+	return ShowJSON("projects:branches create", string(res), format)
 }
 
 func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
@@ -148,18 +150,20 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
 	}
-	res, err := cc.client.Projects.Branches.Get(
+	var res []byte
+	_, err := cc.client.Projects.Branches.Get(
 		context.TODO(),
 		cmd.Value("branch").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("projects:branches retrieve", res.RawJSON(), format)
+	return ShowJSON("projects:branches retrieve", string(res), format)
 }
 
 func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
@@ -168,17 +172,19 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
 	}
-	res, err := cc.client.Projects.Branches.List(
+	var res []byte
+	_, err := cc.client.Projects.Branches.List(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("projects:branches list", res.RawJSON(), format)
+	return ShowJSON("projects:branches list", string(res), format)
 }
 
 func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
@@ -187,7 +193,7 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
 	}
-	res := []byte{}
+	var res []byte
 	_, err := cc.client.Projects.Branches.Delete(
 		context.TODO(),
 		cmd.Value("branch").(string),
@@ -209,16 +215,18 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
 	}
-	res, err := cc.client.Projects.Branches.Rebase(
+	var res []byte
+	_, err := cc.client.Projects.Branches.Rebase(
 		context.TODO(),
 		cmd.Value("branch").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("projects:branches rebase", res.RawJSON(), format)
+	return ShowJSON("projects:branches rebase", string(res), format)
 }
