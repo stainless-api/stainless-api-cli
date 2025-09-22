@@ -7,22 +7,22 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// BuildObject wraps stainless.BuildObject to provide convenience methods
-type BuildObject struct {
-	*stainless.BuildObject
+// Build wraps stainless.Build to provide convenience methods
+type Build struct {
+	*stainless.Build
 }
 
-// NewBuildObject creates a new BuildObject wrapper
-func NewBuildObject(build *stainless.BuildObject) *BuildObject {
+// NewBuild creates a new Build wrapper
+func NewBuild(build *stainless.Build) *Build {
 	if build == nil {
 		return nil
 	}
-	return &BuildObject{BuildObject: build}
+	return &Build{Build: build}
 }
 
 // BuildTarget returns the build target wrapper for a given target type, replacing getBuildTarget
-func (b *BuildObject) BuildTarget(target stainless.Target) *BuildTarget {
-	if b.BuildObject == nil {
+func (b *Build) BuildTarget(target stainless.Target) *BuildTarget {
+	if b.Build == nil {
 		return nil
 	}
 
@@ -76,8 +76,8 @@ func (b *BuildObject) BuildTarget(target stainless.Target) *BuildTarget {
 }
 
 // Languages returns all available build languages/targets for this build
-func (b *BuildObject) Languages() []stainless.Target {
-	if b.BuildObject == nil {
+func (b *Build) Languages() []stainless.Target {
+	if b.Build == nil {
 		return []stainless.Target{}
 	}
 
@@ -122,7 +122,7 @@ func (b *BuildObject) Languages() []stainless.Target {
 }
 
 // IsCompleted checks if the entire build is completed (all targets)
-func (b *BuildObject) IsCompleted() bool {
+func (b *Build) IsCompleted() bool {
 	languages := b.Languages()
 	for _, target := range languages {
 		buildTarget := b.BuildTarget(target)

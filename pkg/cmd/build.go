@@ -105,7 +105,7 @@ func processSingleTarget(target string) (string, string) {
 }
 
 // getBuildTargetInfo extracts completed targets from a build response
-func getBuildTargetInfo(buildRes stainless.BuildObject) []BuildTargetInfo {
+func getBuildTargetInfo(buildRes stainless.Build) []BuildTargetInfo {
 	targets := []BuildTargetInfo{}
 
 	// Check each target and add it to the list if it's completed or in postgen
@@ -173,7 +173,7 @@ func isTargetCompleted(status stainless.BuildTargetStatus) bool {
 }
 
 // waitForBuildCompletion polls a build until completion and shows progress updates
-func waitForBuildCompletion(ctx context.Context, client stainless.Client, build *stainless.BuildObject, waitGroup *Group) (*stainless.BuildObject, error) {
+func waitForBuildCompletion(ctx context.Context, client stainless.Client, build *stainless.Build, waitGroup *Group) (*stainless.Build, error) {
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
@@ -451,12 +451,10 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	targetPaths := parseTargetPaths(cc.workspaceConfig)
 	buildGroup := Info("Creating build...")
 	params := stainless.BuildNewParams{}
-	var res []byte
-	_, err := cc.client.Builds.New(
+	res, err := cc.client.Builds.New(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
-		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
 		return err
@@ -486,7 +484,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	format := cmd.Root().String("format")
-	return ShowJSON("builds create", string(res), format)
+	return ShowJSON("builds create", res.RawJSON(), format)
 }
 
 func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
@@ -507,7 +505,7 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 }
 
 // pullBuildOutputs pulls the outputs for a completed build
-func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainless.BuildObject, targetPaths map[string]string, pullGroup *Group) error {
+func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainless.Build, targetPaths map[string]string, pullGroup *Group) error {
 	// Get all targets
 	allTargets := getBuildTargetInfo(res)
 
@@ -576,8 +574,8 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 }
 
 // hasFailedCommitStep checks if a target has a fatal commit conclusion
-func hasFailedCommitStep(build stainless.BuildObject, target stainless.Target) bool {
-	buildObj := NewBuildObject(&build)
+func hasFailedCommitStep(build stainless.Build, target stainless.Target) bool {
+	buildObj := NewBuild(&build)
 	buildTarget := buildObj.BuildTarget(target)
 	if buildTarget == nil {
 		return false
