@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
@@ -119,6 +120,10 @@ var projectsList = cli.Command{
 
 func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectNewParams{}
 	var res []byte
 	_, err := cc.client.Projects.New(
@@ -139,6 +144,10 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 
 func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectGetParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
@@ -162,6 +171,10 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectUpdateParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
@@ -185,6 +198,10 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 
 func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectListParams{}
 	var res []byte
 	_, err := cc.client.Projects.List(
