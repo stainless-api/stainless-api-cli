@@ -217,9 +217,8 @@ type JSONViewer struct {
 	help    help.Model
 }
 
-func ExploreJSON(title, jsonStr string) error {
-	data := gjson.Parse(jsonStr)
-	view, err := newView("", data, false)
+func ExploreJSON(title string, json gjson.Result) error {
+	view, err := newView("", json, false)
 	if err != nil {
 		return err
 	}
