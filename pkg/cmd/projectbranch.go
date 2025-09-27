@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
@@ -126,6 +127,10 @@ var projectsBranchesRebase = cli.Command{
 
 func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectBranchNewParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
@@ -149,6 +154,14 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 
 func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
+		cmd.Set("branch", unusedArgs[0])
+		unusedArgs = unusedArgs[1:]
+	}
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectBranchGetParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
@@ -173,6 +186,10 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 
 func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectBranchListParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
@@ -196,6 +213,14 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 
 func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
+		cmd.Set("branch", unusedArgs[0])
+		unusedArgs = unusedArgs[1:]
+	}
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectBranchDeleteParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
@@ -220,6 +245,14 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 
 func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
+		cmd.Set("branch", unusedArgs[0])
+		unusedArgs = unusedArgs[1:]
+	}
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectBranchRebaseParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))

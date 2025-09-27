@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -32,6 +33,14 @@ var orgsList = cli.Command{
 
 func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("org") && len(unusedArgs) > 0 {
+		cmd.Set("org", unusedArgs[0])
+		unusedArgs = unusedArgs[1:]
+	}
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	var res []byte
 	_, err := cc.client.Orgs.Get(
 		context.TODO(),
@@ -51,6 +60,10 @@ func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 func handleOrgsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	var res []byte
 	_, err := cc.client.Orgs.List(
 		context.TODO(),
