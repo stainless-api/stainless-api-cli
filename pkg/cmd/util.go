@@ -226,17 +226,23 @@ func shouldUseColors(w io.Writer) bool {
 	return isTerminal(w)
 }
 
-func ShowJSON(title, jsonText, format string) error {
+func ShowJSON(title string, res gjson.Result, format string, transform string) error {
+	if format != "raw" && transform != "" {
+		transformed := res.Get(transform)
+		if transformed.Exists() {
+			res = transformed
+		}
+	}
 	switch strings.ToLower(format) {
 	case "auto":
-		return ShowJSON(title, jsonText, "json")
+		return ShowJSON(title, res, "json", "")
 	case "explore":
-		return jsonview.ExploreJSON(title, jsonText)
+		return jsonview.ExploreJSON(title, res)
 	case "pretty":
-		jsonview.DisplayJSON(title, jsonText)
+		jsonview.DisplayJSON(title, res)
 		return nil
 	case "json":
-		prettyJSON := pretty.Pretty([]byte(jsonText))
+		prettyJSON := pretty.Pretty([]byte(res.Raw))
 		if shouldUseColors(os.Stdout) {
 			fmt.Print(string(pretty.Color(prettyJSON, pretty.TerminalStyle)))
 		} else {
@@ -244,10 +250,10 @@ func ShowJSON(title, jsonText, format string) error {
 		}
 		return nil
 	case "raw":
-		fmt.Println(jsonText)
+		fmt.Println(res.Raw)
 		return nil
 	case "yaml":
-		input := strings.NewReader(jsonText)
+		input := strings.NewReader(res.Raw)
 		var yaml strings.Builder
 		if err := json2yaml.Convert(&yaml, input); err != nil {
 			return err
@@ -255,6 +261,6 @@ func ShowJSON(title, jsonText, format string) error {
 		fmt.Print(yaml.String())
 		return nil
 	default:
-		return fmt.Errorf("Invalid format: %s, valid formats are: %s", format, strings.Join(OutputFormats[:], ", "))
+		return fmt.Errorf("Invalid format: %s, valid formats are: %s", format, strings.Join(OutputFormats, ", "))
 	}
 }

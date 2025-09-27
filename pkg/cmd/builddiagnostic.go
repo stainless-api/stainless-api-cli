@@ -4,10 +4,12 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
 
@@ -60,6 +62,14 @@ var buildsDiagnosticsList = cli.Command{
 
 func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("build-id") && len(unusedArgs) > 0 {
+		cmd.Set("build-id", unusedArgs[0])
+		unusedArgs = unusedArgs[1:]
+	}
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.BuildDiagnosticListParams{}
 	var res []byte
 	_, err := cc.client.Builds.Diagnostics.List(
@@ -73,6 +83,8 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	json := gjson.Parse(string(res))
 	format := cmd.Root().String("format")
-	return ShowJSON("builds:diagnostics list", string(res), format)
+	transform := cmd.Root().String("transform")
+	return ShowJSON("builds:diagnostics list", json, format, transform)
 }

@@ -4,10 +4,12 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
 
@@ -200,6 +202,10 @@ var buildsCompare = cli.Command{
 
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.BuildNewParams{}
 	var res []byte
 	_, err := cc.client.Builds.New(
@@ -212,12 +218,22 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	json := gjson.Parse(string(res))
 	format := cmd.Root().String("format")
-	return ShowJSON("builds create", string(res), format)
+	transform := cmd.Root().String("transform")
+	return ShowJSON("builds create", json, format, transform)
 }
 
 func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("build-id") && len(unusedArgs) > 0 {
+		cmd.Set("build-id", unusedArgs[0])
+		unusedArgs = unusedArgs[1:]
+	}
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	var res []byte
 	_, err := cc.client.Builds.Get(
 		context.TODO(),
@@ -229,12 +245,18 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	json := gjson.Parse(string(res))
 	format := cmd.Root().String("format")
-	return ShowJSON("builds retrieve", string(res), format)
+	transform := cmd.Root().String("transform")
+	return ShowJSON("builds retrieve", json, format, transform)
 }
 
 func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.BuildListParams{}
 	var res []byte
 	_, err := cc.client.Builds.List(
@@ -247,12 +269,18 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	json := gjson.Parse(string(res))
 	format := cmd.Root().String("format")
-	return ShowJSON("builds list", string(res), format)
+	transform := cmd.Root().String("transform")
+	return ShowJSON("builds list", json, format, transform)
 }
 
 func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.BuildCompareParams{}
 	var res []byte
 	_, err := cc.client.Builds.Compare(
@@ -265,6 +293,8 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	json := gjson.Parse(string(res))
 	format := cmd.Root().String("format")
-	return ShowJSON("builds compare", string(res), format)
+	transform := cmd.Root().String("transform")
+	return ShowJSON("builds compare", json, format, transform)
 }

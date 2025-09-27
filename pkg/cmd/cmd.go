@@ -37,14 +37,33 @@ func init() {
 			},
 			&cli.StringFlag{
 				Name:  "format",
-				Usage: "The format for data output (one of: " + strings.Join(OutputFormats[:], ", ") + ")",
+				Usage: "The format for displaying response data (one of: " + strings.Join(OutputFormats, ", ") + ")",
 				Value: "auto",
 				Validator: func(format string) error {
-					if !slices.Contains(OutputFormats[:], strings.ToLower(format)) {
-						return fmt.Errorf("format must be one of: %s", strings.Join(OutputFormats[:], ", "))
+					if !slices.Contains(OutputFormats, strings.ToLower(format)) {
+						return fmt.Errorf("format must be one of: %s", strings.Join(OutputFormats, ", "))
 					}
 					return nil
 				},
+			},
+			&cli.StringFlag{
+				Name:  "format-error",
+				Usage: "The format for displaying error data (one of: " + strings.Join(OutputFormats, ", ") + ")",
+				Value: "auto",
+				Validator: func(format string) error {
+					if !slices.Contains(OutputFormats, strings.ToLower(format)) {
+						return fmt.Errorf("format must be one of: %s", strings.Join(OutputFormats, ", "))
+					}
+					return nil
+				},
+			},
+			&cli.StringFlag{
+				Name:  "transform",
+				Usage: "The GJSON transformation for data output.",
+			},
+			&cli.StringFlag{
+				Name:  "transform-error",
+				Usage: "The GJSON transformation for errors.",
 			},
 			&cli.StringFlag{
 				Name:  "environment",
