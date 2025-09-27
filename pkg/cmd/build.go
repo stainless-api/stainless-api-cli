@@ -4,7 +4,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
@@ -202,10 +201,6 @@ var buildsCompare = cli.Command{
 
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	unusedArgs := cmd.Args().Slice()
-	if len(unusedArgs) > 0 {
-		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
 	params := stainless.BuildNewParams{}
 	var res []byte
 	_, err := cc.client.Builds.New(
@@ -226,14 +221,6 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	unusedArgs := cmd.Args().Slice()
-	if !cmd.IsSet("build-id") && len(unusedArgs) > 0 {
-		cmd.Set("build-id", unusedArgs[0])
-		unusedArgs = unusedArgs[1:]
-	}
-	if len(unusedArgs) > 0 {
-		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
 	var res []byte
 	_, err := cc.client.Builds.Get(
 		context.TODO(),
@@ -253,10 +240,6 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	unusedArgs := cmd.Args().Slice()
-	if len(unusedArgs) > 0 {
-		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
 	params := stainless.BuildListParams{}
 	var res []byte
 	_, err := cc.client.Builds.List(
@@ -277,10 +260,6 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 
 func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	unusedArgs := cmd.Args().Slice()
-	if len(unusedArgs) > 0 {
-		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
 	params := stainless.BuildCompareParams{}
 	var res []byte
 	_, err := cc.client.Builds.Compare(

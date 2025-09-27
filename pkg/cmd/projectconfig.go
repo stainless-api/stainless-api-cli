@@ -4,7 +4,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
@@ -67,10 +66,6 @@ var projectsConfigsGuess = cli.Command{
 
 func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	unusedArgs := cmd.Args().Slice()
-	if len(unusedArgs) > 0 {
-		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
 	params := stainless.ProjectConfigGetParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
@@ -94,10 +89,6 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 
 func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	unusedArgs := cmd.Args().Slice()
-	if len(unusedArgs) > 0 {
-		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
 	params := stainless.ProjectConfigGuessParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
