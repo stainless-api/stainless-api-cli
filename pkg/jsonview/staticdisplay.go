@@ -13,7 +13,6 @@ import (
 
 const (
 	tabWidth = 2
-	maxDepth = 4
 )
 
 var (
@@ -29,11 +28,11 @@ var (
 				Padding(0, 1)
 )
 
-func formatJSON(jsonStr string, width int) string {
-	if !gjson.Valid(jsonStr) {
+func formatJSON(json gjson.Result, width int) string {
+	if !json.Exists() {
 		return nullValueStyle.Render("Invalid JSON")
 	}
-	return formatResult(gjson.Parse(jsonStr), 0, width)
+	return formatResult(json, 0, width)
 }
 
 func formatResult(result gjson.Result, indent, width int) string {
@@ -66,17 +65,13 @@ func formatResult(result gjson.Result, indent, width int) string {
 }
 
 func isSingleLine(result gjson.Result, indent int) bool {
-	return !(result.IsObject() || result.IsArray()) || (indent >= maxDepth)
+	return !(result.IsObject() || result.IsArray())
 }
 
 func formatJSONArray(result gjson.Result, indent, width int) string {
 	items := result.Array()
 	if len(items) == 0 {
-		return nullValueStyle.Render("(none)")
-	}
-
-	if indent >= maxDepth {
-		return bulletStyle.Render(formatArray(result))
+		return nullValueStyle.Render(" (none)")
 	}
 
 	numberWidth := lipgloss.Width(fmt.Sprintf("%d. ", len(items)))
@@ -106,14 +101,6 @@ func formatJSONObject(result gjson.Result, indent, width int) string {
 		return nullValueStyle.Render("(empty)")
 	}
 
-	if indent >= maxDepth {
-		short := formatObject(result)
-		if lipgloss.Width(short) > width {
-			short = truncate.String(short, uint(width-1)) + "…"
-		}
-		return bulletStyle.Render(short)
-	}
-
 	var items []string
 	for _, key := range keys {
 		value := result.Get(key.String())
@@ -136,17 +123,17 @@ func getIndent(indent int) string {
 	return strings.Repeat(" ", indent*tabWidth)
 }
 
-func RenderJSON(title string, jsonStr string) string {
+func RenderJSON(title string, json gjson.Result) string {
 	width, _, err := term.GetSize(os.Stdout.Fd())
 	if err != nil {
 		width = 80
 	}
 	width -= containerStyle.GetBorderLeftSize() + containerStyle.GetBorderRightSize() +
 		containerStyle.GetPaddingLeft() + containerStyle.GetPaddingRight()
-	content := strings.TrimLeft(formatJSON(jsonStr, width), "\n")
+	content := strings.TrimLeft(formatJSON(json, width), "\n")
 	return titleStyle.Render(title) + "\n" + containerStyle.Render(content)
 }
 
-func DisplayJSON(title string, jsonStr string) {
-	fmt.Println(RenderJSON(title, jsonStr))
+func DisplayJSON(title string, json gjson.Result) {
+	fmt.Println(RenderJSON(title, json))
 }

@@ -4,10 +4,12 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
 
@@ -125,6 +127,10 @@ var projectsBranchesRebase = cli.Command{
 
 func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectBranchNewParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
@@ -140,12 +146,22 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	json := gjson.Parse(string(res))
 	format := cmd.Root().String("format")
-	return ShowJSON("projects:branches create", string(res), format)
+	transform := cmd.Root().String("transform")
+	return ShowJSON("projects:branches create", json, format, transform)
 }
 
 func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
+		cmd.Set("branch", unusedArgs[0])
+		unusedArgs = unusedArgs[1:]
+	}
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectBranchGetParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
@@ -162,12 +178,18 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 		return err
 	}
 
+	json := gjson.Parse(string(res))
 	format := cmd.Root().String("format")
-	return ShowJSON("projects:branches retrieve", string(res), format)
+	transform := cmd.Root().String("transform")
+	return ShowJSON("projects:branches retrieve", json, format, transform)
 }
 
 func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectBranchListParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
@@ -183,12 +205,22 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	json := gjson.Parse(string(res))
 	format := cmd.Root().String("format")
-	return ShowJSON("projects:branches list", string(res), format)
+	transform := cmd.Root().String("transform")
+	return ShowJSON("projects:branches list", json, format, transform)
 }
 
 func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
+		cmd.Set("branch", unusedArgs[0])
+		unusedArgs = unusedArgs[1:]
+	}
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectBranchDeleteParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
@@ -205,12 +237,22 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	json := gjson.Parse(string(res))
 	format := cmd.Root().String("format")
-	return ShowJSON("projects:branches delete", string(res), format)
+	transform := cmd.Root().String("transform")
+	return ShowJSON("projects:branches delete", json, format, transform)
 }
 
 func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
+		cmd.Set("branch", unusedArgs[0])
+		unusedArgs = unusedArgs[1:]
+	}
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 	params := stainless.ProjectBranchRebaseParams{}
 	if cmd.IsSet("project") {
 		params.Project = stainless.String(cmd.Value("project").(string))
@@ -227,6 +269,8 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	json := gjson.Parse(string(res))
 	format := cmd.Root().String("format")
-	return ShowJSON("projects:branches rebase", string(res), format)
+	transform := cmd.Root().String("transform")
+	return ShowJSON("projects:branches rebase", json, format, transform)
 }
