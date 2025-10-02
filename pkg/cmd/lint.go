@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/stainless-api/stainless-api-go"
-	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
@@ -31,6 +29,11 @@ var lintCommand = cli.Command{
 			Aliases: []string{"config"},
 			Usage:   "Path to Stainless config file",
 		},
+		&cli.BoolFlag{
+			Name:    "watch",
+			Aliases: []string{"w"},
+			Usage:   "Watch for files to change and re-run linting",
+		},
 	},
 	Action: runLinter,
 }
@@ -46,51 +49,37 @@ type GenerateSpecParams struct {
 
 func runLinter(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-	var specParams GenerateSpecParams
-	specParams.Project = cmd.String("project")
-	specParams.Source.Type = "upload"
-
-	stainlessConfig, err := os.ReadFile(cmd.String("stainless-config"))
-	if err != nil {
-		return err
-	}
-	specParams.Source.StainlessConfig = string(stainlessConfig)
-
-	openAPISpec, err := os.ReadFile(cmd.String("openapi-spec"))
-	if err != nil {
-		return err
-	}
-	specParams.Source.OpenAPISpec = string(openAPISpec)
-
-	var result []byte
-	err = cc.client.Post(ctx, "api/generate/spec", specParams, &result, option.WithMiddleware(cc.AsMiddleware()))
-	if err != nil {
-		return err
-	}
-
-	transform := "spec.diagnostics.@values.@flatten.#(ignored==false)#"
-	jsonObj := gjson.Parse(string(result)).Get(transform)
-	var diagnostics []stainless.BuildDiagnostic
-	json.Unmarshal([]byte(jsonObj.Raw), &diagnostics)
-	if cmd.IsSet("format") {
-		if err := ShowJSON("Diagnostics", jsonObj, cmd.String("format"), ""); err != nil {
+	for {
+		diagnostics, err := getDiagnostics(ctx, cmd, cc)
+		if err != nil {
 			return err
 		}
-	} else {
-		fmt.Println(ViewDiagnosticsPrint(diagnostics, -1))
-	}
 
-	for _, d := range diagnostics {
-		if !d.Ignored {
-			switch d.Level {
-			case stainless.BuildDiagnosticLevelFatal:
-			case stainless.BuildDiagnosticLevelError:
-			case stainless.BuildDiagnosticLevelWarning:
-				os.Exit(1)
-			case stainless.BuildDiagnosticLevelNote:
-				continue
+		if cmd.IsSet("format") {
+			rawJson, err := json.Marshal(diagnostics)
+			if err != nil {
+				return err
 			}
+			jsonObj := gjson.Parse(string(rawJson))
+			if err := ShowJSON("Diagnostics", jsonObj, cmd.String("format"), ""); err != nil {
+				return err
+			}
+		} else {
+			fmt.Println(ViewDiagnosticsPrint(diagnostics, -1))
+		}
+
+		if cmd.Bool("watch") {
+			fmt.Println("\nDiagnostic checks will re-run once you edit your configuration files...")
+			if err := waitTillConfigChanges(ctx, cmd, cc); err != nil {
+				return err
+			}
+		} else {
+			if hasBlockingDiagnostic(diagnostics) {
+				os.Exit(1)
+			}
+			break
 		}
 	}
+
 	return nil
 }

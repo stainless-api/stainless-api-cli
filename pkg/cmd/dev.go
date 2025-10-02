@@ -265,26 +265,12 @@ var devCommand = cli.Command{
 			Value:   false,
 			Usage:   "Run in 'watch' mode to loop and rebuild when files change.",
 		},
-		&cli.BoolFlag{
-			Name:    "lint",
-			Aliases: []string{"l"},
-			Value:   false,
-			Usage:   "Only check for diagnostic errors without running a full build.",
-		},
 	},
 	Action: runPreview,
 }
 
 func runPreview(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
-
-	openapiSpecPath := cmd.String("openapi-spec")
-	stainlessConfigPath := cmd.String("stainless-config")
-
-	// If only linting is requested, run in lint-only mode
-	if cmd.Bool("lint") {
-		return runLintLoop(ctx, cmd)
-	}
 
 	gitUser, err := getGitUsername()
 	if err != nil {
@@ -366,7 +352,7 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 	for {
 		// Keep checking diagnostics until they're all fixed
 		for {
-			diagnostics, err := getPreviewDiagnostics(ctx, cmd)
+			diagnostics, err := getDiagnostics(ctx, cmd, cc)
 			if err != nil {
 				if errors.Is(err, ErrUserCancelled) {
 					return nil
@@ -380,7 +366,7 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 
 			if hasBlockingDiagnostic(diagnostics) {
 				fmt.Println("\nDiagnostic checks will re-run once you edit your configuration files...")
-				if err := waitTillAnyFileChanged(ctx, []string{openapiSpecPath, stainlessConfigPath}); err != nil {
+				if err := waitTillConfigChanges(ctx, cmd, cc); err != nil {
 					return err
 				}
 				continue
@@ -404,35 +390,17 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 	return nil
 }
 
-// runLintLoop handles linting in a loop for watch mode
-func runLintLoop(ctx context.Context, cmd *cli.Command) error {
-	// Get the initial file modification times
-	openapiSpecPath := cmd.String("openapi-spec")
-	stainlessConfigPath := cmd.String("stainless-config")
-
-	for {
-		diagnostics, err := getPreviewDiagnosticsJSON(ctx, cmd)
-		if err != nil {
-			if errors.Is(err, ErrUserCancelled) {
-				return nil
-			}
-			return err
-		}
-		jsonObj := gjson.Parse(diagnostics.Raw)
-		ShowJSON("Diagnostics", jsonObj, cmd.String("format"), cmd.String("transform"))
-
-		if !cmd.Bool("watch") {
-			break
-		}
-
-		if err := waitTillAnyFileChanged(ctx, []string{openapiSpecPath, stainlessConfigPath}); err != nil {
-			return err
-		}
+func waitTillConfigChanges(ctx context.Context, cmd *cli.Command, cc *apiCommandContext) error {
+	openapiSpecPath := cc.workspaceConfig.OpenAPISpec
+	if cmd.IsSet("openapi-spec") {
+		openapiSpecPath = cmd.String("openapi-spec")
 	}
-	return nil
-}
+	stainlessConfigPath := cc.workspaceConfig.StainlessConfig
+	if cmd.IsSet("stainless-config") {
+		stainlessConfigPath = cmd.String("stainless-config")
+	}
 
-func waitTillAnyFileChanged(ctx context.Context, files []string) error {
+	files := []string{openapiSpecPath, stainlessConfigPath}
 	lastModified := make(map[string]time.Time)
 	for _, file := range files {
 		if stat, err := os.Stat(file); err == nil {
@@ -528,19 +496,32 @@ func getCurrentGitBranch() (string, error) {
 	return branch, nil
 }
 
-func getPreviewDiagnosticsJSON(ctx context.Context, cmd *cli.Command) (*gjson.Result, error) {
-	cc := getAPICommandContext(cmd)
+func getDiagnostics(ctx context.Context, cmd *cli.Command, cc *apiCommandContext) ([]stainless.BuildDiagnostic, error) {
 	var specParams GenerateSpecParams
-	specParams.Project = cmd.String("project")
+	if cmd.IsSet("project") {
+		specParams.Project = cmd.String("project")
+	} else {
+		specParams.Project = cc.workspaceConfig.Project
+	}
 	specParams.Source.Type = "upload"
 
-	stainlessConfig, err := os.ReadFile(cmd.String("stainless-config"))
+	configPath := cc.workspaceConfig.StainlessConfig
+	if cmd.IsSet("stainless-config") {
+		configPath = cmd.String("stainless-config")
+	}
+
+	stainlessConfig, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, err
 	}
 	specParams.Source.StainlessConfig = string(stainlessConfig)
 
-	openAPISpec, err := os.ReadFile(cmd.String("openapi-spec"))
+	oasPath := cc.workspaceConfig.OpenAPISpec
+	if cmd.IsSet("openapi-spec") {
+		oasPath = cmd.String("openapi-spec")
+	}
+
+	openAPISpec, err := os.ReadFile(oasPath)
 	if err != nil {
 		return nil, err
 	}
@@ -551,21 +532,12 @@ func getPreviewDiagnosticsJSON(ctx context.Context, cmd *cli.Command) (*gjson.Re
 	if err != nil {
 		return nil, err
 	}
-	json := gjson.ParseBytes(result)
-	diagnostics := json.Get("spec.diagnostics.@values.@flatten")
-	return &diagnostics, nil
-}
 
-func getPreviewDiagnostics(ctx context.Context, cmd *cli.Command) ([]stainless.BuildDiagnostic, error) {
-	jsonDiagnostics, err := getPreviewDiagnosticsJSON(ctx, cmd)
-	if err != nil {
-		return nil, err
-	}
+	transform := "spec.diagnostics.@values.@flatten.#(ignored==false)#"
+	jsonObj := gjson.Parse(string(result)).Get(transform)
 	var diagnostics []stainless.BuildDiagnostic
-	if err := json.Unmarshal([]byte(jsonDiagnostics.Raw), &diagnostics); err != nil {
-		return nil, err
-	}
-	return diagnostics, err
+	json.Unmarshal([]byte(jsonObj.Raw), &diagnostics)
+	return diagnostics, nil
 }
 
 func hasBlockingDiagnostic(diagnostics []stainless.BuildDiagnostic) bool {
