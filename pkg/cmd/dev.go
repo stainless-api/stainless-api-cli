@@ -271,11 +271,6 @@ var devCommand = cli.Command{
 			Value:   false,
 			Usage:   "Only check for diagnostic errors without running a full build.",
 		},
-		&cli.StringFlag{
-			Name:  "lint-format",
-			Value: "pretty",
-			Usage: "The format for the linter output.",
-		},
 		&cli.BoolFlag{
 			Name:  "lint-first",
 			Value: false,
@@ -380,7 +375,9 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 				}
 				return err
 			}
-			ShowJSON("Linting Results", diagnostics.Raw, cmd.String("lint-format"))
+			jsonObj := gjson.Parse(diagnostics.Raw)
+			transform := cmd.String("transform")
+			ShowJSON("Linting Results", jsonObj, cmd.String("format"), transform)
 		}
 
 		// Start the build process
@@ -422,17 +419,16 @@ func runLintLoop(ctx context.Context, cmd *cli.Command) error {
 			}
 			return err
 		}
-		ShowJSON("Diagnostics", diagnostics.Raw, cmd.String("lint-format"))
+		jsonObj := gjson.Parse(diagnostics.Raw)
+		ShowJSON("Diagnostics", jsonObj, cmd.String("format"), cmd.String("transform"))
 
 		if !cmd.Bool("watch") {
 			break
 		}
 
-		// Watch for file changes instead of sleeping
 		for {
-			time.Sleep(500 * time.Millisecond) // Check every 500ms
+			time.Sleep(500 * time.Millisecond)
 
-			// Check OpenAPI spec file
 			if openapiSpecStat, err := os.Stat(openapiSpecPath); err == nil {
 				if openapiSpecStat.ModTime().After(openapiSpecLastModified) {
 					openapiSpecLastModified = openapiSpecStat.ModTime()
