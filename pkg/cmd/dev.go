@@ -271,17 +271,15 @@ var devCommand = cli.Command{
 			Value:   false,
 			Usage:   "Only check for diagnostic errors without running a full build.",
 		},
-		&cli.BoolFlag{
-			Name:  "lint-first",
-			Value: false,
-			Usage: "Run linting before starting the build process.",
-		},
 	},
 	Action: runPreview,
 }
 
 func runPreview(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+
+	openapiSpecPath := cmd.String("openapi-spec")
+	stainlessConfigPath := cmd.String("stainless-config")
 
 	// If only linting is requested, run in lint-only mode
 	if cmd.Bool("lint") {
@@ -366,18 +364,29 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 
 	// Phase 3: Start build and monitor progress in a loop
 	for {
-		// Check if we should run linting before building
-		if cmd.Bool("lint-first") {
-			diagnostics, err := getPreviewDiagnosticsJSON(ctx, cmd)
+		// Keep checking diagnostics until they're all fixed
+		for {
+			diagnostics, err := getPreviewDiagnostics(ctx, cmd)
 			if err != nil {
 				if errors.Is(err, ErrUserCancelled) {
 					return nil
 				}
 				return err
 			}
-			jsonObj := gjson.Parse(diagnostics.Raw)
-			transform := cmd.String("transform")
-			ShowJSON("Linting Results", jsonObj, cmd.String("format"), transform)
+
+			if len(diagnostics) > 0 {
+				fmt.Println(ViewDiagnosticsPrint(diagnostics, 10))
+			}
+
+			if hasBlockingDiagnostic(diagnostics) {
+				fmt.Println("\nDiagnostic checks will re-run once you edit your configuration files...")
+				if err := waitTillAnyFileChanged(ctx, []string{openapiSpecPath, stainlessConfigPath}); err != nil {
+					return err
+				}
+				continue
+			} else {
+				break
+			}
 		}
 
 		// Start the build process
@@ -401,16 +410,6 @@ func runLintLoop(ctx context.Context, cmd *cli.Command) error {
 	openapiSpecPath := cmd.String("openapi-spec")
 	stainlessConfigPath := cmd.String("stainless-config")
 
-	var openapiSpecLastModified, stainlessConfigLastModified time.Time
-
-	if openapiSpecStat, err := os.Stat(openapiSpecPath); err == nil {
-		openapiSpecLastModified = openapiSpecStat.ModTime()
-	}
-
-	if stainlessConfigStat, err := os.Stat(stainlessConfigPath); err == nil {
-		stainlessConfigLastModified = stainlessConfigStat.ModTime()
-	}
-
 	for {
 		diagnostics, err := getPreviewDiagnosticsJSON(ctx, cmd)
 		if err != nil {
@@ -426,30 +425,36 @@ func runLintLoop(ctx context.Context, cmd *cli.Command) error {
 			break
 		}
 
-		for {
-			time.Sleep(500 * time.Millisecond)
+		if err := waitTillAnyFileChanged(ctx, []string{openapiSpecPath, stainlessConfigPath}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-			if openapiSpecStat, err := os.Stat(openapiSpecPath); err == nil {
-				if openapiSpecStat.ModTime().After(openapiSpecLastModified) {
-					openapiSpecLastModified = openapiSpecStat.ModTime()
-					break // File changed, run linting again
+func waitTillAnyFileChanged(ctx context.Context, files []string) error {
+	lastModified := make(map[string]time.Time)
+	for _, file := range files {
+		if stat, err := os.Stat(file); err == nil {
+			lastModified[file] = stat.ModTime()
+		}
+	}
+
+	for {
+		time.Sleep(500 * time.Millisecond)
+
+		for _, file := range files {
+			if stat, err := os.Stat(file); err == nil {
+				if stat.ModTime().After(lastModified[file]) {
+					return nil
 				}
 			}
-
-			// Check Stainless config file
-			if stainlessConfigStat, err := os.Stat(stainlessConfigPath); err == nil {
-				if stainlessConfigStat.ModTime().After(stainlessConfigLastModified) {
-					stainlessConfigLastModified = stainlessConfigStat.ModTime()
-					break // File changed, run linting again
-				}
-			}
-
-			// Check for cancellation
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			default:
-			}
+		}
+		// Check for cancellation
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
 		}
 	}
 	return nil
@@ -547,7 +552,7 @@ func getPreviewDiagnosticsJSON(ctx context.Context, cmd *cli.Command) (*gjson.Re
 		return nil, err
 	}
 	json := gjson.ParseBytes(result)
-	diagnostics := json.Get("spec.diagnostics.@values.@flatten.#.{code,level,ignored,endpoint,message,more,language,location,stainlessPath,oasRef,configRef}")
+	diagnostics := json.Get("spec.diagnostics.@values.@flatten")
 	return &diagnostics, nil
 }
 
@@ -561,4 +566,20 @@ func getPreviewDiagnostics(ctx context.Context, cmd *cli.Command) ([]stainless.B
 		return nil, err
 	}
 	return diagnostics, err
+}
+
+func hasBlockingDiagnostic(diagnostics []stainless.BuildDiagnostic) bool {
+	for _, d := range diagnostics {
+		if !d.Ignored {
+			switch d.Level {
+			case stainless.BuildDiagnosticLevelFatal:
+			case stainless.BuildDiagnosticLevelError:
+			case stainless.BuildDiagnosticLevelWarning:
+				return true
+			case stainless.BuildDiagnosticLevelNote:
+				continue
+			}
+		}
+	}
+	return false
 }
