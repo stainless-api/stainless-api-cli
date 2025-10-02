@@ -72,7 +72,14 @@ func runLinter(ctx context.Context, cmd *cli.Command) error {
 	jsonObj := gjson.Parse(string(result)).Get(transform)
 	var diagnostics []stainless.BuildDiagnostic
 	json.Unmarshal([]byte(jsonObj.Raw), &diagnostics)
-	fmt.Println(ViewDiagnosticsPrint(diagnostics))
+	if cmd.IsSet("format") {
+		if err := ShowJSON("Diagnostics", jsonObj, cmd.String("format"), ""); err != nil {
+			return err
+		}
+	} else {
+		fmt.Println(ViewDiagnosticsPrint(diagnostics, -1))
+	}
+
 	for _, d := range diagnostics {
 		if !d.Ignored {
 			switch d.Level {

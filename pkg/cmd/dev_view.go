@@ -108,7 +108,7 @@ var parts = []struct {
 			if m.diagnostics == nil {
 				s.WriteString(SProperty(0, "diagnostics", "waiting for build to finish"))
 			} else {
-				s.WriteString(ViewDiagnosticsPrint(m.diagnostics))
+				s.WriteString(ViewDiagnosticsPrint(m.diagnostics, 10))
 			}
 		},
 	},
@@ -325,7 +325,7 @@ func countDiagnosticsBySeverity(diagnostics []stainless.BuildDiagnostic) (fatal,
 	return
 }
 
-func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic) string {
+func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic, maxDiagnostics int) string {
 	var s strings.Builder
 
 	if len(diagnostics) > 0 {
@@ -353,14 +353,13 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic) string {
 		}
 
 		var sub strings.Builder
-		maxDiagnostics := 10
 
-		if len(diagnostics) > maxDiagnostics {
+		if maxDiagnostics >= 0 && len(diagnostics) > maxDiagnostics {
 			sub.WriteString(fmt.Sprintf("Showing first %d of %d diagnostics:\n", maxDiagnostics, len(diagnostics)))
 		}
 
 		for i, diag := range diagnostics {
-			if i >= maxDiagnostics {
+			if maxDiagnostics >= 0 && i >= maxDiagnostics {
 				break
 			}
 
