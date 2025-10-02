@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/stainless-api/stainless-api-go"
@@ -397,10 +397,9 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic) string {
 		s.WriteString(lipgloss.NewStyle().
 			Padding(1).
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("7")).
+			BorderForeground(lipgloss.Color("208")).
 			Render(strings.TrimRight(sub.String(), "\n")),
 		)
-		s.WriteString("\n\n")
 	} else {
 		s.WriteString(SProperty(0, "diagnostics", "(no errors or warnings)"))
 	}

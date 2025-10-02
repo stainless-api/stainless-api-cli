@@ -2,9 +2,13 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 
+	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
 
@@ -63,5 +67,23 @@ func runLinter(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-	return ShowJSON("Diagnostics", string(result), "json")
+
+	transform := "spec.diagnostics.@values.@flatten.#(ignored==false)#"
+	jsonObj := gjson.Parse(string(result)).Get(transform)
+	var diagnostics []stainless.BuildDiagnostic
+	json.Unmarshal([]byte(jsonObj.Raw), &diagnostics)
+	fmt.Println(ViewDiagnosticsPrint(diagnostics))
+	for _, d := range diagnostics {
+		if !d.Ignored {
+			switch d.Level {
+			case stainless.BuildDiagnosticLevelFatal:
+			case stainless.BuildDiagnosticLevelError:
+			case stainless.BuildDiagnosticLevelWarning:
+				os.Exit(1)
+			case stainless.BuildDiagnosticLevelNote:
+				continue
+			}
+		}
+	}
+	return nil
 }

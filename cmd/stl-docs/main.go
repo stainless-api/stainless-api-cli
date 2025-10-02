@@ -66,7 +66,7 @@ func generateManpage(filename string) error {
 
 	app := cmd.Command
 
-	manpage, err := docs.ToMan(&app)
+	manpage, err := docs.ToMan(app)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func generateMarkdown(filename string) error {
 
 	app := cmd.Command
 
-	md, err := docs.ToMarkdown(&app)
+	md, err := docs.ToMarkdown(app)
 	if err != nil {
 		return err
 	}
