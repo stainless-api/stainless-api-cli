@@ -9,6 +9,7 @@ import (
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
 
@@ -62,6 +63,10 @@ var buildsTargetOutputsRetrieve = cli.Command{
 
 func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
 
 	buildID := cmd.String("build-id")
 	if buildID == "" {
@@ -75,17 +80,21 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 	params := stainless.BuildTargetOutputGetParams{
 		BuildID: buildID,
 	}
+	var resBytes []byte
 	res, err := cc.client.Builds.TargetOutputs.Get(
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&resBytes),
 	)
 	if err != nil {
 		return err
 	}
 
+	json := gjson.Parse(string(resBytes))
 	format := cmd.Root().String("format")
-	if err := ShowJSON("builds:target_outputs retrieve", res.RawJSON(), format); err != nil {
+	transform := cmd.Root().String("transform")
+	if err := ShowJSON("builds:target_outputs retrieve", json, format, transform); err != nil {
 		return err
 	}
 
