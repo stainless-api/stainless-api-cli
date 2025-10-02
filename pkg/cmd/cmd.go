@@ -162,6 +162,8 @@ stl builds create --branch <branch>`,
 
 			&devCommand,
 
+			&lintCommand,
+
 			{
 				Name:            "@manpages",
 				Usage:           "Generate documentation for 'man'",

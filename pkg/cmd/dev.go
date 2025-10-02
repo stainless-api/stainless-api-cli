@@ -4,16 +4,19 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
 
@@ -44,7 +47,6 @@ type fetchBuildMsg *stainless.Build
 type fetchDiagnosticsMsg []stainless.BuildDiagnostic
 type errorMsg error
 type downloadMsg stainless.Target
-type triggerNewBuildMsg struct{}
 
 func NewBuildModel(cc *apiCommandContext, ctx context.Context, branch string, fn func() (*stainless.Build, error)) BuildModel {
 	return BuildModel{
@@ -238,8 +240,9 @@ func (m *BuildModel) getBuildDuration() time.Duration {
 }
 
 var devCommand = cli.Command{
-	Name:  "dev",
-	Usage: "Development mode with interactive build monitoring",
+	Name:    "preview",
+	Aliases: []string{"dev"},
+	Usage:   "Development mode with interactive build monitoring",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "project",
@@ -256,14 +259,39 @@ var devCommand = cli.Command{
 			Aliases: []string{"config"},
 			Usage:   "Path to Stainless config file",
 		},
+		&cli.BoolFlag{
+			Name:    "watch",
+			Aliases: []string{"w"},
+			Value:   false,
+			Usage:   "Run in 'watch' mode to loop and rebuild when files change.",
+		},
+		&cli.BoolFlag{
+			Name:    "lint",
+			Aliases: []string{"l"},
+			Value:   false,
+			Usage:   "Only check for diagnostic errors without running a full build.",
+		},
+		&cli.StringFlag{
+			Name:  "lint-format",
+			Value: "pretty",
+			Usage: "The format for the linter output.",
+		},
+		&cli.BoolFlag{
+			Name:  "lint-first",
+			Value: false,
+			Usage: "Run linting before starting the build process.",
+		},
 	},
-	Action: func(ctx context.Context, cmd *cli.Command) error {
-		return runDevMode(ctx, cmd)
-	},
+	Action: runPreview,
 }
 
-func runDevMode(ctx context.Context, cmd *cli.Command) error {
+func runPreview(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
+
+	// If only linting is requested, run in lint-only mode
+	if cmd.Bool("lint") {
+		return runLintLoop(ctx, cmd)
+	}
 
 	gitUser, err := getGitUsername()
 	if err != nil {
@@ -343,14 +371,92 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 
 	// Phase 3: Start build and monitor progress in a loop
 	for {
-		err := runDevBuild(ctx, cc, cmd, selectedBranch, targets)
+		// Check if we should run linting before building
+		if cmd.Bool("lint-first") {
+			diagnostics, err := getPreviewDiagnosticsJSON(ctx, cmd)
+			if err != nil {
+				if errors.Is(err, ErrUserCancelled) {
+					return nil
+				}
+				return err
+			}
+			ShowJSON("Linting Results", diagnostics.Raw, cmd.String("lint-format"))
+		}
+
+		// Start the build process
+		if err := runDevBuild(ctx, cc, cmd, selectedBranch, targets); err != nil {
+			if errors.Is(err, ErrUserCancelled) {
+				return nil
+			}
+			return err
+		}
+
+		if !cmd.Bool("watch") {
+			break
+		}
+	}
+	return nil
+}
+
+// runLintLoop handles linting in a loop for watch mode
+func runLintLoop(ctx context.Context, cmd *cli.Command) error {
+	// Get the initial file modification times
+	openapiSpecPath := cmd.String("openapi-spec")
+	stainlessConfigPath := cmd.String("stainless-config")
+
+	var openapiSpecLastModified, stainlessConfigLastModified time.Time
+
+	if openapiSpecStat, err := os.Stat(openapiSpecPath); err == nil {
+		openapiSpecLastModified = openapiSpecStat.ModTime()
+	}
+
+	if stainlessConfigStat, err := os.Stat(stainlessConfigPath); err == nil {
+		stainlessConfigLastModified = stainlessConfigStat.ModTime()
+	}
+
+	for {
+		diagnostics, err := getPreviewDiagnosticsJSON(ctx, cmd)
 		if err != nil {
 			if errors.Is(err, ErrUserCancelled) {
 				return nil
 			}
 			return err
 		}
+		ShowJSON("Diagnostics", diagnostics.Raw, cmd.String("lint-format"))
+
+		if !cmd.Bool("watch") {
+			break
+		}
+
+		// Watch for file changes instead of sleeping
+		for {
+			time.Sleep(500 * time.Millisecond) // Check every 500ms
+
+			// Check OpenAPI spec file
+			if openapiSpecStat, err := os.Stat(openapiSpecPath); err == nil {
+				if openapiSpecStat.ModTime().After(openapiSpecLastModified) {
+					openapiSpecLastModified = openapiSpecStat.ModTime()
+					break // File changed, run linting again
+				}
+			}
+
+			// Check Stainless config file
+			if stainlessConfigStat, err := os.Stat(stainlessConfigPath); err == nil {
+				if stainlessConfigStat.ModTime().After(stainlessConfigLastModified) {
+					stainlessConfigLastModified = stainlessConfigStat.ModTime()
+					break // File changed, run linting again
+				}
+			}
+
+			// Check for cancellation
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
+		}
 	}
+	return nil
 }
 
 func runDevBuild(ctx context.Context, cc *apiCommandContext, cmd *cli.Command, branch string, languages []stainless.Target) error {
@@ -419,4 +525,44 @@ func getCurrentGitBranch() (string, error) {
 	}
 
 	return branch, nil
+}
+
+func getPreviewDiagnosticsJSON(ctx context.Context, cmd *cli.Command) (*gjson.Result, error) {
+	cc := getAPICommandContext(cmd)
+	var specParams GenerateSpecParams
+	specParams.Project = cmd.String("project")
+	specParams.Source.Type = "upload"
+
+	stainlessConfig, err := os.ReadFile(cmd.String("stainless-config"))
+	if err != nil {
+		return nil, err
+	}
+	specParams.Source.StainlessConfig = string(stainlessConfig)
+
+	openAPISpec, err := os.ReadFile(cmd.String("openapi-spec"))
+	if err != nil {
+		return nil, err
+	}
+	specParams.Source.OpenAPISpec = string(openAPISpec)
+
+	var result []byte
+	err = cc.client.Post(ctx, "api/generate/spec", specParams, &result, option.WithMiddleware(cc.AsMiddleware()))
+	if err != nil {
+		return nil, err
+	}
+	json := gjson.ParseBytes(result)
+	diagnostics := json.Get("spec.diagnostics.@values.@flatten.#.{code,level,ignored,endpoint,message,more,language,location,stainlessPath,oasRef,configRef}")
+	return &diagnostics, nil
+}
+
+func getPreviewDiagnostics(ctx context.Context, cmd *cli.Command) ([]stainless.BuildDiagnostic, error) {
+	jsonDiagnostics, err := getPreviewDiagnosticsJSON(ctx, cmd)
+	if err != nil {
+		return nil, err
+	}
+	var diagnostics []stainless.BuildDiagnostic
+	if err := json.Unmarshal([]byte(jsonDiagnostics.Raw), &diagnostics); err != nil {
+		return nil, err
+	}
+	return diagnostics, err
 }
