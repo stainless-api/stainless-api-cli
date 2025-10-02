@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.0-alpha.45 (2025-10-02)
+
+Full Changelog: [v0.1.0-alpha.44...v0.1.0-alpha.45](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.44...v0.1.0-alpha.45)
+
+### Features
+
+* added `--output-filter` flag and `--error-format` flag to support better visualization options ([2768e5b](https://github.com/stainless-api/stainless-api-cli/commit/2768e5b0255ae79e44ed54f583c4809f19801afe))
+* better support for positional arguments ([799d88f](https://github.com/stainless-api/stainless-api-cli/commit/799d88f441c5d1d5dca82a5590fceefdc1823f42))
+
+
+### Chores
+
+* **internal:** codegen related update ([2f9d764](https://github.com/stainless-api/stainless-api-cli/commit/2f9d764f660458d0e84e11adea9f1d418e8f1013))
+* **internal:** codegen related update ([c7df1a7](https://github.com/stainless-api/stainless-api-cli/commit/c7df1a7401a51fe9657ca9fa7f1aff2d37f60851))
+
 ## 0.1.0-alpha.44 (2025-09-22)
 
 Full Changelog: [v0.1.0-alpha.43...v0.1.0-alpha.44](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.43...v0.1.0-alpha.44)
