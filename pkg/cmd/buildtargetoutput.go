@@ -85,6 +85,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 		context.TODO(),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&resBytes),
 	)
 	if err != nil {
 		return err
