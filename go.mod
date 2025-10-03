@@ -1,8 +1,6 @@
 module github.com/stainless-api/stainless-api-cli
 
-go 1.24.4
-
-toolchain go1.24.7
+go 1.24.0
 
 require (
 	github.com/charmbracelet/bubbles v0.21.0
@@ -20,7 +18,7 @@ require (
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/pretty v1.2.1
 	github.com/tidwall/sjson v1.2.5
-	github.com/urfave/cli-docs/v3 v3.1.0
+	github.com/urfave/cli-docs/v3 v3.0.0-alpha6
 	github.com/urfave/cli/v3 v3.4.1
 	golang.org/x/term v0.35.0
 )
