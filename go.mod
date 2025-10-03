@@ -1,8 +1,6 @@
 module github.com/stainless-api/stainless-api-cli
 
-go 1.24.4
-
-toolchain go1.24.7
+go 1.25
 
 require (
 	github.com/charmbracelet/bubbles v0.21.0
@@ -12,6 +10,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.1-0.20250404203927-76690c660834
 	github.com/charmbracelet/x/ansi v0.8.0
 	github.com/charmbracelet/x/term v0.2.1
+	github.com/fsnotify/fsnotify v1.9.0
 	github.com/itchyny/json2yaml v0.1.4
 	github.com/logrusorgru/aurora/v4 v4.0.0
 	github.com/muesli/reflow v0.3.0

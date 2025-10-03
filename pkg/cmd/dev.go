@@ -47,6 +47,7 @@ type fetchBuildMsg *stainless.Build
 type fetchDiagnosticsMsg []stainless.BuildDiagnostic
 type errorMsg error
 type downloadMsg stainless.Target
+type fileChangeMsg struct{}
 
 func NewBuildModel(cc *apiCommandContext, ctx context.Context, branch string, fn func() (*stainless.Build, error)) BuildModel {
 	return BuildModel{
@@ -159,6 +160,10 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case errorMsg:
 		m.err = msg
+		cmds = append(cmds, tea.Quit)
+
+	case fileChangeMsg:
+		// File change detected, exit with success
 		cmds = append(cmds, tea.Quit)
 	}
 	return m, tea.Sequence(cmds...)
@@ -367,6 +372,9 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 			if hasBlockingDiagnostic(diagnostics) {
 				fmt.Println("\nDiagnostic checks will re-run once you edit your configuration files...")
 				if err := waitTillConfigChanges(ctx, cmd, cc); err != nil {
+					if errors.Is(err, ErrUserCancelled) {
+						return nil
+					}
 					return err
 				}
 				continue
@@ -400,32 +408,46 @@ func waitTillConfigChanges(ctx context.Context, cmd *cli.Command, cc *apiCommand
 		stainlessConfigPath = cmd.String("stainless-config")
 	}
 
-	files := []string{openapiSpecPath, stainlessConfigPath}
-	lastModified := make(map[string]time.Time)
-	for _, file := range files {
-		if stat, err := os.Stat(file); err == nil {
-			lastModified[file] = stat.ModTime()
-		}
+	// Get initial file modification times
+	openapiSpecInfo, err := os.Stat(openapiSpecPath)
+	if err != nil {
+		return fmt.Errorf("failed to get file info for %s: %v", openapiSpecPath, err)
 	}
+	openapiSpecModTime := openapiSpecInfo.ModTime()
+
+	stainlessConfigInfo, err := os.Stat(stainlessConfigPath)
+	if err != nil {
+		return fmt.Errorf("failed to get file info for %s: %v", stainlessConfigPath, err)
+	}
+	stainlessConfigModTime := stainlessConfigInfo.ModTime()
+
+	fmt.Println("Waiting for file changes...")
+
+	// Poll for file changes every 250ms
+	ticker := time.NewTicker(250 * time.Millisecond)
+	defer ticker.Stop()
 
 	for {
-		time.Sleep(500 * time.Millisecond)
-
-		for _, file := range files {
-			if stat, err := os.Stat(file); err == nil {
-				if stat.ModTime().After(lastModified[file]) {
+		select {
+		case <-ticker.C:
+			// Check OpenAPI spec file
+			if info, err := os.Stat(openapiSpecPath); err == nil {
+				if info.ModTime().After(openapiSpecModTime) {
 					return nil
 				}
 			}
-		}
-		// Check for cancellation
-		select {
+
+			// Check Stainless config file
+			if info, err := os.Stat(stainlessConfigPath); err == nil {
+				if info.ModTime().After(stainlessConfigModTime) {
+					return nil
+				}
+			}
+
 		case <-ctx.Done():
 			return ctx.Err()
-		default:
 		}
 	}
-	return nil
 }
 
 func runDevBuild(ctx context.Context, cc *apiCommandContext, cmd *cli.Command, branch string, languages []stainless.Target) error {
@@ -494,6 +516,15 @@ func getCurrentGitBranch() (string, error) {
 	}
 
 	return branch, nil
+}
+
+type GenerateSpecParams struct {
+	Project string `json:"project"`
+	Source  struct {
+		Type            string `json:"type"`
+		OpenAPISpec     string `json:"openapi_spec"`
+		StainlessConfig string `json:"stainless_config"`
+	} `json:"source"`
 }
 
 func getDiagnostics(ctx context.Context, cmd *cli.Command, cc *apiCommandContext) ([]stainless.BuildDiagnostic, error) {
