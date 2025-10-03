@@ -394,7 +394,7 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic, maxDiagnostic
 
 		s.WriteString(SProperty(0, "diagnostics", summary))
 		s.WriteString(lipgloss.NewStyle().
-			Padding(1).
+			Padding(0).
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("208")).
 			Render(strings.TrimRight(sub.String(), "\n")),
