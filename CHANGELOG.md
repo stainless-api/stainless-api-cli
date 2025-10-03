@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.0-alpha.47 (2025-10-03)
+
+Full Changelog: [v0.1.0-alpha.46...v0.1.0-alpha.47](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.46...v0.1.0-alpha.47)
+
 ## 0.1.0-alpha.46 (2025-10-03)
 
 Full Changelog: [v0.1.0-alpha.45...v0.1.0-alpha.46](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.45...v0.1.0-alpha.46)
