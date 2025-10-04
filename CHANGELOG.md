@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.49 (2025-10-04)
+
+Full Changelog: [v0.1.0-alpha.48...v0.1.0-alpha.49](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.48...v0.1.0-alpha.49)
+
+### Bug Fixes
+
+* downgrade urfave/cli-docs dependency ([30b4822](https://github.com/stainless-api/stainless-api-cli/commit/30b48221e523c79ab1c79303d5da9acef89e9941))
+
 ## 0.1.0-alpha.48 (2025-10-03)
 
 Full Changelog: [v0.1.0-alpha.47...v0.1.0-alpha.48](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.47...v0.1.0-alpha.48)
