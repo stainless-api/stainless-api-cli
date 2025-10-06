@@ -264,6 +264,16 @@ var devCommand = cli.Command{
 			Aliases: []string{"config"},
 			Usage:   "Path to Stainless config file",
 		},
+		&cli.StringFlag{
+			Name:    "branch",
+			Aliases: []string{"b"},
+			Usage:   "Which branch to use",
+		},
+		&cli.StringSliceFlag{
+			Name:    "target",
+			Aliases: []string{"t"},
+			Usage:   "The target build language(s)",
+		},
 		&cli.BoolFlag{
 			Name:    "watch",
 			Aliases: []string{"w"},
@@ -288,61 +298,28 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	var selectedBranch string
-
-	now := time.Now()
-	randomBytes := make([]byte, 3)
-	rand.Read(randomBytes)
-	randomSuffix := base64.RawURLEncoding.EncodeToString(randomBytes)
-	randomBranch := fmt.Sprintf("%s/%d%02d%02d-%s", gitUser, now.Year(), now.Month(), now.Day(), randomSuffix)
-
-	branchOptions := []huh.Option[string]{}
-	if currentBranch, err := getCurrentGitBranch(); err == nil && currentBranch != "main" && currentBranch != "master" {
-		branchOptions = append(branchOptions,
-			huh.NewOption(currentBranch, currentBranch),
-		)
+	if cmd.IsSet("branch") {
+		selectedBranch = cmd.String("branch")
+	} else {
+		selectedBranch, err = chooseBranch(gitUser)
+		if err != nil {
+			return err
+		}
 	}
-	branchOptions = append(branchOptions,
-		huh.NewOption(fmt.Sprintf("%s/dev", gitUser), fmt.Sprintf("%s/dev", gitUser)),
-		huh.NewOption(fmt.Sprintf("%s/<random>", gitUser), randomBranch),
-	)
-
-	branchForm := huh.NewForm(
-		huh.NewGroup(
-			huh.NewSelect[string]().
-				Title("branch").
-				Description("Select a Stainless project branch to use for development").
-				Options(branchOptions...).
-				Value(&selectedBranch),
-		),
-	).WithTheme(GetFormTheme(0))
-
-	if err := branchForm.Run(); err != nil {
-		return fmt.Errorf("branch selection failed: %v", err)
-	}
-
 	Property("branch", selectedBranch)
 
 	// Phase 2: Language selection
 	var selectedTargets []string
-
-	// Use cached workspace config for intelligent defaults
-	config := cc.workspaceConfig
-
-	targetInfo := getAvailableTargetInfo(ctx, cc.client, cmd.String("project"), config)
-	targetOptions := targetInfoToOptions(targetInfo)
-
-	targetForm := huh.NewForm(
-		huh.NewGroup(
-			huh.NewMultiSelect[string]().
-				Title("targets").
-				Description("Select targets to generate (space to select, enter to confirm, select none to select all):").
-				Options(targetOptions...).
-				Value(&selectedTargets),
-		),
-	).WithTheme(GetFormTheme(0))
-
-	if err := targetForm.Run(); err != nil {
-		return fmt.Errorf("target selection failed: %v", err)
+	targetInfos := getAvailableTargetInfo(ctx, cc.client, cmd.String("project"), cc.workspaceConfig)
+	if cmd.IsSet("target") {
+		selectedTargets = cmd.StringSlice("target")
+		for _, target := range selectedTargets {
+			if !isValidTarget(targetInfos, target) {
+				return fmt.Errorf("invalid language target: %s", target)
+			}
+		}
+	} else {
+		selectedTargets, err = chooseSelectedTargets(targetInfos)
 	}
 
 	if len(selectedTargets) == 0 {
@@ -380,6 +357,62 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 	return nil
+}
+
+func chooseBranch(gitUser string) (string, error) {
+	now := time.Now()
+	randomBytes := make([]byte, 3)
+	rand.Read(randomBytes)
+	randomSuffix := base64.RawURLEncoding.EncodeToString(randomBytes)
+	randomBranch := fmt.Sprintf("%s/%d%02d%02d-%s", gitUser, now.Year(), now.Month(), now.Day(), randomSuffix)
+
+	branchOptions := []huh.Option[string]{}
+	if currentBranch, err := getCurrentGitBranch(); err == nil && currentBranch != "main" && currentBranch != "master" {
+		branchOptions = append(branchOptions,
+			huh.NewOption(currentBranch, currentBranch),
+		)
+	}
+	branchOptions = append(branchOptions,
+		huh.NewOption(fmt.Sprintf("%s/dev", gitUser), fmt.Sprintf("%s/dev", gitUser)),
+		huh.NewOption(fmt.Sprintf("%s/<random>", gitUser), randomBranch),
+	)
+
+	var selectedBranch string
+	branchForm := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().
+				Title("branch").
+				Description("Select a Stainless project branch to use for development").
+				Options(branchOptions...).
+				Value(&selectedBranch),
+		),
+	).WithTheme(GetFormTheme(0))
+
+	if err := branchForm.Run(); err != nil {
+		return selectedBranch, fmt.Errorf("branch selection failed: %v", err)
+	}
+
+	return selectedBranch, nil
+}
+
+func chooseSelectedTargets(targetInfos []TargetInfo) ([]string, error) {
+	targetOptions := targetInfoToOptions(targetInfos)
+
+	var selectedTargets []string
+	targetForm := huh.NewForm(
+		huh.NewGroup(
+			huh.NewMultiSelect[string]().
+				Title("targets").
+				Description("Select targets to generate (space to select, enter to confirm, select none to select all):").
+				Options(targetOptions...).
+				Value(&selectedTargets),
+		),
+	).WithTheme(GetFormTheme(0))
+
+	if err := targetForm.Run(); err != nil {
+		return nil, fmt.Errorf("target selection failed: %v", err)
+	}
+	return selectedTargets, nil
 }
 
 func runDevBuild(ctx context.Context, cc *apiCommandContext, cmd *cli.Command, branch string, languages []stainless.Target) error {
