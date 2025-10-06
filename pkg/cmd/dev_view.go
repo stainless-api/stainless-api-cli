@@ -244,13 +244,13 @@ func ViewStepSymbol(status, conclusion string) string {
 func ViewDiagnosticIcon(level stainless.BuildDiagnosticLevel) string {
 	switch level {
 	case stainless.BuildDiagnosticLevelFatal:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true).Render("💀")
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true).Render("(F)")
 	case stainless.BuildDiagnosticLevelError:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render("❌")
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render("(E)")
 	case stainless.BuildDiagnosticLevelWarning:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render("⚠️")
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render("(W)")
 	case stainless.BuildDiagnosticLevelNote:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Render("ℹ️")
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Render("(i)")
 	default:
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("•")
 	}
