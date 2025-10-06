@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/stainless-api/stainless-api-go"
@@ -29,6 +31,7 @@ type BuildModel struct {
 	ended       *time.Time
 	build       *stainless.Build
 	branch      string
+	help        help.Model
 	diagnostics []stainless.BuildDiagnostic
 	downloads   map[stainless.Target]struct {
 		status string
@@ -56,6 +59,7 @@ func NewBuildModel(cc *apiCommandContext, ctx context.Context, branch string, fn
 		cc:      cc,
 		ctx:     ctx,
 		branch:  branch,
+		help:    help.New(),
 	}
 }
 
@@ -77,13 +81,17 @@ func (m BuildModel) Init() tea.Cmd {
 func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{}
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.help.Width = msg.Width
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
 			m.err = ErrUserCancelled
 			cmds = append(cmds, tea.Quit)
 		case "enter":
-			cmds = append(cmds, tea.Quit)
+			if m.cc.cmd.Bool("watch") {
+				cmds = append(cmds, tea.Quit)
+			}
 		}
 
 	case downloadMsg:
@@ -167,6 +175,28 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, tea.Quit)
 	}
 	return m, tea.Sequence(cmds...)
+}
+
+func (m BuildModel) ShortHelp() []key.Binding {
+	if m.cc.cmd.Bool("watch") {
+		return []key.Binding{
+			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit")),
+			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "rebuild")),
+		}
+	} else {
+		return []key.Binding{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}
+	}
+}
+
+func (m BuildModel) FullHelp() [][]key.Binding {
+	if m.cc.cmd.Bool("watch") {
+		return [][]key.Binding{{
+			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit")),
+			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "rebuild")),
+		}}
+	} else {
+		return [][]key.Binding{{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}}
+	}
 }
 
 func (m BuildModel) downloadTarget(target stainless.Target) tea.Cmd {

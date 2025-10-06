@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -49,26 +51,17 @@ var lintCommand = cli.Command{
 	},
 }
 
-var helpStyle = lipgloss.NewStyle().
-	Foreground(lipgloss.Color("241")).
-	Margin(1, 0, 0, 0)
-
 type lintModel struct {
-	spinner         spinner.Model
-	diagnostics     []stainless.BuildDiagnostic
-	error           error
-	watching        bool
-	stopWhenPassing bool
-	ctx             context.Context
-	cmd             *cli.Command
-	cc              *apiCommandContext
-	stopPolling     chan struct{}
-	help            helpModel
-}
-
-type helpModel struct {
-	width  int
-	height int
+	spinner     spinner.Model
+	diagnostics []stainless.BuildDiagnostic
+	error       error
+	watching    bool
+	canSkip     bool
+	ctx         context.Context
+	cmd         *cli.Command
+	cc          *apiCommandContext
+	stopPolling chan struct{}
+	help        help.Model
 }
 
 func (m lintModel) Init() tea.Cmd {
@@ -94,7 +87,7 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.cmd = msg.cmd
 		m.cc = msg.cc
 
-		if m.stopWhenPassing && !hasBlockingDiagnostic(m.diagnostics) {
+		if m.canSkip && !hasBlockingDiagnostic(m.diagnostics) {
 			m.watching = false
 			return m, tea.Quit
 		}
@@ -119,8 +112,7 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case tea.WindowSizeMsg:
-		m.help.width = msg.Width
-		m.help.height = msg.Height
+		m.help.Width = msg.Width
 		return m, nil
 	}
 
@@ -142,12 +134,7 @@ func (m lintModel) View() string {
 		}
 	}
 
-	if m.stopWhenPassing {
-		content += helpStyle.Render("Press Enter to skip diagnostics, Ctrl+C to exit")
-	} else {
-		content += helpStyle.Render("Press Ctrl+C to exit")
-	}
-
+	content += "\n" + m.help.View(m)
 	return content
 }
 
@@ -172,7 +159,29 @@ func getDiagnosticsCmd(ctx context.Context, cmd *cli.Command, cc *apiCommandCont
 	}
 }
 
-func runLinter(ctx context.Context, cmd *cli.Command, stopWhenPassing bool) error {
+func (m lintModel) ShortHelp() []key.Binding {
+	if m.canSkip {
+		return []key.Binding{
+			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit")),
+			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "skip diagnostics")),
+		}
+	} else {
+		return []key.Binding{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}
+	}
+}
+
+func (m lintModel) FullHelp() [][]key.Binding {
+	if m.canSkip {
+		return [][]key.Binding{{
+			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit")),
+			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "skip diagnostics")),
+		}}
+	} else {
+		return [][]key.Binding{{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}}
+	}
+}
+
+func runLinter(ctx context.Context, cmd *cli.Command, canSkip bool) error {
 	cc := getAPICommandContext(cmd)
 
 	s := spinner.New()
@@ -180,14 +189,14 @@ func runLinter(ctx context.Context, cmd *cli.Command, stopWhenPassing bool) erro
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("208"))
 
 	m := lintModel{
-		spinner:         s,
-		watching:        cmd.Bool("watch"),
-		stopWhenPassing: stopWhenPassing,
-		ctx:             ctx,
-		cmd:             cmd,
-		cc:              cc,
-		stopPolling:     make(chan struct{}),
-		help:            helpModel{},
+		spinner:     s,
+		watching:    cmd.Bool("watch"),
+		canSkip:     canSkip,
+		ctx:         ctx,
+		cmd:         cmd,
+		cc:          cc,
+		stopPolling: make(chan struct{}),
+		help:        help.New(),
 	}
 
 	p := tea.NewProgram(m, tea.WithContext(ctx))

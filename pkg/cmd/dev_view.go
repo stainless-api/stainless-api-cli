@@ -98,9 +98,9 @@ var parts = []struct {
 		view: func(m BuildModel, s *strings.Builder) {
 			buildIDStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Background(lipgloss.Color("6")).Bold(true)
 			if m.build != nil {
-				s.WriteString(fmt.Sprintf("\n\n%s %s\n\n", buildIDStyle.Render(" BUILD "), m.build.ID))
+				fmt.Fprintf(s, "\n\n%s %s\n\n", buildIDStyle.Render(" BUILD "), m.build.ID)
 			} else {
-				s.WriteString(fmt.Sprintf("\n\n%s\n\n", buildIDStyle.Render(" BUILD ")))
+				fmt.Fprintf(s, "\n\n%s\n\n", buildIDStyle.Render(" BUILD "))
 			}
 		},
 	},
@@ -169,8 +169,7 @@ var parts = []struct {
 	{
 		name: "help",
 		view: func(m BuildModel, s *strings.Builder) {
-			s.WriteString("\n")
-			s.WriteString(ViewHelpMenu())
+			s.WriteString(m.help.View(m))
 		},
 	},
 }
@@ -255,42 +254,6 @@ func ViewDiagnosticIcon(level stainless.BuildDiagnosticLevel) string {
 	default:
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("•")
 	}
-}
-
-// ViewHelpMenu creates a styled help menu inspired by huh help component
-func ViewHelpMenu() string {
-	keyStyle := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
-		Light: "#909090",
-		Dark:  "#626262",
-	})
-
-	descStyle := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
-		Light: "#B2B2B2",
-		Dark:  "#4A4A4A",
-	})
-
-	sepStyle := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
-		Light: "#DDDADA",
-		Dark:  "#3C3C3C",
-	})
-
-	helpItems := []struct {
-		key  string
-		desc string
-	}{
-		{"enter", "rebuild"},
-		{"ctrl+c", "exit"},
-	}
-
-	var parts []string
-	for _, item := range helpItems {
-		parts = append(parts,
-			keyStyle.Render(item.key)+
-				sepStyle.Render(" ")+
-				descStyle.Render(item.desc))
-	}
-
-	return strings.Join(parts, sepStyle.Render(" • "))
 }
 
 // renderMarkdown renders markdown content using glamour
