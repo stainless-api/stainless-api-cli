@@ -4,16 +4,21 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
 
@@ -26,6 +31,7 @@ type BuildModel struct {
 	ended       *time.Time
 	build       *stainless.Build
 	branch      string
+	help        help.Model
 	diagnostics []stainless.BuildDiagnostic
 	downloads   map[stainless.Target]struct {
 		status string
@@ -44,7 +50,7 @@ type fetchBuildMsg *stainless.Build
 type fetchDiagnosticsMsg []stainless.BuildDiagnostic
 type errorMsg error
 type downloadMsg stainless.Target
-type triggerNewBuildMsg struct{}
+type fileChangeMsg struct{}
 
 func NewBuildModel(cc *apiCommandContext, ctx context.Context, branch string, fn func() (*stainless.Build, error)) BuildModel {
 	return BuildModel{
@@ -53,6 +59,7 @@ func NewBuildModel(cc *apiCommandContext, ctx context.Context, branch string, fn
 		cc:      cc,
 		ctx:     ctx,
 		branch:  branch,
+		help:    help.New(),
 	}
 }
 
@@ -74,13 +81,17 @@ func (m BuildModel) Init() tea.Cmd {
 func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds := []tea.Cmd{}
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.help.Width = msg.Width
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
 			m.err = ErrUserCancelled
 			cmds = append(cmds, tea.Quit)
 		case "enter":
-			cmds = append(cmds, tea.Quit)
+			if m.cc.cmd.Bool("watch") {
+				cmds = append(cmds, tea.Quit)
+			}
 		}
 
 	case downloadMsg:
@@ -158,8 +169,34 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case errorMsg:
 		m.err = msg
 		cmds = append(cmds, tea.Quit)
+
+	case fileChangeMsg:
+		// File change detected, exit with success
+		cmds = append(cmds, tea.Quit)
 	}
 	return m, tea.Sequence(cmds...)
+}
+
+func (m BuildModel) ShortHelp() []key.Binding {
+	if m.cc.cmd.Bool("watch") {
+		return []key.Binding{
+			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit")),
+			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "rebuild")),
+		}
+	} else {
+		return []key.Binding{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}
+	}
+}
+
+func (m BuildModel) FullHelp() [][]key.Binding {
+	if m.cc.cmd.Bool("watch") {
+		return [][]key.Binding{{
+			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit")),
+			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "rebuild")),
+		}}
+	} else {
+		return [][]key.Binding{{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}}
+	}
 }
 
 func (m BuildModel) downloadTarget(target stainless.Target) tea.Cmd {
@@ -238,8 +275,9 @@ func (m *BuildModel) getBuildDuration() time.Duration {
 }
 
 var devCommand = cli.Command{
-	Name:  "dev",
-	Usage: "Development mode with interactive build monitoring",
+	Name:    "preview",
+	Aliases: []string{"dev"},
+	Usage:   "Development mode with interactive build monitoring",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "project",
@@ -256,13 +294,33 @@ var devCommand = cli.Command{
 			Aliases: []string{"config"},
 			Usage:   "Path to Stainless config file",
 		},
+		&cli.StringFlag{
+			Name:    "branch",
+			Aliases: []string{"b"},
+			Usage:   "Which branch to use",
+		},
+		&cli.StringSliceFlag{
+			Name:    "target",
+			Aliases: []string{"t"},
+			Usage:   "The target build language(s)",
+		},
+		&cli.BoolFlag{
+			Name:    "watch",
+			Aliases: []string{"w"},
+			Value:   false,
+			Usage:   "Run in 'watch' mode to loop and rebuild when files change.",
+		},
 	},
-	Action: func(ctx context.Context, cmd *cli.Command) error {
-		return runDevMode(ctx, cmd)
-	},
+	Action: runPreview,
 }
 
-func runDevMode(ctx context.Context, cmd *cli.Command) error {
+func runPreview(ctx context.Context, cmd *cli.Command) error {
+	if cmd.Bool("watch") {
+		// Clear the screen and move the cursor to the top
+		fmt.Print("\033[2J\033[H")
+		os.Stdout.Sync()
+	}
+
 	cc := getAPICommandContext(cmd)
 
 	gitUser, err := getGitUsername()
@@ -272,7 +330,68 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	var selectedBranch string
+	if cmd.IsSet("branch") {
+		selectedBranch = cmd.String("branch")
+	} else {
+		selectedBranch, err = chooseBranch(gitUser)
+		if err != nil {
+			return err
+		}
+	}
+	Property("branch", selectedBranch)
 
+	// Phase 2: Language selection
+	var selectedTargets []string
+	targetInfos := getAvailableTargetInfo(ctx, cc.client, cmd.String("project"), cc.workspaceConfig)
+	if cmd.IsSet("target") {
+		selectedTargets = cmd.StringSlice("target")
+		for _, target := range selectedTargets {
+			if !isValidTarget(targetInfos, target) {
+				return fmt.Errorf("invalid language target: %s", target)
+			}
+		}
+	} else {
+		selectedTargets, err = chooseSelectedTargets(targetInfos)
+	}
+
+	if len(selectedTargets) == 0 {
+		return fmt.Errorf("no languages selected")
+	}
+
+	Property("targets", strings.Join(selectedTargets, ", "))
+
+	// Convert string targets to stainless.Target
+	targets := make([]stainless.Target, len(selectedTargets))
+	for i, target := range selectedTargets {
+		targets[i] = stainless.Target(target)
+	}
+
+	// Phase 3: Start build and monitor progress in a loop
+	for {
+		// Make the user get past linter errors
+		if err := runLinter(ctx, cmd, true); err != nil {
+			if errors.Is(err, ErrUserCancelled) {
+				return nil
+			}
+			return err
+		}
+
+		// Start the build process
+		if err := runDevBuild(ctx, cc, cmd, selectedBranch, targets); err != nil {
+			if errors.Is(err, ErrUserCancelled) {
+				return nil
+			}
+			return err
+		}
+
+		if !cmd.Bool("watch") {
+			break
+		}
+	}
+	return nil
+}
+
+func chooseBranch(gitUser string) (string, error) {
 	now := time.Now()
 	randomBytes := make([]byte, 3)
 	rand.Read(randomBytes)
@@ -290,6 +409,7 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 		huh.NewOption(fmt.Sprintf("%s/<random>", gitUser), randomBranch),
 	)
 
+	var selectedBranch string
 	branchForm := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
@@ -301,20 +421,16 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 	).WithTheme(GetFormTheme(0))
 
 	if err := branchForm.Run(); err != nil {
-		return fmt.Errorf("branch selection failed: %v", err)
+		return selectedBranch, fmt.Errorf("branch selection failed: %v", err)
 	}
 
-	Property("branch", selectedBranch)
+	return selectedBranch, nil
+}
 
-	// Phase 2: Language selection
+func chooseSelectedTargets(targetInfos []TargetInfo) ([]string, error) {
+	targetOptions := targetInfoToOptions(targetInfos)
+
 	var selectedTargets []string
-
-	// Use cached workspace config for intelligent defaults
-	config := cc.workspaceConfig
-
-	targetInfo := getAvailableTargetInfo(ctx, cc.client, cmd.String("project"), config)
-	targetOptions := targetInfoToOptions(targetInfo)
-
 	targetForm := huh.NewForm(
 		huh.NewGroup(
 			huh.NewMultiSelect[string]().
@@ -326,31 +442,9 @@ func runDevMode(ctx context.Context, cmd *cli.Command) error {
 	).WithTheme(GetFormTheme(0))
 
 	if err := targetForm.Run(); err != nil {
-		return fmt.Errorf("target selection failed: %v", err)
+		return nil, fmt.Errorf("target selection failed: %v", err)
 	}
-
-	if len(selectedTargets) == 0 {
-		return fmt.Errorf("no languages selected")
-	}
-
-	Property("targets", strings.Join(selectedTargets, ", "))
-
-	// Convert string targets to stainless.Target
-	targets := make([]stainless.Target, len(selectedTargets))
-	for i, target := range selectedTargets {
-		targets[i] = stainless.Target(target)
-	}
-
-	// Phase 3: Start build and monitor progress in a loop
-	for {
-		err := runDevBuild(ctx, cc, cmd, selectedBranch, targets)
-		if err != nil {
-			if errors.Is(err, ErrUserCancelled) {
-				return nil
-			}
-			return err
-		}
-	}
+	return selectedTargets, nil
 }
 
 func runDevBuild(ctx context.Context, cc *apiCommandContext, cmd *cli.Command, branch string, languages []stainless.Target) error {
@@ -419,4 +513,73 @@ func getCurrentGitBranch() (string, error) {
 	}
 
 	return branch, nil
+}
+
+type GenerateSpecParams struct {
+	Project string `json:"project"`
+	Source  struct {
+		Type            string `json:"type"`
+		OpenAPISpec     string `json:"openapi_spec"`
+		StainlessConfig string `json:"stainless_config"`
+	} `json:"source"`
+}
+
+func getDiagnostics(ctx context.Context, cmd *cli.Command, cc *apiCommandContext) ([]stainless.BuildDiagnostic, error) {
+	var specParams GenerateSpecParams
+	if cmd.IsSet("project") {
+		specParams.Project = cmd.String("project")
+	} else {
+		specParams.Project = cc.workspaceConfig.Project
+	}
+	specParams.Source.Type = "upload"
+
+	configPath := cc.workspaceConfig.StainlessConfig
+	if cmd.IsSet("stainless-config") {
+		configPath = cmd.String("stainless-config")
+	}
+
+	stainlessConfig, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+	specParams.Source.StainlessConfig = string(stainlessConfig)
+
+	oasPath := cc.workspaceConfig.OpenAPISpec
+	if cmd.IsSet("openapi-spec") {
+		oasPath = cmd.String("openapi-spec")
+	}
+
+	openAPISpec, err := os.ReadFile(oasPath)
+	if err != nil {
+		return nil, err
+	}
+	specParams.Source.OpenAPISpec = string(openAPISpec)
+
+	var result []byte
+	err = cc.client.Post(ctx, "api/generate/spec", specParams, &result, option.WithMiddleware(cc.AsMiddleware()))
+	if err != nil {
+		return nil, err
+	}
+
+	transform := "spec.diagnostics.@values.@flatten.#(ignored==false)#"
+	jsonObj := gjson.Parse(string(result)).Get(transform)
+	var diagnostics []stainless.BuildDiagnostic
+	json.Unmarshal([]byte(jsonObj.Raw), &diagnostics)
+	return diagnostics, nil
+}
+
+func hasBlockingDiagnostic(diagnostics []stainless.BuildDiagnostic) bool {
+	for _, d := range diagnostics {
+		if !d.Ignored {
+			switch d.Level {
+			case stainless.BuildDiagnosticLevelFatal:
+			case stainless.BuildDiagnosticLevelError:
+			case stainless.BuildDiagnosticLevelWarning:
+				return true
+			case stainless.BuildDiagnosticLevelNote:
+				continue
+			}
+		}
+	}
+	return false
 }

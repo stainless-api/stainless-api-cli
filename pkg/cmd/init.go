@@ -523,6 +523,15 @@ func getAllTargetInfo() []TargetInfo {
 	}
 }
 
+func isValidTarget(targetInfos []TargetInfo, name string) bool {
+	for _, info := range targetInfos {
+		if info.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 // targetInfoToOptions converts TargetInfo slice to huh.Options
 func targetInfoToOptions(targets []TargetInfo) []huh.Option[string] {
 	options := make([]huh.Option[string], len(targets))

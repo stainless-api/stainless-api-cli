@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/term"
 	"github.com/stainless-api/stainless-api-go"
 )
 
@@ -96,9 +98,9 @@ var parts = []struct {
 		view: func(m BuildModel, s *strings.Builder) {
 			buildIDStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Background(lipgloss.Color("6")).Bold(true)
 			if m.build != nil {
-				s.WriteString(fmt.Sprintf("\n\n%s %s\n\n", buildIDStyle.Render(" BUILD "), m.build.ID))
+				fmt.Fprintf(s, "\n\n%s %s\n\n", buildIDStyle.Render(" BUILD "), m.build.ID)
 			} else {
-				s.WriteString(fmt.Sprintf("\n\n%s\n\n", buildIDStyle.Render(" BUILD ")))
+				fmt.Fprintf(s, "\n\n%s\n\n", buildIDStyle.Render(" BUILD "))
 			}
 		},
 	},
@@ -108,7 +110,7 @@ var parts = []struct {
 			if m.diagnostics == nil {
 				s.WriteString(SProperty(0, "diagnostics", "waiting for build to finish"))
 			} else {
-				s.WriteString(ViewDiagnosticsPrint(m.diagnostics))
+				s.WriteString(ViewDiagnosticsPrint(m.diagnostics, 10))
 			}
 		},
 	},
@@ -167,8 +169,7 @@ var parts = []struct {
 	{
 		name: "help",
 		view: func(m BuildModel, s *strings.Builder) {
-			s.WriteString("\n")
-			s.WriteString(ViewHelpMenu())
+			s.WriteString(m.help.View(m))
 		},
 	},
 }
@@ -243,60 +244,29 @@ func ViewStepSymbol(status, conclusion string) string {
 func ViewDiagnosticIcon(level stainless.BuildDiagnosticLevel) string {
 	switch level {
 	case stainless.BuildDiagnosticLevelFatal:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true).Render("💀")
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true).Render("(F)")
 	case stainless.BuildDiagnosticLevelError:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render("❌")
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render("(E)")
 	case stainless.BuildDiagnosticLevelWarning:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render("⚠️")
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render("(W)")
 	case stainless.BuildDiagnosticLevelNote:
-		return lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Render("ℹ️")
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Render("(i)")
 	default:
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("•")
 	}
 }
 
-// ViewHelpMenu creates a styled help menu inspired by huh help component
-func ViewHelpMenu() string {
-	keyStyle := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
-		Light: "#909090",
-		Dark:  "#626262",
-	})
-
-	descStyle := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
-		Light: "#B2B2B2",
-		Dark:  "#4A4A4A",
-	})
-
-	sepStyle := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
-		Light: "#DDDADA",
-		Dark:  "#3C3C3C",
-	})
-
-	helpItems := []struct {
-		key  string
-		desc string
-	}{
-		{"enter", "rebuild"},
-		{"ctrl+c", "exit"},
-	}
-
-	var parts []string
-	for _, item := range helpItems {
-		parts = append(parts,
-			keyStyle.Render(item.key)+
-				sepStyle.Render(" ")+
-				descStyle.Render(item.desc))
-	}
-
-	return strings.Join(parts, sepStyle.Render(" • "))
-}
-
 // renderMarkdown renders markdown content using glamour
 func renderMarkdown(content string) string {
+	width, _, err := term.GetSize(uintptr(os.Stdout.Fd()))
+	if err != nil || width <= 0 || width > 120 {
+		width = 120
+	}
 	r, err := glamour.NewTermRenderer(
 		glamour.WithAutoStyle(),
-		glamour.WithWordWrap(120),
+		glamour.WithWordWrap(width),
 	)
+
 	if err != nil {
 		return content
 	}
@@ -325,7 +295,7 @@ func countDiagnosticsBySeverity(diagnostics []stainless.BuildDiagnostic) (fatal,
 	return
 }
 
-func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic) string {
+func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic, maxDiagnostics int) string {
 	var s strings.Builder
 
 	if len(diagnostics) > 0 {
@@ -353,14 +323,13 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic) string {
 		}
 
 		var sub strings.Builder
-		maxDiagnostics := 10
 
-		if len(diagnostics) > maxDiagnostics {
+		if maxDiagnostics >= 0 && len(diagnostics) > maxDiagnostics {
 			sub.WriteString(fmt.Sprintf("Showing first %d of %d diagnostics:\n", maxDiagnostics, len(diagnostics)))
 		}
 
 		for i, diag := range diagnostics {
-			if i >= maxDiagnostics {
+			if maxDiagnostics >= 0 && i >= maxDiagnostics {
 				break
 			}
 
@@ -395,12 +364,11 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic) string {
 
 		s.WriteString(SProperty(0, "diagnostics", summary))
 		s.WriteString(lipgloss.NewStyle().
-			Padding(1).
+			Padding(0).
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("7")).
+			BorderForeground(lipgloss.Color("208")).
 			Render(strings.TrimRight(sub.String(), "\n")),
 		)
-		s.WriteString("\n\n")
 	} else {
 		s.WriteString(SProperty(0, "diagnostics", "(no errors or warnings)"))
 	}
