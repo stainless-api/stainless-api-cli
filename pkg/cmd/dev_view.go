@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/term"
 	"github.com/stainless-api/stainless-api-go"
 )
 
@@ -293,10 +295,15 @@ func ViewHelpMenu() string {
 
 // renderMarkdown renders markdown content using glamour
 func renderMarkdown(content string) string {
+	width, _, err := term.GetSize(uintptr(os.Stdout.Fd()))
+	if err != nil || width <= 0 || width > 120 {
+		width = 120
+	}
 	r, err := glamour.NewTermRenderer(
 		glamour.WithAutoStyle(),
-		glamour.WithWordWrap(120),
+		glamour.WithWordWrap(width),
 	)
+
 	if err != nil {
 		return content
 	}

@@ -275,6 +275,10 @@ var devCommand = cli.Command{
 }
 
 func runPreview(ctx context.Context, cmd *cli.Command) error {
+	// Clear the screen and move the cursor to the top
+	fmt.Print("\033[2J\033[H")
+	os.Stdout.Sync()
+
 	cc := getAPICommandContext(cmd)
 
 	gitUser, err := getGitUsername()

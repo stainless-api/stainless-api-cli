@@ -41,6 +41,10 @@ var lintCommand = cli.Command{
 	Action: runLinter,
 }
 
+var helpStyle = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("241")).
+	Margin(1, 0, 0, 0)
+
 type lintModel struct {
 	spinner      spinner.Model
 	diagnostics  []stainless.BuildDiagnostic
@@ -88,6 +92,11 @@ func waitForFileChanges(m lintModel) tea.Cmd {
 }
 
 func (m lintModel) Init() tea.Cmd {
+	if m.watching {
+		// Clear the screen and move the cursor to the top
+		fmt.Print("\033[2J\033[H")
+		os.Stdout.Sync()
+	}
 	return m.spinner.Tick
 }
 
@@ -95,6 +104,7 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
+			m.watching = false
 			return m, tea.Quit
 		}
 
@@ -143,13 +153,7 @@ func (m lintModel) View() string {
 		}
 	}
 
-	// Add help menu
-	helpStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("241")).
-		Margin(1, 0, 0, 0)
-
 	helpText := helpStyle.Render("Press Ctrl+C to exit")
-
 	return content + helpText
 }
 
@@ -221,7 +225,7 @@ func runLinter(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	// If not in watch mode and we have blocking diagnostics, exit with error code
-	if !finalModel.watching && hasBlockingDiagnostic(finalModel.diagnostics) {
+	if !cmd.Bool("watch") && hasBlockingDiagnostic(finalModel.diagnostics) {
 		os.Exit(1)
 	}
 
