@@ -359,32 +359,12 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 
 	// Phase 3: Start build and monitor progress in a loop
 	for {
-		// Keep checking diagnostics until they're all fixed
-		for {
-			diagnostics, err := getDiagnostics(ctx, cmd, cc)
-			if err != nil {
-				if errors.Is(err, ErrUserCancelled) {
-					return nil
-				}
-				return err
+		// Make the user get past linter errors
+		if err := runLinter(ctx, cmd, true); err != nil {
+			if errors.Is(err, ErrUserCancelled) {
+				return nil
 			}
-
-			if len(diagnostics) > 0 {
-				fmt.Println(ViewDiagnosticsPrint(diagnostics, 10))
-			}
-
-			if hasBlockingDiagnostic(diagnostics) {
-				fmt.Println("\nDiagnostic checks will re-run once you edit your configuration files...")
-				if err := waitTillConfigChanges(ctx, cmd, cc); err != nil {
-					if errors.Is(err, ErrUserCancelled) {
-						return nil
-					}
-					return err
-				}
-				continue
-			} else {
-				break
-			}
+			return err
 		}
 
 		// Start the build process

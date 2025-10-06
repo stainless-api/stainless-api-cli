@@ -39,7 +39,14 @@ var lintCommand = cli.Command{
 			Usage:   "Watch for files to change and re-run linting",
 		},
 	},
-	Action: runLinter,
+	Action: func(ctx context.Context, cmd *cli.Command) error {
+		if cmd.Bool("watch") {
+			// Clear the screen and move the cursor to the top
+			fmt.Print("\033[2J\033[H")
+			os.Stdout.Sync()
+		}
+		return runLinter(ctx, cmd, false)
+	},
 }
 
 var helpStyle = lipgloss.NewStyle().
@@ -47,15 +54,16 @@ var helpStyle = lipgloss.NewStyle().
 	Margin(1, 0, 0, 0)
 
 type lintModel struct {
-	spinner     spinner.Model
-	diagnostics []stainless.BuildDiagnostic
-	error       error
-	watching    bool
-	ctx         context.Context
-	cmd         *cli.Command
-	cc          *apiCommandContext
-	stopPolling chan struct{}
-	help        helpModel
+	spinner         spinner.Model
+	diagnostics     []stainless.BuildDiagnostic
+	error           error
+	watching        bool
+	stopWhenPassing bool
+	ctx             context.Context
+	cmd             *cli.Command
+	cc              *apiCommandContext
+	stopPolling     chan struct{}
+	help            helpModel
 }
 
 type helpModel struct {
@@ -64,11 +72,6 @@ type helpModel struct {
 }
 
 func (m lintModel) Init() tea.Cmd {
-	if m.watching {
-		// Clear the screen and move the cursor to the top
-		fmt.Print("\033[2J\033[H")
-		os.Stdout.Sync()
-	}
 	return m.spinner.Tick
 }
 
@@ -76,6 +79,10 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
+			m.watching = false
+			m.error = ErrUserCancelled
+			return m, tea.Quit
+		} else if msg.String() == "enter" {
 			m.watching = false
 			return m, tea.Quit
 		}
@@ -86,6 +93,11 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx = msg.ctx
 		m.cmd = msg.cmd
 		m.cc = msg.cc
+
+		if m.stopWhenPassing && !hasBlockingDiagnostic(m.diagnostics) {
+			m.watching = false
+			return m, tea.Quit
+		}
 
 		if m.watching {
 			return m, func() tea.Msg {
@@ -130,8 +142,13 @@ func (m lintModel) View() string {
 		}
 	}
 
-	helpText := helpStyle.Render("Press Ctrl+C to exit")
-	return content + helpText
+	if m.stopWhenPassing {
+		content += helpStyle.Render("Press Enter to skip diagnostics, Ctrl+C to exit")
+	} else {
+		content += helpStyle.Render("Press Ctrl+C to exit")
+	}
+
+	return content
 }
 
 type diagnosticsMsg struct {
@@ -155,7 +172,7 @@ func getDiagnosticsCmd(ctx context.Context, cmd *cli.Command, cc *apiCommandCont
 	}
 }
 
-func runLinter(ctx context.Context, cmd *cli.Command) error {
+func runLinter(ctx context.Context, cmd *cli.Command, stopWhenPassing bool) error {
 	cc := getAPICommandContext(cmd)
 
 	s := spinner.New()
@@ -163,13 +180,14 @@ func runLinter(ctx context.Context, cmd *cli.Command) error {
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("208"))
 
 	m := lintModel{
-		spinner:     s,
-		watching:    cmd.Bool("watch"),
-		ctx:         ctx,
-		cmd:         cmd,
-		cc:          cc,
-		stopPolling: make(chan struct{}),
-		help:        helpModel{},
+		spinner:         s,
+		watching:        cmd.Bool("watch"),
+		stopWhenPassing: stopWhenPassing,
+		ctx:             ctx,
+		cmd:             cmd,
+		cc:              cc,
+		stopPolling:     make(chan struct{}),
+		help:            helpModel{},
 	}
 
 	p := tea.NewProgram(m, tea.WithContext(ctx))
