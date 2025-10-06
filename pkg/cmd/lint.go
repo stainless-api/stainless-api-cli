@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -46,49 +47,20 @@ var helpStyle = lipgloss.NewStyle().
 	Margin(1, 0, 0, 0)
 
 type lintModel struct {
-	spinner      spinner.Model
-	diagnostics  []stainless.BuildDiagnostic
-	error        error
-	watching     bool
-	watchedFiles map[string]time.Time
-	ctx          context.Context
-	cmd          *cli.Command
-	cc           *apiCommandContext
-	stopPolling  chan struct{}
-	help         helpModel
+	spinner     spinner.Model
+	diagnostics []stainless.BuildDiagnostic
+	error       error
+	watching    bool
+	ctx         context.Context
+	cmd         *cli.Command
+	cc          *apiCommandContext
+	stopPolling chan struct{}
+	help        helpModel
 }
 
 type helpModel struct {
 	width  int
 	height int
-}
-
-type fileChangedEvent struct{}
-
-func waitForFileChanges(m lintModel) tea.Cmd {
-	return func() tea.Msg {
-		ticker := time.NewTicker(250 * time.Millisecond)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-ticker.C:
-				for file, lastModTime := range m.watchedFiles {
-					stat, err := os.Stat(file)
-					if err != nil {
-						continue
-					}
-
-					if stat.ModTime().After(lastModTime) {
-						m.watchedFiles[file] = stat.ModTime()
-						return fileChangedEvent{}
-					}
-				}
-			case <-m.stopPolling:
-				return nil
-			}
-		}
-	}
 }
 
 func (m lintModel) Init() tea.Cmd {
@@ -116,11 +88,16 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.cc = msg.cc
 
 		if m.watching {
-			return m, waitForFileChanges(m)
+			return m, func() tea.Msg {
+				if err := waitTillConfigChanges(m.ctx, m.cmd, m.cc); err != nil {
+					log.Fatal(err)
+				}
+				return configChangedEvent{}
+			}
 		}
 		return m, tea.Quit
 
-	case fileChangedEvent:
+	case configChangedEvent:
 		m.diagnostics = nil // Clear diagnostics while linting
 		return m, getDiagnosticsCmd(m.ctx, m.cmd, m.cc)
 
@@ -186,20 +163,13 @@ func runLinter(ctx context.Context, cmd *cli.Command) error {
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("208"))
 
 	m := lintModel{
-		spinner:      s,
-		watching:     cmd.Bool("watch"),
-		ctx:          ctx,
-		cmd:          cmd,
-		cc:           cc,
-		watchedFiles: make(map[string]time.Time),
-		stopPolling:  make(chan struct{}),
-		help:         helpModel{},
-	}
-
-	if m.watching {
-		if err := setupFileWatcher(&m, cmd, cc); err != nil {
-			return err
-		}
+		spinner:     s,
+		watching:    cmd.Bool("watch"),
+		ctx:         ctx,
+		cmd:         cmd,
+		cc:          cc,
+		stopPolling: make(chan struct{}),
+		help:        helpModel{},
 	}
 
 	p := tea.NewProgram(m, tea.WithContext(ctx))
@@ -229,34 +199,5 @@ func runLinter(ctx context.Context, cmd *cli.Command) error {
 		os.Exit(1)
 	}
 
-	return nil
-}
-
-func setupFileWatcher(m *lintModel, cmd *cli.Command, cc *apiCommandContext) error {
-	// Watch OpenAPI spec file
-	openapiSpecPath := cc.workspaceConfig.OpenAPISpec
-	if cmd.IsSet("openapi-spec") {
-		openapiSpecPath = cmd.String("openapi-spec")
-	}
-
-	if err := addFileToWatch(m, openapiSpecPath); err != nil {
-		return err
-	}
-
-	// Watch Stainless config file
-	stainlessConfigPath := cc.workspaceConfig.StainlessConfig
-	if cmd.IsSet("stainless-config") {
-		stainlessConfigPath = cmd.String("stainless-config")
-	}
-
-	return addFileToWatch(m, stainlessConfigPath)
-}
-
-func addFileToWatch(m *lintModel, path string) error {
-	stat, err := os.Stat(path)
-	if err != nil {
-		return fmt.Errorf("failed to get file info for %s: %v", path, err)
-	}
-	m.watchedFiles[path] = stat.ModTime()
 	return nil
 }
