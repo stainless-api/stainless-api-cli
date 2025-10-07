@@ -120,12 +120,10 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m lintModel) View() string {
-	if m.error != nil {
-		return fmt.Sprintf("Error: %s\n", m.error)
-	}
-
 	var content string
-	if m.diagnostics == nil {
+	if m.error != nil {
+		content = "Linting failed!"
+	} else if m.diagnostics == nil {
 		content = m.spinner.View() + " Linting"
 	} else {
 		content = ViewDiagnosticsPrint(m.diagnostics, -1)
