@@ -1,6 +1,6 @@
 module github.com/stainless-api/stainless-api-cli
 
-go 1.24.0
+go 1.25
 
 require (
 	github.com/charmbracelet/bubbles v0.21.0
