@@ -536,22 +536,26 @@ func getDiagnostics(ctx context.Context, cmd *cli.Command, cc *apiCommandContext
 	configPath := cc.workspaceConfig.StainlessConfig
 	if cmd.IsSet("stainless-config") {
 		configPath = cmd.String("stainless-config")
+	} else if configPath == "" {
+		return nil, fmt.Errorf("You must provide a stainless configuration file with `--config /path/to/stainless.yml` or run this command from an initialized workspace.")
 	}
 
 	stainlessConfig, err := os.ReadFile(configPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Could not read your stainless configuration file:\n%w", err)
 	}
 	specParams.Source.StainlessConfig = string(stainlessConfig)
 
 	oasPath := cc.workspaceConfig.OpenAPISpec
 	if cmd.IsSet("openapi-spec") {
 		oasPath = cmd.String("openapi-spec")
+	} else if oasPath == "" {
+		return nil, fmt.Errorf("You must provide an OpenAPI specification with `--oas /path/to/openapi.json` or run this command from an initialized workspace.")
 	}
 
 	openAPISpec, err := os.ReadFile(oasPath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Could not read your stainless configuration file:\n%w", err)
 	}
 	specParams.Source.OpenAPISpec = string(openAPISpec)
 
