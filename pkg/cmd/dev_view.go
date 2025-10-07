@@ -105,10 +105,10 @@ var parts = []struct {
 		},
 	},
 	{
-		name: "diagnostics",
+		name: "build diagnostics",
 		view: func(m BuildModel, s *strings.Builder) {
 			if m.diagnostics == nil {
-				s.WriteString(SProperty(0, "diagnostics", "waiting for build to finish"))
+				s.WriteString(SProperty(0, "build diagnostics", "(waiting for build to finish)"))
 			} else {
 				s.WriteString(ViewDiagnosticsPrint(m.diagnostics, 10))
 			}
@@ -362,7 +362,7 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic, maxDiagnostic
 			}
 		}
 
-		s.WriteString(SProperty(0, "diagnostics", summary))
+		s.WriteString(SProperty(0, "build diagnostics", summary))
 		s.WriteString(lipgloss.NewStyle().
 			Padding(0).
 			Border(lipgloss.RoundedBorder()).
@@ -370,7 +370,7 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic, maxDiagnostic
 			Render(strings.TrimRight(sub.String(), "\n")),
 		)
 	} else {
-		s.WriteString(SProperty(0, "diagnostics", "(no errors or warnings)"))
+		s.WriteString(SProperty(0, "build diagnostics", "(no errors or warnings)"))
 	}
 
 	return s.String()

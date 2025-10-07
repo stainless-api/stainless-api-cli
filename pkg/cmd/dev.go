@@ -387,6 +387,12 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 		if !cmd.Bool("watch") {
 			break
 		}
+
+		// Clear the screen and move the cursor to the top
+		fmt.Print("\nRebuilding...\n\n\033[2J\033[H")
+		os.Stdout.Sync()
+		Property("branch", selectedBranch)
+		Property("targets", strings.Join(selectedTargets, ", "))
 	}
 	return nil
 }

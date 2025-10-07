@@ -56,6 +56,7 @@ type lintModel struct {
 	diagnostics []stainless.BuildDiagnostic
 	error       error
 	watching    bool
+	skipped     bool
 	canSkip     bool
 	ctx         context.Context
 	cmd         *cli.Command
@@ -77,6 +78,7 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		} else if msg.String() == "enter" {
 			m.watching = false
+			m.skipped = true
 			return m, tea.Quit
 		}
 
@@ -124,10 +126,16 @@ func (m lintModel) View() string {
 	if m.error != nil {
 		content = "Linting failed!"
 	} else if m.diagnostics == nil {
-		content = m.spinner.View() + " Linting"
+		if m.skipped {
+			content = "Skipped!"
+		} else {
+			content = m.spinner.View() + " Linting"
+		}
 	} else {
 		content = ViewDiagnosticsPrint(m.diagnostics, -1)
-		if m.watching {
+		if m.skipped {
+			content += "\nContinuing..."
+		} else if m.watching {
 			content += "\n" + m.spinner.View() + " Waiting for configuration changes"
 		}
 	}
