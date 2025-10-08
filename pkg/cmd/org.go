@@ -31,7 +31,7 @@ var orgsList = cli.Command{
 	HideHelpCommand: true,
 }
 
-func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
+func handleOrgsRetrieve(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("org") && len(unusedArgs) > 0 {
@@ -58,7 +58,7 @@ func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON("orgs retrieve", json, format, transform)
 }
 
-func handleOrgsList(ctx context.Context, cmd *cli.Command) error {
+func handleOrgsList(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {

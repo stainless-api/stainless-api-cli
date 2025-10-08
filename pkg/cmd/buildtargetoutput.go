@@ -18,14 +18,16 @@ var buildsTargetOutputsRetrieve = cli.Command{
 	Usage: "Retrieve a method to download an output for a given build target.",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
-			Name: "build-id",
+			Name:  "build-id",
+			Usage: "Build ID",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "build_id",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "target",
+			Name:  "target",
+			Usage: "SDK language target name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "target",
@@ -39,18 +41,20 @@ var buildsTargetOutputsRetrieve = cli.Command{
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "output",
+			Name:  "output",
+			Usage: "Output format: url (download URL) or git (temporary access token).",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "output",
 			},
+			Value: "url",
 		},
 	},
 	Action:          handleBuildsTargetOutputsRetrieve,
 	HideHelpCommand: true,
 }
 
-func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) error {
+func handleBuildsTargetOutputsRetrieve(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {

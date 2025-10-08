@@ -18,50 +18,58 @@ var buildsCreate = cli.Command{
 	Usage: "Create a build, on top of a project branch, against a given input revision.",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
-			Name: "project",
+			Name:  "project",
+			Usage: "Project name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "project",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "revision",
+			Name:  "revision",
+			Usage: `A branch name, commit SHA, or merge command in the format "base..head"`,
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "revision",
 			},
 		},
 		&jsonflag.JSONBoolFlag{
-			Name: "allow-empty",
+			Name:  "allow-empty",
+			Usage: "Whether to allow empty commits (no changes). Defaults to false.",
 			Config: jsonflag.JSONConfig{
 				Kind:     jsonflag.Body,
 				Path:     "allow_empty",
 				SetValue: true,
 			},
+			Value: false,
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "branch",
+			Name:  "branch",
+			Usage: "The project branch to use for the build. If not specified, the\nbranch is inferred from the `revision`, and will 400 when that\nis not possible.",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "branch",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "commit-message",
+			Name:  "commit-message",
+			Usage: "Optional commit message to use when creating a new commit.",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "commit_message",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "targets",
+			Name:  "targets",
+			Usage: "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "targets.#",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "+target",
+			Name:  "+target",
+			Usage: "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "targets.-1",
@@ -77,7 +85,8 @@ var buildsRetrieve = cli.Command{
 	Usage: "Retrieve a build by its ID.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name: "build-id",
+			Name:  "build-id",
+			Usage: "Build ID",
 		},
 	},
 	Action:          handleBuildsRetrieve,
@@ -89,35 +98,41 @@ var buildsList = cli.Command{
 	Usage: "List user-triggered builds for a given project.",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
-			Name: "project",
+			Name:  "project",
+			Usage: "Project name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "project",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "branch",
+			Name:  "branch",
+			Usage: "Branch name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "branch",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "cursor",
+			Name:  "cursor",
+			Usage: "Pagination cursor from a previous response.",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "cursor",
 			},
 		},
 		&jsonflag.JSONFloatFlag{
-			Name: "limit",
+			Name:  "limit",
+			Usage: "Maximum number of builds to return, defaults to 10 (maximum: 100).",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "limit",
 			},
+			Value: 10,
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "revision",
+			Name:  "revision",
+			Usage: "A config commit SHA used for the build",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "revision",
@@ -133,63 +148,72 @@ var buildsCompare = cli.Command{
 	Usage: "Create two builds whose outputs can be directly compared with each other.",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
-			Name: "base.branch",
+			Name:  "base.branch",
+			Usage: "Branch to use. When using a branch name as revision, this must match or be\nomitted.",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "base.branch",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "base.revision",
+			Name:  "base.revision",
+			Usage: `A branch name, commit SHA, or merge command in the format "base..head"`,
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "base.revision",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "base.commit_message",
+			Name:  "base.commit_message",
+			Usage: "Optional commit message to use when creating a new commit.",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "base.commit_message",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "head.branch",
+			Name:  "head.branch",
+			Usage: "Branch to use. When using a branch name as revision, this must match or be\nomitted.",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "head.branch",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "head.revision",
+			Name:  "head.revision",
+			Usage: `A branch name, commit SHA, or merge command in the format "base..head"`,
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "head.revision",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "head.commit_message",
+			Name:  "head.commit_message",
+			Usage: "Optional commit message to use when creating a new commit.",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "head.commit_message",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "project",
+			Name:  "project",
+			Usage: "Project name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "project",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "targets",
+			Name:  "targets",
+			Usage: "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "targets.#",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "+target",
+			Name:  "+target",
+			Usage: "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "targets.-1",
@@ -200,7 +224,7 @@ var buildsCompare = cli.Command{
 	HideHelpCommand: true,
 }
 
-func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
+func handleBuildsCreate(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -224,7 +248,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON("builds create", json, format, transform)
 }
 
-func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
+func handleBuildsRetrieve(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("build-id") && len(unusedArgs) > 0 {
@@ -251,7 +275,7 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON("builds retrieve", json, format, transform)
 }
 
-func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
+func handleBuildsList(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -275,7 +299,7 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON("builds list", json, format, transform)
 }
 
-func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
+func handleBuildsCompare(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
