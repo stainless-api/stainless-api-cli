@@ -27,7 +27,7 @@ var specRetrieveDecoratedSpec = cli.Command{
 	HideHelpCommand: true,
 }
 
-func handleSpecRetrieveDecoratedSpec(ctx context.Context, cmd *cli.Command) error {
+func handleSpecRetrieveDecoratedSpec(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("project-name") && len(unusedArgs) > 0 {

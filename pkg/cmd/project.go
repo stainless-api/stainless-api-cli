@@ -18,35 +18,40 @@ var projectsCreate = cli.Command{
 	Usage: "Create a new project.",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
-			Name: "display-name",
+			Name:  "display-name",
+			Usage: "Human-readable project name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "display_name",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "org",
+			Name:  "org",
+			Usage: "Organization name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "org",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "slug",
+			Name:  "slug",
+			Usage: "Project name/slug",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "slug",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "targets",
+			Name:  "targets",
+			Usage: "Targets to generate for",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "targets.#",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "+target",
+			Name:  "+target",
+			Usage: "Targets to generate for",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "targets.-1",
@@ -93,18 +98,21 @@ var projectsList = cli.Command{
 	Usage: "List projects in an organization, from oldest to newest.",
 	Flags: []cli.Flag{
 		&jsonflag.JSONStringFlag{
-			Name: "cursor",
+			Name:  "cursor",
+			Usage: "Pagination cursor from a previous response",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "cursor",
 			},
 		},
 		&jsonflag.JSONFloatFlag{
-			Name: "limit",
+			Name:  "limit",
+			Usage: "Maximum number of projects to return, defaults to 10 (maximum: 100).",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "limit",
 			},
+			Value: 10,
 		},
 		&jsonflag.JSONStringFlag{
 			Name: "org",
@@ -118,7 +126,7 @@ var projectsList = cli.Command{
 	HideHelpCommand: true,
 }
 
-func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsCreate(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -142,7 +150,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects create", json, format, transform)
 }
 
-func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsRetrieve(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -169,7 +177,7 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects retrieve", json, format, transform)
 }
 
-func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsUpdate(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -196,7 +204,7 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects update", json, format, transform)
 }
 
-func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsList(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {

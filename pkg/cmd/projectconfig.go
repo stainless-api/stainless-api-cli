@@ -21,11 +21,13 @@ var projectsConfigsRetrieve = cli.Command{
 			Name: "project",
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "branch",
+			Name:  "branch",
+			Usage: `Branch name, defaults to "main".`,
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "branch",
 			},
+			Value: "main",
 		},
 		&jsonflag.JSONStringFlag{
 			Name: "include",
@@ -47,25 +49,28 @@ var projectsConfigsGuess = cli.Command{
 			Name: "project",
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "spec",
+			Name:  "spec",
+			Usage: "OpenAPI spec",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "spec",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "branch",
+			Name:  "branch",
+			Usage: "Branch name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "branch",
 			},
+			Value: "main",
 		},
 	},
 	Action:          handleProjectsConfigsGuess,
 	HideHelpCommand: true,
 }
 
-func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsConfigsRetrieve(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -92,7 +97,7 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 	return ShowJSON("projects:configs retrieve", json, format, transform)
 }
 
-func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsConfigsGuess(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
