@@ -21,26 +21,30 @@ var projectsBranchesCreate = cli.Command{
 			Name: "project",
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "branch",
+			Name:  "branch",
+			Usage: "Branch name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "branch",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "branch-from",
+			Name:  "branch-from",
+			Usage: "Branch or commit SHA to branch from",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "branch_from",
 			},
 		},
 		&jsonflag.JSONBoolFlag{
-			Name: "force",
+			Name:  "force",
+			Usage: "Whether to throw an error if the branch already exists. Defaults to false.",
 			Config: jsonflag.JSONConfig{
 				Kind:     jsonflag.Body,
 				Path:     "force",
 				SetValue: true,
 			},
+			Value: false,
 		},
 	},
 	Action:          handleProjectsBranchesCreate,
@@ -70,18 +74,21 @@ var projectsBranchesList = cli.Command{
 			Name: "project",
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "cursor",
+			Name:  "cursor",
+			Usage: "Pagination cursor from a previous response",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "cursor",
 			},
 		},
 		&jsonflag.JSONFloatFlag{
-			Name: "limit",
+			Name:  "limit",
+			Usage: "Maximum number of items to return, defaults to 10 (maximum: 100).",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "limit",
 			},
+			Value: 10,
 		},
 	},
 	Action:          handleProjectsBranchesList,
@@ -114,18 +121,20 @@ var projectsBranchesRebase = cli.Command{
 			Name: "branch",
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "base",
+			Name:  "base",
+			Usage: `The branch or commit SHA to rebase onto. Defaults to "main".`,
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "base",
 			},
+			Value: "main",
 		},
 	},
 	Action:          handleProjectsBranchesRebase,
 	HideHelpCommand: true,
 }
 
-func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsBranchesCreate(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -152,7 +161,7 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects:branches create", json, format, transform)
 }
 
-func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsBranchesRetrieve(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
@@ -184,7 +193,7 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 	return ShowJSON("projects:branches retrieve", json, format, transform)
 }
 
-func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsBranchesList(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -211,7 +220,7 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects:branches list", json, format, transform)
 }
 
-func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsBranchesDelete(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
@@ -243,7 +252,7 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects:branches delete", json, format, transform)
 }
 
-func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
+func handleProjectsBranchesRebase(_ context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
