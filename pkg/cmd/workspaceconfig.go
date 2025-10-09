@@ -107,11 +107,7 @@ func (config *WorkspaceConfig) Save() error {
 	return encoder.Encode(config)
 }
 
-func NewWorkspaceConfig(projectName, openAPISpec, stainlessConfig string) (WorkspaceConfig, error) {
-	return NewWorkspaceConfigWithTargets(projectName, openAPISpec, stainlessConfig, nil)
-}
-
-func NewWorkspaceConfigWithTargets(projectName, openAPISpec, stainlessConfig string, targets map[string]*TargetConfig) (WorkspaceConfig, error) {
+func NewWorkspaceConfig(projectName, openAPISpecPath, stainlessConfigPath string) (WorkspaceConfig, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return WorkspaceConfig{}, err
@@ -119,9 +115,9 @@ func NewWorkspaceConfigWithTargets(projectName, openAPISpec, stainlessConfig str
 
 	return WorkspaceConfig{
 		Project:         projectName,
-		OpenAPISpec:     openAPISpec,
-		StainlessConfig: stainlessConfig,
-		Targets:         targets,
+		OpenAPISpec:     openAPISpecPath,
+		StainlessConfig: stainlessConfigPath,
+		Targets:         nil,
 		ConfigPath:      filepath.Join(dir, ".stainless", "workspace.json"),
 	}, nil
 }

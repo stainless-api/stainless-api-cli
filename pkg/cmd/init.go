@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/browser"
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
+	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/urfave/cli/v3"
 )
 
@@ -104,12 +105,13 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	if err == nil && found {
 		title := fmt.Sprintf("Existing workspace detected: %s (project: %s)", existingConfig.ConfigPath, existingConfig.Project)
 		overwrite, err := Confirm(cmd, "", title, "Do you want to overwrite your existing workplace configuration?", true)
-		if err != nil {
+		if err != nil || !overwrite {
 			return err
 		}
-		if !overwrite {
-			return nil
+		if err := os.Remove(existingConfig.ConfigPath); err != nil {
+			return err
 		}
+		existingConfig = WorkspaceConfig{}
 	}
 
 	orgs := fetchUserOrgs(cc.client, ctx)
@@ -279,19 +281,19 @@ func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext,
 	info.Property("targets", fmt.Sprintf("%v", selectedTargets))
 
 	slug := nameToSlug(projectName)
-	// _, err := cc.client.Projects.New(
-	// 	ctx,
-	// 	stainless.ProjectNewParams{
-	// 		DisplayName: projectName,
-	// 		Org:         org,
-	// 		Slug:        slug,
-	// 		Targets:     selectedTargets,
-	// 	},
-	// 	option.WithMiddleware(cc.AsMiddleware()),
-	// )
-	// if err != nil {
-	// 	return "", nil, err
-	// }
+	_, err := cc.client.Projects.New(
+		ctx,
+		stainless.ProjectNewParams{
+			DisplayName: projectName,
+			Org:         org,
+			Slug:        slug,
+			Targets:     selectedTargets,
+		},
+		option.WithMiddleware(cc.AsMiddleware()),
+	)
+	if err != nil {
+		return "", nil, err
+	}
 
 	info.Success("Project created successfully")
 
@@ -301,25 +303,30 @@ func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext,
 func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandContext, projectSlug string, targets []stainless.Target) error {
 	info := Info("Initializing workspace...")
 
-	openAPISpec := cmd.String("openapi-spec")
-	if openAPISpec == "" {
+	var openAPISpecPath string
+	if cmd.IsSet("openapi-spec") {
+		fmt.Printf("OAS Path: %s\n", openAPISpecPath)
+		openAPISpecPath = cmd.String("openapi-spec")
+	} else {
 		var err error
-		openAPISpec, err = chooseOpenAPISpecLocation()
+		openAPISpecPath, err = chooseOpenAPISpecLocation()
 		if err != nil {
 			return err
 		}
 	}
 
-	stainlessConfig := cmd.String("stainless-config")
-	if stainlessConfig == "" {
+	var stainlessConfigPath string
+	if cmd.IsSet("stainless-config") {
+		stainlessConfigPath = cmd.String("stainless-config")
+	} else {
 		var err error
-		stainlessConfig, err = chooseStainlessConfigLocation()
+		stainlessConfigPath, err = chooseStainlessConfigLocation()
 		if err != nil {
 			return err
 		}
 	}
 
-	config, err := NewWorkspaceConfig(projectSlug, openAPISpec, stainlessConfig)
+	config, err := NewWorkspaceConfig(projectSlug, openAPISpecPath, stainlessConfigPath)
 	if err != nil {
 		info.Error("Failed to create workspace config: %v", err)
 		return fmt.Errorf("project created but workspace initialization failed: %v", err)
