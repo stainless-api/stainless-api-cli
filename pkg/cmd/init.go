@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
@@ -505,6 +504,7 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, config Wo
 	group := Info("Downloading Stainless config...")
 	params := stainless.ProjectConfigGetParams{
 		Project: stainless.String(config.Project),
+		Include: stainless.String("openapi"),
 	}
 
 	configRes, err := client.Projects.Configs.Get(ctx, params)
@@ -542,21 +542,17 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, config Wo
 	}
 
 	{
-		response, err := client.Spec.GetDecoratedSpec(
-			ctx,
-			config.Project,
-			stainless.SpecGetDecoratedSpecParams{
-				ClientID: defaultClientID,
-			},
-		)
-		if err != nil {
-			return err
+		var specContent []byte
+		if try, ok := (*configRes)["openapi.json"]; ok {
+			specContent = []byte(try.Content)
+		} else if try, ok := (*configRes)["openapi.yml"]; ok {
+			specContent = []byte(try.Content)
+		} else if try, ok := (*configRes)["openapi.yaml"]; ok {
+			specContent = []byte(try.Content)
+		} else {
+			return fmt.Errorf("could not find OpenAPI specification in response")
 		}
-
-		bytes, err := json.Marshal(response)
-		if err != nil {
-			return err
-		}
+		fmt.Printf("OAS:\n%s\n\n", string(specContent))
 
 		// Create parent directories if they don't exist
 		dir := filepath.Dir(config.OpenAPISpec)
@@ -564,7 +560,7 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, config Wo
 			return fmt.Errorf("failed to create directory for config file: %w", err)
 		}
 
-		err = os.WriteFile(config.OpenAPISpec, bytes, 0644)
+		err = os.WriteFile(config.OpenAPISpec, specContent, 0644)
 		if err != nil {
 			group.Error("Failed to save project config to %s: %v", config.OpenAPISpec, err)
 			return fmt.Errorf("OpenAPI specification could not write to file: %v", err)
