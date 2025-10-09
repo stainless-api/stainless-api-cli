@@ -516,57 +516,68 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, config Wo
 		group.Property("- ", key)
 	}
 
-	{
-		var content string
-		if try, ok := (*configRes)["stainless.yml"]; ok {
-			content = try.Content
-		} else if try, ok := (*configRes)["openapi.stainless.yml"]; ok {
-			content = try.Content
-		} else {
-			content = "" // Write an empty file
-		}
-
+	// Helper function to write a file with confirmation if it exists
+	writeFileWithConfirm := func(path string, content []byte, description string) error {
 		// Create parent directories if they don't exist
-		dir := filepath.Dir(config.StainlessConfig)
+		dir := filepath.Dir(path)
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("failed to create directory for config file: %w", err)
 		}
 
-		err = os.WriteFile(config.StainlessConfig, []byte(content), 0644)
-		if err != nil {
-			group.Error("Failed to save project config to %s: %v", config.StainlessConfig, err)
-			return fmt.Errorf("Stainless configuration could not write to file: %v", err)
+		// If the file exists and is nonempty, ask the user before writing over it
+		if fileInfo, err := os.Stat(path); err == nil && fileInfo.Size() > 0 {
+			shouldOverwrite, err := Confirm(nil, "", fmt.Sprintf("File %s already exists", path), "Do you want to overwrite it?", true)
+			if err != nil {
+				return fmt.Errorf("failed to confirm file overwrite: %w", err)
+			}
+			if !shouldOverwrite {
+				group.Property("Note", fmt.Sprintf("Keeping existing file at %s", path))
+				return nil
+			}
 		}
 
-		group.Success("Stainless configuration downloaded to %s", config.StainlessConfig)
+		err = os.WriteFile(path, content, 0644)
+		if err != nil {
+			group.Error("Failed to save project config to %s: %v", path, err)
+			return fmt.Errorf("%s could not write to file: %v", description, err)
+		}
+		group.Success("%s downloaded to %s", description, path)
+		return nil
 	}
 
+	// Handle Stainless config file
 	{
-		var specContent []byte
-		if try, ok := (*configRes)["openapi.json"]; ok {
-			specContent = []byte(try.Content)
-		} else if try, ok := (*configRes)["openapi.yml"]; ok {
-			specContent = []byte(try.Content)
-		} else if try, ok := (*configRes)["openapi.yaml"]; ok {
-			specContent = []byte(try.Content)
+		var stainlessConfig string
+		if try, ok := (*configRes)["stainless.yml"]; ok {
+			stainlessConfig = try.Content
+		} else if try, ok := (*configRes)["openapi.stainless.yml"]; ok {
+			stainlessConfig = try.Content
 		} else {
-			return fmt.Errorf("could not find OpenAPI specification in response")
-		}
-		fmt.Printf("OAS:\n%s\n\n", string(specContent))
-
-		// Create parent directories if they don't exist
-		dir := filepath.Dir(config.OpenAPISpec)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("failed to create directory for config file: %w", err)
+			stainlessConfig = "" // Write an empty file
 		}
 
-		err = os.WriteFile(config.OpenAPISpec, specContent, 0644)
-		if err != nil {
-			group.Error("Failed to save project config to %s: %v", config.OpenAPISpec, err)
-			return fmt.Errorf("OpenAPI specification could not write to file: %v", err)
+		if err := writeFileWithConfirm(config.StainlessConfig, []byte(stainlessConfig), "Stainless configuration"); err != nil {
+			return err
+		}
+	}
+
+	// Handle OpenAPI spec file
+	{
+		var openAPISpec string
+		if try, ok := (*configRes)["openapi.json"]; ok {
+			openAPISpec = try.Content
+		} else if try, ok := (*configRes)["openapi.yml"]; ok {
+			openAPISpec = try.Content
+		} else if try, ok := (*configRes)["openapi.yaml"]; ok {
+			openAPISpec = try.Content
+		} else {
+			openAPISpec = ""
 		}
 
-		group.Success("OpenAPI specification downloaded to %s", config.OpenAPISpec)
+		// TODO: we should warn or confirm if the downloaded file has a different file extension than the destination filename
+		if err := writeFileWithConfirm(config.OpenAPISpec, []byte(openAPISpec), "OpenAPI specification"); err != nil {
+			return err
+		}
 	}
 
 	return nil
