@@ -189,10 +189,12 @@ func waitForBuildCompletion(ctx context.Context, client stainless.Client, build 
 			if string(target.status) != prevStatus {
 				targetProgress[target.name] = string(target.status)
 
-				if isTargetCompleted(target.status) {
-					waitGroup.Success("%s: %s", target.name, "completed")
-				} else if target.status == "failed" {
-					waitGroup.Error("%s: %s", target.name, string(target.status))
+				if waitGroup != nil {
+					if isTargetCompleted(target.status) {
+						waitGroup.Success("%s: %s", target.name, "completed")
+					} else if target.status == "failed" {
+						waitGroup.Error("%s: %s", target.name, string(target.status))
+					}
 				}
 			}
 
@@ -203,7 +205,9 @@ func waitForBuildCompletion(ctx context.Context, client stainless.Client, build 
 
 		if allCompleted && len(targets) > 0 {
 			if allCompleted {
-				waitGroup.Success("Build completed successfully")
+				if waitGroup != nil {
+					waitGroup.Success("Build completed successfully")
+				}
 				return build, nil
 			}
 		}
@@ -451,9 +455,15 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	// Whether or not to print information about each step as it happens
+	showInfo := !cmd.IsSet("format") || cmd.String("format") == "auto" || cmd.String("format") == "pretty"
+
 	// Parse target paths using cached workspace config
 	targetPaths := parseTargetPaths(cc.workspaceConfig)
-	buildGroup := Info("Creating build...")
+	var buildGroup Group
+	if showInfo {
+		buildGroup = Info("Creating build...")
+	}
 	params := stainless.BuildNewParams{}
 	res, err := cc.client.Builds.New(
 		context.TODO(),
@@ -463,13 +473,19 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-	
-	buildGroup.Property("build_id", res.ID)
+
+	if showInfo {
+		buildGroup.Property("build_id", res.ID)
+	}
 
 	if cmd.Bool("wait") {
-		waitGroup := Info("Waiting for latest build to complete...")
+		var waitGroup *Group
+		if showInfo {
+			tmp := Info("Waiting for latest build to complete...")
+			waitGroup = &tmp
+		}
 
-		res, err = waitForBuildCompletion(context.TODO(), cc.client, res, &waitGroup)
+		res, err = waitForBuildCompletion(context.TODO(), cc.client, res, waitGroup)
 		if err != nil {
 			return err
 		}
@@ -478,11 +494,18 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		shouldPull := cmd.Bool("pull") || (cc.HasWorkspaceTargets() && !cmd.IsSet("pull"))
 
 		if shouldPull {
-			pullGroup := Info("Downloading build outputs...")
-			if err := pullBuildOutputs(context.TODO(), cc.client, *res, targetPaths, &pullGroup); err != nil {
-				pullGroup.Error("Failed to download outputs: %v", err)
-			} else {
-				pullGroup.Success("Successfully downloaded all outputs")
+			var pullGroup *Group
+			if showInfo {
+				g := Info("Downloading build outputs...")
+				pullGroup = &g
+			}
+			err := pullBuildOutputs(context.TODO(), cc.client, *res, targetPaths, pullGroup)
+			if pullGroup != nil {
+				if err != nil {
+					pullGroup.Error("Failed to download outputs: %v", err)
+				} else {
+					pullGroup.Success("Successfully downloaded all outputs")
+				}
 			}
 		}
 	}
@@ -545,7 +568,11 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 			targetDir = customPath
 		}
 
-		targetGroup := pullGroup.Progress("downloading %s → %s", target, targetDir)
+		var targetGroup *Group
+		if pullGroup != nil {
+			g := pullGroup.Progress("downloading %s → %s", target, targetDir)
+			targetGroup = &g
+		}
 
 		// Get the output details
 		outputRes, err := client.Builds.TargetOutputs.Get(
@@ -558,14 +585,18 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 			},
 		)
 		if err != nil {
-			targetGroup.Error("Failed to get output details for %s: %v", target, err)
+			if targetGroup != nil {
+				targetGroup.Error("Failed to get output details for %s: %v", target, err)
+			}
 			continue
 		}
 
 		// Handle based on output type
-		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, targetDir, &targetGroup)
+		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, targetDir, targetGroup)
 		if err != nil {
-			targetGroup.Error("Failed to pull %s: %v", target, err)
+			if targetGroup != nil {
+				targetGroup.Error("Failed to pull %s: %v", target, err)
+			}
 			continue
 		}
 
@@ -573,16 +604,18 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 		if outputRes.Output == "git" {
 			// Extract repository name from git URL for success message
 			repoName := filepath.Base(outputRes.URL)
-			if strings.HasSuffix(repoName, ".git") {
-				repoName = strings.TrimSuffix(repoName, ".git")
-			}
+			repoName = strings.TrimSuffix(repoName, ".git")
 			if repoName == "" || repoName == "." || repoName == "/" {
 				repoName = "repository"
 			}
-			targetGroup.Success("Successfully downloaded")
+			if targetGroup != nil {
+				targetGroup.Success("Successfully downloaded")
+			}
 		} else {
 			filename := extractFilenameFromURL(outputRes.URL)
-			targetGroup.Success("Successfully downloaded %s", filename)
+			if targetGroup != nil {
+				targetGroup.Success("Successfully downloaded %s", filename)
+			}
 		}
 	}
 
@@ -719,7 +752,9 @@ func pullOutput(output, url, ref, targetDir string, targetGroup *Group) error {
 			cmd.Stderr = &stderr
 			if err := cmd.Run(); err != nil {
 				// Origin doesn't exist, add it with stripped auth
-				targetGroup.Property("adding remote origin", stripHTTPAuth(url))
+				if targetGroup != nil {
+					targetGroup.Property("adding remote origin", stripHTTPAuth(url))
+				}
 				addCmd := exec.Command("git", "-C", targetDir, "remote", "add", "origin", stripHTTPAuth(url))
 				var addStderr bytes.Buffer
 				addCmd.Stdout = nil
@@ -729,7 +764,9 @@ func pullOutput(output, url, ref, targetDir string, targetGroup *Group) error {
 				}
 			}
 
-			targetGroup.Property("fetching from", stripHTTPAuth(url))
+			if targetGroup != nil {
+				targetGroup.Property("fetching from", stripHTTPAuth(url))
+			}
 			cmd = exec.Command("git", "-C", targetDir, "fetch", url, ref)
 			cmd.Stdout = nil
 			cmd.Stderr = &stderr
@@ -740,7 +777,9 @@ func pullOutput(output, url, ref, targetDir string, targetGroup *Group) error {
 
 		// Checkout the specific ref
 		{
-			targetGroup.Property("checking out ref", ref)
+			if targetGroup != nil {
+				targetGroup.Property("checking out ref", ref)
+			}
 			cmd := exec.Command("git", "-C", targetDir, "checkout", ref)
 			var stderr bytes.Buffer
 			cmd.Stdout = nil // Suppress git checkout output
@@ -752,7 +791,9 @@ func pullOutput(output, url, ref, targetDir string, targetGroup *Group) error {
 
 	case "url":
 		// Download the file directly to current directory
-		targetGroup.Property("downloading url", url)
+		if targetGroup != nil {
+			targetGroup.Property("downloading url", url)
+		}
 
 		// Download the file
 		resp, err := http.Get(url)
@@ -767,7 +808,9 @@ func pullOutput(output, url, ref, targetDir string, targetGroup *Group) error {
 
 		// Extract filename from URL and Content-Disposition header
 		filename := extractFilename(url, resp)
-		targetGroup.Property("downloaded", filename)
+		if targetGroup != nil {
+			targetGroup.Property("downloaded", filename)
+		}
 
 		// Create the output file in current directory
 		outFile, err := os.Create(filename)

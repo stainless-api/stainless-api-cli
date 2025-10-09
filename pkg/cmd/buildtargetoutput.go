@@ -98,9 +98,17 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 		return err
 	}
 
-	group := Info("Downloading output")
+	// Whether or not to print information about each step as it happens
+	showInfo := !cmd.IsSet("format") || cmd.String("format") == "auto" || cmd.String("format") == "pretty"
+
+	var group *Group
+	if showInfo {
+		g := Info("Downloading output")
+		group = &g
+	}
+
 	if cmd.Bool("pull") {
-		return pullOutput(res.Output, res.URL, res.Ref, "", &group)
+		return pullOutput(res.Output, res.URL, res.Ref, "", group)
 	}
 
 	return nil
