@@ -33,8 +33,9 @@ func Rel(basepath, targpath string) string {
 }
 
 var workspaceInit = cli.Command{
-	Name:  "init",
-	Usage: "Initialize Stainless workspace configuration in current directory",
+	Name:     "init",
+	Usage:    "Initialize Stainless workspace configuration in current directory",
+	HideHelp: true,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "project",
