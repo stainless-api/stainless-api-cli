@@ -34,19 +34,17 @@ func ConfigDir() (string, error) {
 // Returns (false, nil) if config file doesn't exist or is empty (not an error).
 // Returns (false, error) if config file exists but failed to load due to an error.
 func (config *AuthConfig) Find() (bool, error) {
-	if config.ConfigPath != "" {
-		return true, nil
-	}
+	if config.ConfigPath == "" {
+		configDir, err := ConfigDir()
+		if err != nil {
+			return false, fmt.Errorf("failed to get config directory: %w", err)
+		}
 
-	configDir, err := ConfigDir()
-	if err != nil {
-		return false, fmt.Errorf("failed to get config directory: %w", err)
+		config.ConfigPath = filepath.Join(configDir, "auth.json")
 	}
-
-	configPath := filepath.Join(configDir, "auth.json")
-	if _, err := os.Stat(configPath); err == nil {
+	if _, err := os.Stat(config.ConfigPath); err == nil {
 		// Config file exists, attempt to load it
-		err := config.Load(configPath)
+		err := config.Load(config.ConfigPath)
 		if err != nil {
 			return false, err
 		}
@@ -71,6 +69,7 @@ func (config *AuthConfig) Load(configPath string) error {
 	if err != nil {
 		if os.IsNotExist(err) {
 			// File doesn't exist - this is not an error, just means no auth config
+			fmt.Println("No config file!")
 			return nil
 		}
 		return fmt.Errorf("failed to open auth config file %s: %w", configPath, err)
@@ -84,6 +83,7 @@ func (config *AuthConfig) Load(configPath string) error {
 	}
 	if info.Size() == 0 {
 		// File exists but is empty - this is not an error, treat as no auth config
+		fmt.Println("Empty config file!")
 		return nil
 	}
 

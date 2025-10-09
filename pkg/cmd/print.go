@@ -144,7 +144,7 @@ func (g Group) Success(format string, args ...any) Group {
 }
 
 func (g Group) Confirm(cmd *cli.Command, flagName, title, description string, defaultValue bool) (bool, Group, error) {
-	if cmd.IsSet(flagName) {
+	if cmd != nil && flagName != "" && cmd.IsSet(flagName) {
 		return cmd.Bool(flagName), Group{prefix: "✱", indent: g.indent + 1}, nil
 	}
 

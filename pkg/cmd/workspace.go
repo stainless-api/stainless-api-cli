@@ -5,13 +5,10 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"maps"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 
-	"github.com/charmbracelet/huh"
 	"github.com/urfave/cli/v3"
 )
 
@@ -36,8 +33,9 @@ func Rel(basepath, targpath string) string {
 }
 
 var workspaceInit = cli.Command{
-	Name:  "init",
-	Usage: "Initialize Stainless workspace configuration in current directory",
+	Name:     "init",
+	Usage:    "Initialize Stainless workspace configuration in current directory",
+	HideHelp: true,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "project",
@@ -64,7 +62,7 @@ var workspaceInit = cli.Command{
 			Value: true,
 		},
 	},
-	Action:          handleWorkspaceInit,
+	Action:          handleInit,
 	HideHelpCommand: true,
 }
 
@@ -73,167 +71,6 @@ var workspaceStatus = cli.Command{
 	Usage:           "Show workspace configuration status",
 	Action:          handleWorkspaceStatus,
 	HideHelpCommand: true,
-}
-
-func handleWorkspaceInit(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
-
-	// Check for existing workspace configuration
-	var existingConfig WorkspaceConfig
-	found, err := existingConfig.Find()
-	if err == nil && found {
-		Info("Existing workspace detected: %s (project: %s)", existingConfig.ConfigPath, existingConfig.Project)
-	}
-
-	// Get current directory and show where the file will be written
-	dir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("failed to get current directory: %v", err)
-	}
-	configPath := filepath.Join(dir, "stainless-workspace.json")
-	Info("Writing workspace config to: %s", configPath)
-
-	Spacer()
-
-	// Get values from flags or prepare for interactive prompt
-	projectName := cmd.String("project")
-	openAPISpec := cmd.String("openapi-spec")
-	stainlessConfig := cmd.String("stainless-config")
-
-	if openAPISpec == "" {
-		openAPISpec = findOpenAPISpec()
-	}
-	if stainlessConfig == "" {
-		stainlessConfig = findStainlessConfig()
-	}
-
-	openAPISpec = Rel(filepath.Dir(configPath), openAPISpec)
-	stainlessConfig = Rel(filepath.Dir(configPath), stainlessConfig)
-
-	projectInfoMap := fetchUserProjects(ctx, cc.client)
-	form := huh.NewForm(
-		huh.NewGroup(
-			huh.NewInput().
-				Title("project").
-				Value(&projectName).
-				Suggestions(slices.Collect(maps.Keys(projectInfoMap))).
-				Description("Enter the stainless project for this workspace"),
-			huh.NewInput().
-				Title("openapi_spec (optional)").
-				Description("Relative path to your OpenAPI spec file").
-				Placeholder("./openapi.yml").
-				Value(&openAPISpec),
-			huh.NewInput().
-				Title("stainless_config (optional)").
-				Description("Relative path to your Stainless config file").
-				Placeholder("./openapi.stainless.yml").
-				Value(&stainlessConfig),
-		),
-	).WithTheme(GetFormTheme(0)).WithKeyMap(GetFormKeyMap())
-
-	if err := form.Run(); err != nil {
-		return fmt.Errorf("failed to get workspace configuration: %v", err)
-	}
-
-	group := Info("Initializing workspace...")
-	group.Property("project_name", projectName)
-	if openAPISpec != "" {
-		group.Property("openapi_spec", openAPISpec)
-	}
-	if stainlessConfig != "" {
-		group.Property("stainless_config", stainlessConfig)
-	}
-
-	config, err := NewWorkspaceConfig(projectName, openAPISpec, stainlessConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create workspace config: %v", err)
-	}
-	if err := config.Save(); err != nil {
-		return fmt.Errorf("failed to save workspace config: %v", err)
-	}
-	group.Success("Workspace initialized")
-
-	Spacer()
-
-	hasStainlessConfig := false
-	if stainlessConfig != "" {
-		if _, err := os.Stat(filepath.Join(filepath.Dir(configPath), stainlessConfig)); err == nil {
-			hasStainlessConfig = true
-		}
-	} else {
-		hasStainlessConfig = true
-	}
-
-	if !hasStainlessConfig {
-		downloadConfig, err := Confirm(cmd, "download-config",
-			"Download Stainless config to workspace?",
-			"Manages Stainless config as part of your source code instead of in the Stainless cloud",
-			true)
-		if err != nil {
-			return fmt.Errorf("failed to get stainless config preference: %v", err)
-		}
-
-		if stainlessConfig == "" {
-			stainlessConfig = "./stainless.yml"
-		}
-		config.StainlessConfig = stainlessConfig
-
-		err = config.Save()
-		if err != nil {
-			return fmt.Errorf("workspace update failed: %v", err)
-		}
-		if downloadConfig {
-			if err := downloadStainlessConfig(ctx, cc.client, projectName, &config); err != nil {
-				return fmt.Errorf("config download failed: %v", err)
-			}
-		}
-	} else if stainlessConfig == "" {
-		Info("Stainless config not configured to output locally, skipping download")
-	} else {
-		Info("Stainless config already exists, skipping download")
-	}
-
-	Spacer()
-
-	configureTargetsFlag, err := Confirm(cmd, "download-targets",
-		"Configure targets?",
-		"Setup download paths for your SDK targets. When the workspace is configured with these targets, they are downloaded by default on every build triggered by the CLI.",
-		true)
-	if err != nil {
-		return fmt.Errorf("failed to get target configuration preference: %v", err)
-	}
-	if configureTargetsFlag {
-		// Get available targets from project's latest build with workspace config for defaults
-		targetInfos := getAvailableTargetInfo(ctx, cc.client, projectName, config)
-
-		var selectedTargets []string
-		for _, targetInfo := range targetInfos {
-			selectedTargets = append(selectedTargets, targetInfo.Name)
-		}
-
-		if len(selectedTargets) > 0 {
-			if err := configureTargets(projectName, selectedTargets, &config); err != nil {
-				return fmt.Errorf("target configuration failed: %v", err)
-			}
-		}
-	}
-
-	if config.Targets != nil && len(config.Targets) > 0 {
-		Spacer()
-
-		build, err := waitForLatestBuild(ctx, cc.client, projectName)
-		if err != nil {
-			return fmt.Errorf("build wait failed: %v", err)
-		}
-
-		Spacer()
-
-		if err := pullConfiguredTargets(ctx, cc.client, *build, config); err != nil {
-			return fmt.Errorf("target download failed: %v", err)
-		}
-	}
-
-	return nil
 }
 
 func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {

@@ -17,7 +17,11 @@ import (
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
+
+const defaultClientID = "stl_client_0001u04Vo1IWoSe0Mwinw2SVuuO3hTkvL"
 
 var authLogin = cli.Command{
 	Name:  "login",
@@ -25,7 +29,7 @@ var authLogin = cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:  "client-id",
-			Value: "stl_client_0001u04Vo1IWoSe0Mwinw2SVuuO3hTkvL",
+			Value: defaultClientID,
 			Usage: "OAuth client ID",
 		},
 	},
@@ -47,19 +51,29 @@ var authStatus = cli.Command{
 	HideHelpCommand: true,
 }
 
-func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
-	clientID := cmd.String("client-id")
-	scope := "openapi:read project:write project:read"
-	authResult, err := startDeviceFlow(ctx, cmd, cc.client, clientID, scope)
-	if err != nil {
-		return err
+func authenticate(ctx context.Context, cmd *cli.Command, forceAuthentication bool) error {
+	if apiKey := os.Getenv("STAINLESS_API_KEY"); apiKey != "" && !forceAuthentication {
+		return nil
 	}
 
 	config, err := NewAuthConfig()
 	if err != nil {
 		Error("Failed to create config: %v", err)
 		return fmt.Errorf("authentication failed")
+	}
+
+	if !forceAuthentication {
+		if found, err := config.Find(); err == nil && found && config.AccessToken != "" {
+			return nil
+		}
+	}
+
+	cc := getAPICommandContext(cmd)
+	clientID := cmd.String("client-id")
+	scope := "openapi:read project:write project:read"
+	authResult, err := startDeviceFlow(ctx, cmd, cc.client, clientID, scope)
+	if err != nil {
+		return err
 	}
 
 	config.AccessToken = authResult.AccessToken
@@ -70,8 +84,12 @@ func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
 		Error("Failed to save authentication: %v", err)
 		return fmt.Errorf("authentication failed")
 	}
-	Success("Authentication successful! Your credentials have been saved to " + config.ConfigPath)
+	Success("Authentication successful! Your credentials have been saved to %s", config.ConfigPath)
 	return nil
+}
+
+func handleAuthLogin(ctx context.Context, cmd *cli.Command) error {
+	return authenticate(ctx, cmd, true)
 }
 
 func handleAuthLogout(ctx context.Context, cmd *cli.Command) error {
@@ -153,8 +171,7 @@ func startDeviceFlow(ctx context.Context, cmd *cli.Command, client stainless.Cli
 	ok, _, err := group.Confirm(cmd, "browser", "Open browser?", "", true)
 	if err != nil {
 		return nil, err
-	}
-	if ok {
+	} else if ok {
 		if err := browser.OpenURL(deviceResponse.VerificationURIComplete); err == nil {
 			group.Info("Opening browser...")
 		} else {
@@ -244,7 +261,7 @@ func getDeviceName() string {
 	case "linux":
 		osName = "Linux"
 	default:
-		osName = strings.Title(osName)
+		osName = cases.Title(language.English).String(osName)
 	}
 
 	if username != "" {
