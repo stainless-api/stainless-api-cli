@@ -15,7 +15,7 @@ require (
 	github.com/tidwall/sjson v1.2.5
 	github.com/urfave/cli-docs/v3 v3.0.0-alpha6
 	github.com/urfave/cli/v3 v3.3.2
-	golang.org/x/term v0.35.0
+	golang.org/x/term v0.36.0
 )
 
 require (
@@ -37,6 +37,6 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/sync v0.15.0 // indirect
-	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.3.8 // indirect
 )
