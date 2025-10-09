@@ -12,6 +12,7 @@ import (
 
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/term"
 	"github.com/pkg/browser"
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
@@ -359,15 +360,27 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandCo
 
 	Spacer()
 
+	// Get terminal width or use a sensible default
+	width, _, err := term.GetSize(os.Stderr.Fd())
+	if err != nil {
+		width = 100
+	} else if width > 100 {
+		width = 100
+	}
+
 	fmt.Fprintf(
 		os.Stderr,
 		"%s\n",
-		lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).Padding(0, 1).Render(
-			"Next steps:\n\n"+
-				"  * See "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("https://www.stainless.com/docs/guides/configure")+" to learn how to customize your SDKs\n\n"+
-				"  * Use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl builds create")+" to create more builds\n"+
-				"  * Use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl dev")+" to launch a development server that helps you build and see output locally.",
-		),
+		lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			Padding(0, 1).
+			Width(width-2).
+			Render(
+				"Next steps:\n\n"+
+					"  * See "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("https://www.stainless.com/docs/guides/configure")+" to learn how to customize your SDKs\n\n"+
+					"  * Use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl builds create")+" to create more builds\n"+
+					"  * Use "+lipgloss.NewStyle().Foreground(lipgloss.Color("14")).Render("stl dev")+" to launch a development server that helps you build and see output locally.",
+			),
 	)
 
 	return nil
