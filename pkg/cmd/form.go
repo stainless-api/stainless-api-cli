@@ -11,15 +11,16 @@ func GetFormTheme(indent int) *huh.Theme {
 	t := huh.ThemeBase()
 
 	grayBright := lipgloss.Color("251")
-	gray := lipgloss.Color("8")
+	gray := lipgloss.Color("243")
 	primary := lipgloss.Color("6")
 	primaryBright := lipgloss.Color("14")
 	error := lipgloss.Color("1")
 
 	t.Form.Base = t.Form.Base.PaddingLeft(indent * 2)
-	t.Group.Title = t.Group.Title.Foreground(gray).PaddingBottom(1)
+	t.Group.Title = t.Group.Title.Foreground(primary).PaddingBottom(1)
+	t.Group.Description = t.Group.Description.Foreground(gray)
 
-	t.Focused.Title = t.Focused.Title.Bold(true)
+	t.Focused.Title = t.Focused.Title.Foreground(primary).Bold(true)
 	t.Focused.Base = t.Focused.Base.
 		BorderLeft(false).
 		SetString("\b\b" + lipgloss.NewStyle().Foreground(primaryBright).Render("✱")).
@@ -27,6 +28,7 @@ func GetFormTheme(indent int) *huh.Theme {
 	t.Focused.Description = t.Focused.Description.Foreground(gray).Width(70)
 	t.Focused.TextInput.Placeholder = t.Focused.TextInput.Placeholder.Foreground(gray)
 	t.Focused.SelectedPrefix = lipgloss.NewStyle().SetString("[✓] ")
+	t.Focused.SelectedOption = lipgloss.NewStyle().Foreground(lipgloss.Color("75"))
 
 	t.Focused.ErrorIndicator = t.Focused.ErrorIndicator.Foreground(error)
 	t.Focused.ErrorMessage = t.Focused.ErrorMessage.Foreground(error)

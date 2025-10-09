@@ -38,18 +38,19 @@ func (config *WorkspaceConfig) Find() (bool, error) {
 	}
 
 	for {
-		configPath := filepath.Join(dir, "stainless-workspace.json")
-		if _, err := os.Stat(configPath); err == nil {
-			// Found config file
-			err := config.Load(configPath)
-			if err != nil {
-				return false, err
+		for _, configPath := range []string{filepath.Join(dir, ".stainless", "workspace.json"), filepath.Join(dir, "stainless-workspace.json")} {
+			if _, err := os.Stat(configPath); err == nil {
+				// Found config file
+				err := config.Load(configPath)
+				if err != nil {
+					return false, err
+				}
+				// Check if the config was actually loaded (not empty)
+				if config.ConfigPath != "" {
+					return true, nil
+				}
+				// File exists but is empty, continue searching
 			}
-			// Check if the config was actually loaded (not empty)
-			if config.ConfigPath != "" {
-				return true, nil
-			}
-			// File exists but is empty, continue searching
 		}
 
 		parent := filepath.Dir(dir)
@@ -89,6 +90,12 @@ func (config *WorkspaceConfig) Load(configPath string) error {
 }
 
 func (config *WorkspaceConfig) Save() error {
+	// Create parent directories if they don't exist
+	dir := filepath.Dir(config.ConfigPath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create directory for config file: %w", err)
+	}
+
 	file, err := os.Create(config.ConfigPath)
 	if err != nil {
 		return err
@@ -115,7 +122,7 @@ func NewWorkspaceConfigWithTargets(projectName, openAPISpec, stainlessConfig str
 		OpenAPISpec:     openAPISpec,
 		StainlessConfig: stainlessConfig,
 		Targets:         targets,
-		ConfigPath:      filepath.Join(dir, "stainless-workspace.json"),
+		ConfigPath:      filepath.Join(dir, ".stainless", "workspace.json"),
 	}, nil
 }
 
@@ -140,64 +147,4 @@ func fetchUserOrgs(client stainless.Client, ctx context.Context) []string {
 	}
 
 	return orgs
-}
-
-// fetchUserProjects retrieves the list of projects the user has access to
-func fetchUserProjects(ctx context.Context, client stainless.Client) map[string]projectInfo {
-	params := stainless.ProjectListParams{}
-
-	res, err := client.Projects.List(ctx, params)
-	if err != nil {
-		// Return empty map if we can't fetch projects
-		return map[string]projectInfo{}
-	}
-
-	projectInfoMap := make(map[string]projectInfo)
-	for _, project := range res.Data {
-		if project.Slug != "" {
-			projectInfoMap[project.Slug] = projectInfo{
-				Name: project.Slug,
-				Org:  project.Org,
-			}
-		}
-	}
-
-	return projectInfoMap
-}
-
-// findOpenAPISpec searches for common OpenAPI spec files in the current directory
-func findOpenAPISpec() string {
-	commonOpenAPIFiles := []string{
-		"openapi.json",
-		"openapi.yml",
-		"openapi.yaml",
-		"api.yml",
-		"api.yaml",
-		"spec.yml",
-		"spec.yaml",
-	}
-
-	for _, filename := range commonOpenAPIFiles {
-		if _, err := os.Stat(filename); err == nil {
-			return "./" + filename
-		}
-	}
-	return ""
-}
-
-// findStainlessConfig searches for common Stainless config files in the current directory
-func findStainlessConfig() string {
-	commonStainlessFiles := []string{
-		"openapi.stainless.yml",
-		"openapi.stainless.yaml",
-		"stainless.yml",
-		"stainless.yaml",
-	}
-
-	for _, filename := range commonStainlessFiles {
-		if _, err := os.Stat(filename); err == nil {
-			return "./" + filename
-		}
-	}
-	return ""
 }
