@@ -224,7 +224,7 @@ var buildsCompare = cli.Command{
 	HideHelpCommand: true,
 }
 
-func handleBuildsCreate(_ context.Context, cmd *cli.Command) error {
+func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -233,7 +233,7 @@ func handleBuildsCreate(_ context.Context, cmd *cli.Command) error {
 	params := stainless.BuildNewParams{}
 	var res []byte
 	_, err := cc.client.Builds.New(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
@@ -248,7 +248,7 @@ func handleBuildsCreate(_ context.Context, cmd *cli.Command) error {
 	return ShowJSON("builds create", json, format, transform)
 }
 
-func handleBuildsRetrieve(_ context.Context, cmd *cli.Command) error {
+func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("build-id") && len(unusedArgs) > 0 {
@@ -260,7 +260,7 @@ func handleBuildsRetrieve(_ context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Builds.Get(
-		context.TODO(),
+		ctx,
 		cmd.Value("build-id").(string),
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
@@ -275,7 +275,7 @@ func handleBuildsRetrieve(_ context.Context, cmd *cli.Command) error {
 	return ShowJSON("builds retrieve", json, format, transform)
 }
 
-func handleBuildsList(_ context.Context, cmd *cli.Command) error {
+func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -284,7 +284,7 @@ func handleBuildsList(_ context.Context, cmd *cli.Command) error {
 	params := stainless.BuildListParams{}
 	var res []byte
 	_, err := cc.client.Builds.List(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
@@ -299,7 +299,7 @@ func handleBuildsList(_ context.Context, cmd *cli.Command) error {
 	return ShowJSON("builds list", json, format, transform)
 }
 
-func handleBuildsCompare(_ context.Context, cmd *cli.Command) error {
+func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -308,7 +308,7 @@ func handleBuildsCompare(_ context.Context, cmd *cli.Command) error {
 	params := stainless.BuildCompareParams{}
 	var res []byte
 	_, err := cc.client.Builds.Compare(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),

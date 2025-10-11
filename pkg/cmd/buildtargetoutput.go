@@ -54,7 +54,7 @@ var buildsTargetOutputsRetrieve = cli.Command{
 	HideHelpCommand: true,
 }
 
-func handleBuildsTargetOutputsRetrieve(_ context.Context, cmd *cli.Command) error {
+func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -63,7 +63,7 @@ func handleBuildsTargetOutputsRetrieve(_ context.Context, cmd *cli.Command) erro
 	params := stainless.BuildTargetOutputGetParams{}
 	var res []byte
 	_, err := cc.client.Builds.TargetOutputs.Get(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
