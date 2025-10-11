@@ -134,7 +134,7 @@ var projectsBranchesRebase = cli.Command{
 	HideHelpCommand: true,
 }
 
-func handleProjectsBranchesCreate(_ context.Context, cmd *cli.Command) error {
+func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -146,7 +146,7 @@ func handleProjectsBranchesCreate(_ context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Branches.New(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
@@ -161,7 +161,7 @@ func handleProjectsBranchesCreate(_ context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects:branches create", json, format, transform)
 }
 
-func handleProjectsBranchesRetrieve(_ context.Context, cmd *cli.Command) error {
+func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
@@ -177,7 +177,7 @@ func handleProjectsBranchesRetrieve(_ context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Branches.Get(
-		context.TODO(),
+		ctx,
 		cmd.Value("branch").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
@@ -193,7 +193,7 @@ func handleProjectsBranchesRetrieve(_ context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects:branches retrieve", json, format, transform)
 }
 
-func handleProjectsBranchesList(_ context.Context, cmd *cli.Command) error {
+func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -205,7 +205,7 @@ func handleProjectsBranchesList(_ context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Branches.List(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
@@ -220,7 +220,7 @@ func handleProjectsBranchesList(_ context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects:branches list", json, format, transform)
 }
 
-func handleProjectsBranchesDelete(_ context.Context, cmd *cli.Command) error {
+func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
@@ -236,7 +236,7 @@ func handleProjectsBranchesDelete(_ context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Branches.Delete(
-		context.TODO(),
+		ctx,
 		cmd.Value("branch").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
@@ -252,7 +252,7 @@ func handleProjectsBranchesDelete(_ context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects:branches delete", json, format, transform)
 }
 
-func handleProjectsBranchesRebase(_ context.Context, cmd *cli.Command) error {
+func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
@@ -268,7 +268,7 @@ func handleProjectsBranchesRebase(_ context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Branches.Rebase(
-		context.TODO(),
+		ctx,
 		cmd.Value("branch").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
