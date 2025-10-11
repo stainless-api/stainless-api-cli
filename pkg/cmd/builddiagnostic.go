@@ -67,7 +67,7 @@ var buildsDiagnosticsList = cli.Command{
 	HideHelpCommand: true,
 }
 
-func handleBuildsDiagnosticsList(_ context.Context, cmd *cli.Command) error {
+func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("build-id") && len(unusedArgs) > 0 {
@@ -80,7 +80,7 @@ func handleBuildsDiagnosticsList(_ context.Context, cmd *cli.Command) error {
 	params := stainless.BuildDiagnosticListParams{}
 	var res []byte
 	_, err := cc.client.Builds.Diagnostics.List(
-		context.TODO(),
+		ctx,
 		cmd.Value("build-id").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),

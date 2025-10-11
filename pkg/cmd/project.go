@@ -126,7 +126,7 @@ var projectsList = cli.Command{
 	HideHelpCommand: true,
 }
 
-func handleProjectsCreate(_ context.Context, cmd *cli.Command) error {
+func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -135,7 +135,7 @@ func handleProjectsCreate(_ context.Context, cmd *cli.Command) error {
 	params := stainless.ProjectNewParams{}
 	var res []byte
 	_, err := cc.client.Projects.New(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
@@ -150,7 +150,7 @@ func handleProjectsCreate(_ context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects create", json, format, transform)
 }
 
-func handleProjectsRetrieve(_ context.Context, cmd *cli.Command) error {
+func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -162,7 +162,7 @@ func handleProjectsRetrieve(_ context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Get(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
@@ -177,7 +177,7 @@ func handleProjectsRetrieve(_ context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects retrieve", json, format, transform)
 }
 
-func handleProjectsUpdate(_ context.Context, cmd *cli.Command) error {
+func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -189,7 +189,7 @@ func handleProjectsUpdate(_ context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Update(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
@@ -204,7 +204,7 @@ func handleProjectsUpdate(_ context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects update", json, format, transform)
 }
 
-func handleProjectsList(_ context.Context, cmd *cli.Command) error {
+func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -213,7 +213,7 @@ func handleProjectsList(_ context.Context, cmd *cli.Command) error {
 	params := stainless.ProjectListParams{}
 	var res []byte
 	_, err := cc.client.Projects.List(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),

@@ -70,7 +70,7 @@ var projectsConfigsGuess = cli.Command{
 	HideHelpCommand: true,
 }
 
-func handleProjectsConfigsRetrieve(_ context.Context, cmd *cli.Command) error {
+func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -82,7 +82,7 @@ func handleProjectsConfigsRetrieve(_ context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Configs.Get(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
@@ -97,7 +97,7 @@ func handleProjectsConfigsRetrieve(_ context.Context, cmd *cli.Command) error {
 	return ShowJSON("projects:configs retrieve", json, format, transform)
 }
 
-func handleProjectsConfigsGuess(_ context.Context, cmd *cli.Command) error {
+func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -109,7 +109,7 @@ func handleProjectsConfigsGuess(_ context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Configs.Guess(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
