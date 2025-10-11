@@ -21,11 +21,13 @@ var projectsConfigsRetrieve = cli.Command{
 			Name: "project",
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "branch",
+			Name:  "branch",
+			Usage: `Branch name, defaults to "main".`,
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "branch",
 			},
+			Value: "main",
 		},
 		&jsonflag.JSONStringFlag{
 			Name: "include",
@@ -47,18 +49,21 @@ var projectsConfigsGuess = cli.Command{
 			Name: "project",
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "spec",
+			Name:  "spec",
+			Usage: "OpenAPI spec",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "spec",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "branch",
+			Name:  "branch",
+			Usage: "Branch name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "branch",
 			},
+			Value: "main",
 		},
 	},
 	Action:          handleProjectsConfigsGuess,
@@ -77,7 +82,7 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 	}
 	var res []byte
 	_, err := cc.client.Projects.Configs.Get(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
@@ -104,7 +109,7 @@ func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Configs.Guess(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),

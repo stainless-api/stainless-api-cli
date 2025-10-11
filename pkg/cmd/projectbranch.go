@@ -21,26 +21,30 @@ var projectsBranchesCreate = cli.Command{
 			Name: "project",
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "branch",
+			Name:  "branch",
+			Usage: "Branch name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "branch",
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "branch-from",
+			Name:  "branch-from",
+			Usage: "Branch or commit SHA to branch from",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Body,
 				Path: "branch_from",
 			},
 		},
 		&jsonflag.JSONBoolFlag{
-			Name: "force",
+			Name:  "force",
+			Usage: "Whether to throw an error if the branch already exists. Defaults to false.",
 			Config: jsonflag.JSONConfig{
 				Kind:     jsonflag.Body,
 				Path:     "force",
 				SetValue: true,
 			},
+			Value: false,
 		},
 	},
 	Action:          handleProjectsBranchesCreate,
@@ -70,18 +74,21 @@ var projectsBranchesList = cli.Command{
 			Name: "project",
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "cursor",
+			Name:  "cursor",
+			Usage: "Pagination cursor from a previous response",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "cursor",
 			},
 		},
 		&jsonflag.JSONFloatFlag{
-			Name: "limit",
+			Name:  "limit",
+			Usage: "Maximum number of items to return, defaults to 10 (maximum: 100).",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "limit",
 			},
+			Value: 10,
 		},
 	},
 	Action:          handleProjectsBranchesList,
@@ -114,11 +121,13 @@ var projectsBranchesRebase = cli.Command{
 			Name: "branch",
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "base",
+			Name:  "base",
+			Usage: `The branch or commit SHA to rebase onto. Defaults to "main".`,
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "base",
 			},
+			Value: "main",
 		},
 	},
 	Action:          handleProjectsBranchesRebase,
@@ -137,7 +146,7 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Branches.New(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
@@ -168,7 +177,7 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 	}
 	var res []byte
 	_, err := cc.client.Projects.Branches.Get(
-		context.TODO(),
+		ctx,
 		cmd.Value("branch").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
@@ -196,7 +205,7 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Branches.List(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
@@ -227,7 +236,7 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Branches.Delete(
-		context.TODO(),
+		ctx,
 		cmd.Value("branch").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
@@ -259,7 +268,7 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Projects.Branches.Rebase(
-		context.TODO(),
+		ctx,
 		cmd.Value("branch").(string),
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),

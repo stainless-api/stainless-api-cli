@@ -21,7 +21,8 @@ var buildsTargetOutputsRetrieve = cli.Command{
 			Name: "pull",
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "build-id",
+			Name:  "build-id",
+			Usage: "Build ID",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "build_id",
@@ -37,7 +38,8 @@ var buildsTargetOutputsRetrieve = cli.Command{
 			Value: "main",
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "target",
+			Name:  "target",
+			Usage: "SDK language target name",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "target",
@@ -51,11 +53,13 @@ var buildsTargetOutputsRetrieve = cli.Command{
 			},
 		},
 		&jsonflag.JSONStringFlag{
-			Name: "output",
+			Name:  "output",
+			Usage: "Output format: url (download URL) or git (temporary access token).",
 			Config: jsonflag.JSONConfig{
 				Kind: jsonflag.Query,
 				Path: "output",
 			},
+			Value: "url",
 		},
 	},
 	Action: handleBuildsTargetOutputsRetrieve,
@@ -82,7 +86,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 	}
 	var resBytes []byte
 	res, err := cc.client.Builds.TargetOutputs.Get(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&resBytes),

@@ -43,7 +43,7 @@ func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Orgs.Get(
-		context.TODO(),
+		ctx,
 		cmd.Value("org").(string),
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
@@ -66,7 +66,7 @@ func handleOrgsList(ctx context.Context, cmd *cli.Command) error {
 	}
 	var res []byte
 	_, err := cc.client.Orgs.List(
-		context.TODO(),
+		ctx,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&res),
 	)
