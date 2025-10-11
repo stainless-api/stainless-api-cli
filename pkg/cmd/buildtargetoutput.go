@@ -65,7 +65,7 @@ var buildsTargetOutputsRetrieve = cli.Command{
 	Action: handleBuildsTargetOutputsRetrieve,
 }
 
-func handleBuildsTargetOutputsRetrieve(_ context.Context, cmd *cli.Command) error {
+func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
@@ -86,7 +86,7 @@ func handleBuildsTargetOutputsRetrieve(_ context.Context, cmd *cli.Command) erro
 	}
 	var resBytes []byte
 	res, err := cc.client.Builds.TargetOutputs.Get(
-		context.TODO(),
+		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 		option.WithResponseBodyInto(&resBytes),
