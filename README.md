@@ -61,7 +61,7 @@ For details about specific commands, use the `--help` flag.
 The CLI supports workspace configuration to avoid repeatedly specifying the project name. When you run a command, the CLI will:
 
 1. Check if a project name is provided via command-line flag
-2. If not, look for a `stainless-workspace.json` file in the current directory or any parent directory
+2. If not, look for a `.stainless/workspace.json` file in the current directory or any parent directory
 3. Use the project name from the workspace configuration if found
 
 ### Initializing a Workspace
