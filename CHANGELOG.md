@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.0-alpha.50 (2025-10-23)
+
+Full Changelog: [v0.1.0-alpha.49...v0.1.0-alpha.50](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.49...v0.1.0-alpha.50)
+
+### Features
+
+* arguments now have defaults and descriptions ([9b8d534](https://github.com/stainless-api/stainless-api-cli/commit/9b8d534c8b92ae4f03dda9ac12e80c0574a0642d))
+* Expose connection-specific decorated OAS ([abf1d87](https://github.com/stainless-api/stainless-api-cli/commit/abf1d87e0af1e8f77405873c1ddf36f5070f897c))
+
+
+### Bug Fixes
+
+* pass through context parameter correctly ([29182fd](https://github.com/stainless-api/stainless-api-cli/commit/29182fdae10f5f91e3b8d0f90234f4e330572c9d))
+
+
+### Chores
+
+* bump go sdk version ([358eed4](https://github.com/stainless-api/stainless-api-cli/commit/358eed41b58f7bacf6d5ce340795d251fa1803c3))
+* bump Go version ([84c6127](https://github.com/stainless-api/stainless-api-cli/commit/84c612747d1a22ee69d3ffca48f7c538b9b44896))
+* **internal:** codegen related update ([375ca6b](https://github.com/stainless-api/stainless-api-cli/commit/375ca6ba3c64a74577430abec867b1b9b7c2fe43))
+
 ## 0.1.0-alpha.49 (2025-10-06)
 
 Full Changelog: [v0.1.0-alpha.48...v0.1.0-alpha.49](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.48...v0.1.0-alpha.49)
