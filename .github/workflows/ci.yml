@@ -11,6 +11,7 @@ on:
     branches-ignore:
       - 'stl-preview-head/**'
       - 'stl-preview-base/**'
+
 jobs:
   lint:
     timeout-minutes: 10
