@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-alpha.51 (2025-10-25)
+
+Full Changelog: [v0.1.0-alpha.50...v0.1.0-alpha.51](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.50...v0.1.0-alpha.51)
+
+### Features
+
+* use scope:"*" ([6b45c41](https://github.com/stainless-api/stainless-api-cli/commit/6b45c41e78d6992355533234986ee07f212d92c0))
+
+
+### Bug Fixes
+
+* fix builds for non-public Go repos ([725ff05](https://github.com/stainless-api/stainless-api-cli/commit/725ff05a2078bef1e4081e8a19bc3be12ce20a0f))
+* remove some bootstrapping logic ([a3f713d](https://github.com/stainless-api/stainless-api-cli/commit/a3f713d5551ca6c0b6d1bdf4d83999652c15d9cf))
+
 ## 0.1.0-alpha.50 (2025-10-23)
 
 Full Changelog: [v0.1.0-alpha.49...v0.1.0-alpha.50](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.49...v0.1.0-alpha.50)
