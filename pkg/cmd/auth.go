@@ -70,7 +70,7 @@ func authenticate(ctx context.Context, cmd *cli.Command, forceAuthentication boo
 
 	cc := getAPICommandContext(cmd)
 	clientID := cmd.String("client-id")
-	scope := "openapi:read project:write project:read"
+	scope := "*"
 	authResult, err := startDeviceFlow(ctx, cmd, cc.client, clientID, scope)
 	if err != nil {
 		return err
