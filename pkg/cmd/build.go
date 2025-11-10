@@ -523,6 +523,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 			target.Get("commit.completed.conclusion").String() == "error" ||
 			target.Get("lint.completed.conclusion").String() == "error" ||
 			target.Get("test.completed.conclusion").String() == "error" {
+			buildGroup.Error("Build did not succeed!")
 			os.Exit(1)
 		}
 	}
