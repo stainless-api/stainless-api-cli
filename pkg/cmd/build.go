@@ -479,7 +479,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	targetPaths := parseTargetPaths(cc.workspaceConfig)
 	buildGroup := Info("Creating build...")
 	params := stainless.BuildNewParams{}
-	res, err := cc.client.Builds.New(
+	build, err := cc.client.Builds.New(
 		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
@@ -487,13 +487,13 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-	
-	buildGroup.Property("build_id", res.ID)
+
+	buildGroup.Property("build_id", build.ID)
 
 	if cmd.Bool("wait") {
 		waitGroup := Info("Waiting for latest build to complete...")
 
-		res, err = waitForBuildCompletion(context.TODO(), cc.client, res, &waitGroup)
+		build, err = waitForBuildCompletion(context.TODO(), cc.client, build, &waitGroup)
 		if err != nil {
 			return err
 		}
@@ -503,7 +503,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 		if shouldPull {
 			pullGroup := Info("Downloading build outputs...")
-			if err := pullBuildOutputs(context.TODO(), cc.client, *res, targetPaths, &pullGroup); err != nil {
+			if err := pullBuildOutputs(context.TODO(), cc.client, *build, targetPaths, &pullGroup); err != nil {
 				pullGroup.Error("Failed to download outputs: %v", err)
 			} else {
 				pullGroup.Success("Successfully downloaded all outputs")
@@ -511,10 +511,24 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		}
 	}
 
-	data := gjson.Parse(string(res.RawJSON()))
+	data := gjson.Parse(string(build.RawJSON()))
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("builds create", data, format, transform)
+	if err := ShowJSON("builds create", data, format, transform); err != nil {
+		return err
+	}
+
+	for _, target := range data.Get("targets.@values").Array() {
+		if target.Get("status").String() == "not_started" ||
+			target.Get("commit.completed.conclusion").String() == "error" ||
+			target.Get("lint.completed.conclusion").String() == "error" ||
+			target.Get("test.completed.conclusion").String() == "error" {
+			buildGroup.Error("Build did not succeed!")
+			os.Exit(1)
+		}
+	}
+
+	return nil
 }
 
 func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
