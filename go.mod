@@ -20,7 +20,8 @@ require (
 	github.com/tidwall/sjson v1.2.5
 	github.com/urfave/cli-docs/v3 v3.0.0-alpha6
 	github.com/urfave/cli/v3 v3.3.2
-	golang.org/x/term v0.36.0
+	golang.org/x/term v0.37.0
+	golang.org/x/text v0.24.0
 )
 
 require (
@@ -55,6 +56,5 @@ require (
 	github.com/yuin/goldmark-emoji v1.0.5 // indirect
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/sys v0.38.0 // indirect
 )
