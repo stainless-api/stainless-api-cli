@@ -113,6 +113,7 @@ stl builds create --branch <branch>`,
 					&projectsBranchesList,
 					&projectsBranchesDelete,
 					&projectsBranchesRebase,
+					&projectsBranchesReset,
 				},
 			},
 			{

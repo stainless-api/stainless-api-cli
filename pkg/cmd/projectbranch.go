@@ -134,6 +134,29 @@ var projectsBranchesRebase = cli.Command{
 	HideHelpCommand: true,
 }
 
+var projectsBranchesReset = cli.Command{
+	Name:  "reset",
+	Usage: "Reset a project branch.",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name: "project",
+		},
+		&cli.StringFlag{
+			Name: "branch",
+		},
+		&jsonflag.JSONStringFlag{
+			Name:  "target-config-sha",
+			Usage: "The commit SHA to reset the main branch to. Required if resetting the main branch; disallowed otherwise.",
+			Config: jsonflag.JSONConfig{
+				Kind: jsonflag.Query,
+				Path: "target_config_sha",
+			},
+		},
+	},
+	Action:          handleProjectsBranchesReset,
+	HideHelpCommand: true,
+}
+
 func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 	unusedArgs := cmd.Args().Slice()
@@ -282,4 +305,36 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
 	return ShowJSON("projects:branches rebase", json, format, transform)
+}
+
+func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
+	cc := getAPICommandContext(cmd)
+	unusedArgs := cmd.Args().Slice()
+	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
+		cmd.Set("branch", unusedArgs[0])
+		unusedArgs = unusedArgs[1:]
+	}
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
+	params := stainless.ProjectBranchResetParams{}
+	if cmd.IsSet("project") {
+		params.Project = stainless.String(cmd.Value("project").(string))
+	}
+	var res []byte
+	_, err := cc.client.Projects.Branches.Reset(
+		ctx,
+		cmd.Value("branch").(string),
+		params,
+		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithResponseBodyInto(&res),
+	)
+	if err != nil {
+		return err
+	}
+
+	json := gjson.Parse(string(res))
+	format := cmd.Root().String("format")
+	transform := cmd.Root().String("transform")
+	return ShowJSON("projects:branches reset", json, format, transform)
 }

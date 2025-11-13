@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-alpha.53 (2025-11-13)
+
+Full Changelog: [v0.1.0-alpha.51...v0.1.0-alpha.53](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.51...v0.1.0-alpha.53)
+
+### Features
+
+* **api:** add branch reset functionality ([b0df2a1](https://github.com/stainless-api/stainless-api-cli/commit/b0df2a1520a8c57fb854e8dc3b133ce195c122d5))
+
+
+### Chores
+
+* bump go sdk version ([d34a873](https://github.com/stainless-api/stainless-api-cli/commit/d34a87386da62d51ef9fd33fd5637de54d11ee67))
+* **internal:** codegen related update ([4e786ec](https://github.com/stainless-api/stainless-api-cli/commit/4e786ece778e52ced853f83374e2fefd3c8460d1))
+
 ## 0.1.0-alpha.51 (2025-10-25)
 
 Full Changelog: [v0.1.0-alpha.50...v0.1.0-alpha.51](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.50...v0.1.0-alpha.51)
