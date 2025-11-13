@@ -90,6 +90,7 @@ func init() {
 					&projectsBranchesList,
 					&projectsBranchesDelete,
 					&projectsBranchesRebase,
+					&projectsBranchesReset,
 				},
 			},
 			{
