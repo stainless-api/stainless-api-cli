@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"io/fs"
 	"os"
@@ -19,6 +20,12 @@ import (
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/urfave/cli/v3"
 )
+
+//go:embed example-openapi.yml
+var exampleSpecYAML string
+
+//go:embed example-openapi.json
+var exampleSpecJSON string
 
 var initCommand = cli.Command{
 	Name:  "init",
@@ -252,8 +259,11 @@ func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext,
 	// Determine targets
 	var selectedTargets []stainless.Target
 	if cmd.IsSet("targets") {
-		for _, target := range strings.Split(cmd.String("targets"), ",") {
+		for target := range strings.SplitSeq(cmd.String("targets"), ",") {
 			selectedTargets = append(selectedTargets, stainless.Target(strings.TrimSpace(target)))
+		}
+		if len(selectedTargets) == 0 {
+			return "", nil, fmt.Errorf("You must select at least one target!")
 		}
 	} else {
 		allTargets := slices.DeleteFunc(getAllTargetInfo(), func(item TargetInfo) bool {
@@ -268,6 +278,12 @@ func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext,
 			Title("targets").
 			Description("Select target languages for code generation").
 			Options(options...).
+			Validate(func(selected []stainless.Target) error {
+				if len(selected) == 0 {
+					return fmt.Errorf("You must select at least one target!")
+				}
+				return nil
+			}).
 			Value(&selectedTargets))
 		if err != nil {
 			return "", nil, err
@@ -277,14 +293,61 @@ func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext,
 	info.Property("targets", fmt.Sprintf("%v", selectedTargets))
 
 	slug := nameToSlug(projectName)
+	params := stainless.ProjectNewParams{
+		DisplayName: projectName,
+		Org:         org,
+		Slug:        slug,
+		Targets:     selectedTargets,
+		Revision:    make(map[string]stainless.FileInputUnionParam),
+	}
+
+	var openAPISpecPath string
+	if cmd.IsSet("openapi-spec") {
+		openAPISpecPath = cmd.String("openapi-spec")
+	} else if path, err := chooseOpenAPISpecLocation(); err != nil {
+		return "", nil, err
+	} else {
+		openAPISpecPath = path
+		cmd.Set("openapi-spec", openAPISpecPath)
+	}
+
+	var oasName string
+	if strings.HasSuffix(openAPISpecPath, ".json") {
+		oasName = "openapi.json"
+	} else if strings.HasSuffix(openAPISpecPath, ".yaml") {
+		oasName = "openapi.yaml"
+	} else {
+		oasName = "openapi.yml"
+	}
+
+	var oasContent string
+	if fileBytes, err := os.ReadFile(openAPISpecPath); err == nil {
+		oasContent = string(fileBytes)
+		info.Property("openapi", "loaded from "+openAPISpecPath)
+	} else {
+		if strings.HasSuffix(openAPISpecPath, ".json") {
+			oasContent = exampleSpecJSON
+		} else {
+			oasContent = exampleSpecYAML
+		}
+		if err := os.MkdirAll(filepath.Dir(openAPISpecPath), 0755); err != nil {
+			return "", nil, fmt.Errorf("failed to create directory for OpenAPI spec: %w", err)
+		}
+		if err := os.WriteFile(openAPISpecPath, []byte(oasContent), 0644); err != nil {
+			return "", nil, fmt.Errorf("failed to write OpenAPI spec to %s: %w", openAPISpecPath, err)
+		}
+		info.Property("openapi", "placeholder stored at "+openAPISpecPath)
+	}
+
+	params.Revision[oasName] = stainless.FileInputUnionParam{
+		OfFileInputContent: &stainless.FileInputContentParam{
+			Content: oasContent,
+		},
+	}
+
 	_, err := cc.client.Projects.New(
 		ctx,
-		stainless.ProjectNewParams{
-			DisplayName: projectName,
-			Org:         org,
-			Slug:        slug,
-			Targets:     selectedTargets,
-		},
+		params,
 		option.WithMiddleware(cc.AsMiddleware()),
 	)
 	if err != nil {
@@ -520,8 +583,15 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, config Wo
 			return fmt.Errorf("failed to create directory for config file: %w", err)
 		}
 
-		// If the file exists and is nonempty, ask for confirmation
+		// Check if the file exists and is nonempty
 		if fileInfo, err := os.Stat(path); err == nil && fileInfo.Size() > 0 {
+			// If contents are identical, this is a no-op
+			existingContent, readErr := os.ReadFile(path)
+			if readErr == nil && string(existingContent) == string(content) {
+				return nil
+			}
+
+			// If contents differ, ask for confirmation
 			shouldOverwrite, err := Confirm(nil, "", fmt.Sprintf("File %s already exists", path), "Do you want to overwrite it?", true)
 			if err != nil {
 				return fmt.Errorf("failed to confirm file overwrite: %w", err)
