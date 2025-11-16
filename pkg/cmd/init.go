@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -159,16 +160,17 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		err := singleFieldForm(huh.NewSelect[string]().
 			Title("org").
 			Description("Enter the organization for this project").
-			Options(huh.NewOptions(orgs...)...).
+			Options(huh.NewOptions(slices.Sorted(slices.Values(orgs))...)...).
 			Height(len(orgs) + 2).
 			Value(&org))
 		if err != nil {
 			return err
 		}
 	}
+	Property("org", org)
 
 	var projects []stainless.Project
-	if projectsResponse, err := cc.client.Projects.List(ctx, stainless.ProjectListParams{}); err == nil {
+	if projectsResponse, err := cc.client.Projects.List(ctx, stainless.ProjectListParams{Org: stainless.String(org)}); err == nil {
 		projects = projectsResponse.Data
 	}
 
@@ -201,6 +203,12 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		}
 	} else if len(projects) > 0 {
 		options := make([]huh.Option[*stainless.Project], 0, len(projects)+1)
+		projects = slices.SortedFunc(slices.Values(projects), func(p1, p2 stainless.Project) int {
+			if p1.Slug < p2.Slug {
+				return -1
+			}
+			return 1
+		})
 		for _, project := range projects {
 			options = append(options, huh.NewOption(project.Slug, &project))
 		}
@@ -225,6 +233,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 			return err
 		}
 	}
+	Property("project", project)
 
 	return initializeWorkspace(ctx, cmd, cc, project, targets)
 }
@@ -234,7 +243,7 @@ func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext,
 
 	if projectName == "" {
 		err := singleFieldForm(huh.NewInput().
-			Title("Project Display Name").
+			Title("project").
 			Description("Enter a display name for your new project").
 			Value(&projectName).
 			DescriptionFunc(func() string {
@@ -253,7 +262,6 @@ func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext,
 			return "", nil, err
 		}
 	}
-
 	info.Property("project", projectName)
 
 	// Determine targets
@@ -509,7 +517,7 @@ func chooseOpenAPISpecLocation() (string, error) {
 
 	path := suggestion
 	err := singleFieldForm(huh.NewInput().
-		Title("OpenAPI Specification Location").
+		Title("OpenAPI specification location").
 		Description("Path where the OpenAPI specification file should be stored").
 		Value(&path).
 		Placeholder(suggestion))
@@ -538,8 +546,8 @@ func chooseStainlessConfigLocation() (string, error) {
 
 	path := suggestion
 	err := singleFieldForm(huh.NewInput().
-		Title("Stainless Config Location").
-		Description("Path where the Stainless configuration file should be stored").
+		Title("Stainless config location").
+		Description("Path where the Stainless config file should be stored").
 		Value(&path).
 		Placeholder(suggestion))
 
@@ -547,7 +555,7 @@ func chooseStainlessConfigLocation() (string, error) {
 		return "", err
 	}
 
-	Property("Stainless configuration file", path)
+	Property("Stainless config file", path)
 	return path, nil
 }
 
@@ -570,10 +578,7 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, config Wo
 		return fmt.Errorf("config download failed: %v", err)
 	}
 
-	group.Property("Available config files", "")
-	for key := range *configRes {
-		group.Property("- ", key)
-	}
+	group.Property("Available config files:", strings.Join(slices.Collect(maps.Keys(*configRes)), ", "))
 
 	// Helper function to write a file with confirmation if it exists
 	writeFileWithConfirm := func(path string, content []byte, description string) error {
@@ -591,8 +596,7 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, config Wo
 				return nil
 			}
 
-			// If contents differ, ask for confirmation
-			shouldOverwrite, err := Confirm(nil, "", fmt.Sprintf("File %s already exists", path), "Do you want to overwrite it?", true)
+			shouldOverwrite, _, err := group.Confirm(nil, "", fmt.Sprintf("File %s already exists", path), "Do you want to overwrite it?", true)
 			if err != nil {
 				return fmt.Errorf("failed to confirm file overwrite: %w", err)
 			}
