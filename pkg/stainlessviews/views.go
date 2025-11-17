@@ -1,4 +1,4 @@
-package cmd
+package stainlessviews
 
 import (
 	"fmt"
@@ -6,21 +6,38 @@ import (
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/term"
+	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 	"github.com/stainless-api/stainless-api-go"
 )
 
-func (m BuildModel) View() string {
+// ViewData contains all the data needed to render the build view
+type ViewData struct {
+	Build       *stainless.Build
+	Diagnostics []stainless.BuildDiagnostic
+	Duration    time.Duration
+	Branch      string
+	Downloads   map[stainless.Target]DownloadStatus
+	HelpText    string
+}
+
+// ViewPart represents a single part of the build view
+type ViewPart struct {
+	Name string
+	View func(ViewData, *strings.Builder)
+}
+
+// ViewBuild renders the build view from a given state onwards
+func ViewBuild(data ViewData, currentView string) string {
 	s := strings.Builder{}
 
 	startIndex := 0
-	if m.view != "" {
+	if currentView != "" {
 		for i, part := range parts {
-			if part.name == string(m.view) {
+			if part.Name == currentView {
 				startIndex = i + 1
 				break
 			}
@@ -28,119 +45,101 @@ func (m BuildModel) View() string {
 	}
 
 	for i := startIndex; i < len(parts); i++ {
-		parts[i].view(m, &s)
+		parts[i].View(data, &s)
 	}
 
 	return s.String()
 }
 
-// updateView updates the view state and prints everything from current state to target state to scrollback
-func (m *BuildModel) updateView(targetState string) tea.Cmd {
-	// Find current state index
-	currentIndex := -1
-	if m.view != "" {
+// ViewBuildRange renders the build view from startView to endView (inclusive)
+// Returns empty string if views are not found
+func ViewBuildRange(data ViewData, startView, endView string) string {
+	var output strings.Builder
+
+	startIndex := 0
+	if startView != "" {
+		found := false
 		for i, part := range parts {
-			if part.name == m.view {
-				currentIndex = i
+			if part.Name == startView {
+				startIndex = i + 1
+				found = true
 				break
 			}
 		}
+		if !found {
+			startIndex = -1
+		}
 	} else {
-		currentIndex = -1 // Start from beginning if no current view
+		startIndex = 0
 	}
 
-	// Find target state index
-	targetIndex := -1
+	endIndex := -1
 	for i, part := range parts {
-		if part.name == targetState {
-			targetIndex = i
+		if part.Name == endView {
+			endIndex = i
 			break
 		}
 	}
 
-	if targetIndex == -1 {
-		return nil // Target state not found
+	if endIndex == -1 || startIndex == -1 {
+		return ""
 	}
 
-	// Build output from current state to target state
-	var output strings.Builder
-	startIndex := currentIndex + 1
-	if currentIndex == -1 {
-		startIndex = 0
+	for i := startIndex; i <= endIndex; i++ {
+		parts[i].View(data, &output)
 	}
 
-	for i := startIndex; i <= targetIndex; i++ {
-		parts[i].view(*m, &output)
-	}
-
-	// Update model state
-	m.view = targetState
-
-	// Print to scrollback
-	if output.Len() > 0 {
-		out := output.String()
-		if out[len(out)-1] == '\n' {
-			return tea.Println(out[:len(out)-1])
-		} else {
-			return tea.Println(out)
-		}
-	}
-	return nil
+	return output.String()
 }
 
-type buildViewState string
-
-var parts = []struct {
-	name string
-	view func(BuildModel, *strings.Builder)
-}{
+// GetViewParts returns the ordered list of view parts
+var parts = []ViewPart{
 	{
-		name: "header",
-		view: func(m BuildModel, s *strings.Builder) {
+		Name: "header",
+		View: func(d ViewData, s *strings.Builder) {
 			buildIDStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Background(lipgloss.Color("6")).Bold(true)
-			if m.build != nil {
-				fmt.Fprintf(s, "\n\n%s %s\n\n", buildIDStyle.Render(" BUILD "), m.build.ID)
+			if d.Build != nil {
+				fmt.Fprintf(s, "\n\n%s %s\n\n", buildIDStyle.Render(" BUILD "), d.Build.ID)
 			} else {
 				fmt.Fprintf(s, "\n\n%s\n\n", buildIDStyle.Render(" BUILD "))
 			}
 		},
 	},
 	{
-		name: "build diagnostics",
-		view: func(m BuildModel, s *strings.Builder) {
-			if m.diagnostics == nil {
-				s.WriteString(SProperty(0, "build diagnostics", "(waiting for build to finish)"))
+		Name: "build diagnostics",
+		View: func(d ViewData, s *strings.Builder) {
+			if d.Diagnostics == nil {
+				s.WriteString(console.SProperty(0, "build diagnostics", "(waiting for build to finish)"))
 			} else {
-				s.WriteString(ViewDiagnosticsPrint(m.diagnostics, 10))
+				s.WriteString(ViewDiagnosticsPrint(d.Diagnostics, 10))
 			}
 		},
 	},
 	{
-		name: "duration",
-		view: func(m BuildModel, s *strings.Builder) {
-			duration := m.getBuildDuration()
-			s.WriteString(SProperty(0, "duration", duration.Round(time.Second).String()))
+		Name: "duration",
+		View: func(d ViewData, s *strings.Builder) {
+			s.WriteString(console.SProperty(0, "duration", d.Duration.Round(time.Second).String()))
 		},
 	},
 	{
-		name: "studio",
-		view: func(m BuildModel, s *strings.Builder) {
-			if m.build != nil {
-				url := fmt.Sprintf("https://app.stainless.com/%s/%s/studio?branch=%s", m.build.Org, m.build.Project, m.branch)
-				s.WriteString(SProperty(0, "studio", Hyperlink(url, url)))
+		Name: "studio",
+		View: func(d ViewData, s *strings.Builder) {
+			if d.Build != nil {
+				url := fmt.Sprintf("https://app.stainless.com/%s/%s/studio?branch=%s", d.Build.Org, d.Build.Project, d.Branch)
+				s.WriteString(console.SProperty(0, "studio", console.Hyperlink(url, url)))
 			}
 		},
 	},
 	{
-		name: "build_status",
-		view: func(m BuildModel, s *strings.Builder) {
+		Name: "build_status",
+		View: func(d ViewData, s *strings.Builder) {
 			s.WriteString("\n")
-			if m.build != nil {
-				buildObj := stainlessutils.NewBuild(m.build)
+			if d.Build != nil {
+				buildObj := stainlessutils.NewBuild(d.Build)
 				languages := buildObj.Languages()
 				// Target rows with colors
 				for _, target := range languages {
-					pipeline := ViewBuildPipeline(m.build, target, m.downloads)
+					pipeline := ViewBuildPipeline(d.Build, target, d.Downloads)
 					langStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true)
 					s.WriteString(fmt.Sprintf("%s %s\n", langStyle.Render(fmt.Sprintf("%-13s", string(target))), pipeline))
 				}
@@ -168,17 +167,22 @@ var parts = []struct {
 		},
 	},
 	{
-		name: "help",
-		view: func(m BuildModel, s *strings.Builder) {
-			s.WriteString(m.help.View(m))
+		Name: "help",
+		View: func(d ViewData, s *strings.Builder) {
+			s.WriteString(d.HelpText)
 		},
 	},
 }
 
-func ViewBuildPipeline(build *stainless.Build, target stainless.Target, downloads map[stainless.Target]struct {
-	status string
-	path   string
-}) string {
+// DownloadStatus represents the download status and path for a target
+type DownloadStatus struct {
+	Status string
+	Path   string
+}
+
+
+// ViewBuildPipeline renders the build pipeline for a target
+func ViewBuildPipeline(build *stainless.Build, target stainless.Target, downloads map[stainless.Target]DownloadStatus) string {
 	buildObj := stainlessutils.NewBuild(build)
 	buildTarget := buildObj.BuildTarget(target)
 	if buildTarget == nil {
@@ -197,24 +201,25 @@ func ViewBuildPipeline(build *stainless.Build, target stainless.Target, download
 		if pipeline.Len() > 0 {
 			pipeline.WriteString(" → ")
 		}
-		pipeline.WriteString(symbol + " " + Hyperlink(url, step))
+		pipeline.WriteString(symbol + " " + console.Hyperlink(url, step))
 	}
 
 	if download, ok := downloads[target]; ok {
-		if download.status == "not started" {
+		if download.Status == "not started" {
 			// do nothing
-		} else if download.status == "started" {
+		} else if download.Status == "started" {
 			pipeline.WriteString(" → " + "downloading")
-		} else if download.status == "completed" {
+		} else if download.Status == "completed" {
 			pipeline.WriteString(" → " + "downloaded")
 		} else {
-			pipeline.WriteString(" → " + download.status)
+			pipeline.WriteString(" → " + download.Status)
 		}
 	}
 
 	return pipeline.String()
 }
 
+// ViewStepSymbol returns a colored symbol for a build step status
 func ViewStepSymbol(status, conclusion string) string {
 	greenStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
 	redStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
@@ -242,6 +247,7 @@ func ViewStepSymbol(status, conclusion string) string {
 	}
 }
 
+// ViewDiagnosticIcon returns a colored icon for a diagnostic level
 func ViewDiagnosticIcon(level stainless.BuildDiagnosticLevel) string {
 	switch level {
 	case stainless.BuildDiagnosticLevelFatal:
@@ -280,6 +286,7 @@ func renderMarkdown(content string) string {
 	return strings.Trim(rendered, "\n ")
 }
 
+// countDiagnosticsBySeverity counts diagnostics by severity level
 func countDiagnosticsBySeverity(diagnostics []stainless.BuildDiagnostic) (fatal, errors, warnings, notes int) {
 	for _, diag := range diagnostics {
 		switch diag.Level {
@@ -296,6 +303,7 @@ func countDiagnosticsBySeverity(diagnostics []stainless.BuildDiagnostic) (fatal,
 	return
 }
 
+// ViewDiagnosticsPrint renders build diagnostics with formatting
 func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic, maxDiagnostics int) string {
 	var s strings.Builder
 
@@ -363,7 +371,7 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic, maxDiagnostic
 			}
 		}
 
-		s.WriteString(SProperty(0, "build diagnostics", summary))
+		s.WriteString(console.SProperty(0, "build diagnostics", summary))
 		s.WriteString(lipgloss.NewStyle().
 			Padding(0).
 			Border(lipgloss.RoundedBorder()).
@@ -371,7 +379,7 @@ func ViewDiagnosticsPrint(diagnostics []stainless.BuildDiagnostic, maxDiagnostic
 			Render(strings.TrimRight(sub.String(), "\n")),
 		)
 	} else {
-		s.WriteString(SProperty(0, "build diagnostics", "(no errors or warnings)"))
+		s.WriteString(console.SProperty(0, "build diagnostics", "(no errors or warnings)"))
 	}
 
 	return s.String()
