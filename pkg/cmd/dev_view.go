@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/term"
+	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 	"github.com/stainless-api/stainless-api-go"
 )
 
@@ -135,7 +136,7 @@ var parts = []struct {
 		view: func(m BuildModel, s *strings.Builder) {
 			s.WriteString("\n")
 			if m.build != nil {
-				buildObj := NewBuild(m.build)
+				buildObj := stainlessutils.NewBuild(m.build)
 				languages := buildObj.Languages()
 				// Target rows with colors
 				for _, target := range languages {
@@ -178,7 +179,7 @@ func ViewBuildPipeline(build *stainless.Build, target stainless.Target, download
 	status string
 	path   string
 }) string {
-	buildObj := NewBuild(build)
+	buildObj := stainlessutils.NewBuild(build)
 	buildTarget := buildObj.BuildTarget(target)
 	if buildTarget == nil {
 		return ""
