@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.1.0-alpha.55 (2025-11-17)
+
+Full Changelog: [v0.1.0-alpha.54...v0.1.0-alpha.55](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.54...v0.1.0-alpha.55)
+
+### Features
+
+* clean up messages / formatting ([eb3b9b1](https://github.com/stainless-api/stainless-api-cli/commit/eb3b9b13d804ce10327bcd35ce03704f36d77c68))
+
+
+### Chores
+
+* move dev_view ([0512c7f](https://github.com/stainless-api/stainless-api-cli/commit/0512c7f57dc27d0461bcdce7da9bee346bf6e052))
+
+
+### Refactors
+
+* extract console ([83f3da7](https://github.com/stainless-api/stainless-api-cli/commit/83f3da7ffeed20d1b9dbb4c9bb23b771ac7f9234))
+* extract stainlessutils ([9ee2138](https://github.com/stainless-api/stainless-api-cli/commit/9ee21382a58eaa4ebee33192524c909bf341e237))
+* extract stainlessviews ([d075dea](https://github.com/stainless-api/stainless-api-cli/commit/d075dea1085b36d5761eea19253cb253c5273eca))
+
 ## 0.1.0-alpha.54 (2025-11-14)
 
 Full Changelog: [v0.1.0-alpha.53...v0.1.0-alpha.54](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.53...v0.1.0-alpha.54)
