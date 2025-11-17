@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/stainless-api/stainless-api-cli/pkg/console"
+
 	"github.com/urfave/cli/v3"
 )
 
@@ -77,7 +79,7 @@ func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 
 	if cc.workspaceConfig.ConfigPath == "" {
-		group := Warn("No workspace configuration found")
+		group := console.Warn("No workspace configuration found")
 		group.Info("Run 'stl workspace init' to initialize a workspace in this directory.")
 		return nil
 	}
@@ -94,7 +96,7 @@ func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {
 		relPath = cc.workspaceConfig.ConfigPath // fallback to absolute path
 	}
 
-	group := Success("Workspace configuration found")
+	group := console.Success("Workspace configuration found")
 	group.Property("path", relPath)
 	group.Property("project", cc.workspaceConfig.Project)
 

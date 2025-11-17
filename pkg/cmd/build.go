@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stainless-api/stainless-api-cli/pkg/console"
+
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 	"github.com/stainless-api/stainless-api-go"
@@ -174,7 +176,7 @@ func isTargetCompleted(status stainless.BuildTargetStatus) bool {
 }
 
 // waitForBuildCompletion polls a build until completion and shows progress updates
-func waitForBuildCompletion(ctx context.Context, client stainless.Client, build *stainless.Build, waitGroup *Group) (*stainless.Build, error) {
+func waitForBuildCompletion(ctx context.Context, client stainless.Client, build *stainless.Build, waitGroup *console.Group) (*stainless.Build, error) {
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
@@ -478,7 +480,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 	// Parse target paths using cached workspace config
 	targetPaths := parseTargetPaths(cc.workspaceConfig)
-	buildGroup := Info("Creating build...")
+	buildGroup := console.Info("Creating build...")
 	params := stainless.BuildNewParams{}
 	build, err := cc.client.Builds.New(
 		ctx,
@@ -492,7 +494,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	buildGroup.Property("build_id", build.ID)
 
 	if cmd.Bool("wait") {
-		waitGroup := Info("Waiting for latest build to complete...")
+		waitGroup := console.Info("Waiting for latest build to complete...")
 
 		build, err = waitForBuildCompletion(context.TODO(), cc.client, build, &waitGroup)
 		if err != nil {
@@ -503,7 +505,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		shouldPull := cmd.Bool("pull") || (cc.HasWorkspaceTargets() && !cmd.IsSet("pull"))
 
 		if shouldPull {
-			pullGroup := Info("Downloading build outputs...")
+			pullGroup := console.Info("Downloading build outputs...")
 			if err := pullBuildOutputs(context.TODO(), cc.client, *build, targetPaths, &pullGroup); err != nil {
 				pullGroup.Error("Failed to download outputs: %v", err)
 			} else {
@@ -560,7 +562,7 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 }
 
 // pullBuildOutputs pulls the outputs for a completed build
-func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainless.Build, targetPaths map[string]string, pullGroup *Group) error {
+func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainless.Build, targetPaths map[string]string, pullGroup *console.Group) error {
 	// Get all targets
 	allTargets := getBuildTargetInfo(res)
 
@@ -707,7 +709,7 @@ func extractFilename(urlStr string, resp *http.Response) string {
 }
 
 // pullOutput handles downloading or cloning a build target output
-func pullOutput(output, url, ref, targetDir string, targetGroup *Group) error {
+func pullOutput(output, url, ref, targetDir string, targetGroup *console.Group) error {
 	switch output {
 	case "git":
 		// Extract repository name from git URL for directory name
