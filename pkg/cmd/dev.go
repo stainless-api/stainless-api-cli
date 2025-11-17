@@ -205,7 +205,7 @@ func (m BuildModel) downloadTarget(target stainless.Target) tea.Cmd {
 			Output:  "git",
 		}
 		outputRes, err := m.cc.client.Builds.TargetOutputs.Get(
-			context.TODO(),
+			m.ctx,
 			params,
 		)
 		if err != nil {

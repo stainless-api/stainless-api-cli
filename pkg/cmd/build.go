@@ -496,7 +496,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	if cmd.Bool("wait") {
 		waitGroup := console.Info("Waiting for latest build to complete...")
 
-		build, err = waitForBuildCompletion(context.TODO(), cc.client, build, &waitGroup)
+		build, err = waitForBuildCompletion(ctx, cc.client, build, &waitGroup)
 		if err != nil {
 			return err
 		}
@@ -506,7 +506,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 		if shouldPull {
 			pullGroup := console.Info("Downloading build outputs...")
-			if err := pullBuildOutputs(context.TODO(), cc.client, *build, targetPaths, &pullGroup); err != nil {
+			if err := pullBuildOutputs(ctx, cc.client, *build, targetPaths, &pullGroup); err != nil {
 				pullGroup.Error("Failed to download outputs: %v", err)
 			} else {
 				pullGroup.Success("Successfully downloaded all outputs")
