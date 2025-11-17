@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stainless-api/stainless-api-cli/pkg/console"
+
 	"github.com/pkg/browser"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
@@ -58,7 +60,7 @@ func authenticate(ctx context.Context, cmd *cli.Command, forceAuthentication boo
 
 	config, err := NewAuthConfig()
 	if err != nil {
-		Error("Failed to create config: %v", err)
+		console.Error("Failed to create config: %v", err)
 		return fmt.Errorf("authentication failed")
 	}
 
@@ -81,10 +83,10 @@ func authenticate(ctx context.Context, cmd *cli.Command, forceAuthentication boo
 	config.TokenType = authResult.TokenType
 
 	if err := config.Save(); err != nil {
-		Error("Failed to save authentication: %v", err)
+		console.Error("Failed to save authentication: %v", err)
 		return fmt.Errorf("authentication failed")
 	}
-	Success("Authentication successful! Your credentials have been saved to %s", config.ConfigPath)
+	console.Success("Authentication successful! Your credentials have been saved to %s", config.ConfigPath)
 	return nil
 }
 
@@ -100,7 +102,7 @@ func handleAuthLogout(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if !found {
-		Warn("No active session found.")
+		console.Warn("No active session found.")
 		return nil
 	}
 
@@ -108,14 +110,14 @@ func handleAuthLogout(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("failed to remove auth file: %v", err)
 	}
 
-	Success("Successfully logged out.")
+	console.Success("Successfully logged out.")
 	return nil
 }
 
 func handleAuthStatus(ctx context.Context, cmd *cli.Command) error {
 	// Check for API key in environment variables first
 	if apiKey := os.Getenv("STAINLESS_API_KEY"); apiKey != "" {
-		Success("Authenticated via STAINLESS_API_KEY environment variable")
+		console.Success("Authenticated via STAINLESS_API_KEY environment variable")
 		return nil
 	}
 
@@ -127,12 +129,12 @@ func handleAuthStatus(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if !found || config.AccessToken == "" {
-		Warn("Not logged in.")
+		console.Warn("Not logged in.")
 		return nil
 	}
 
 	// If we have a config file with a token
-	group := Success("Authenticated via saved credentials")
+	group := console.Success("Authenticated via saved credentials")
 
 	// Show a truncated version of the token for verification
 	if len(config.AccessToken) > 10 {
@@ -164,7 +166,7 @@ func startDeviceFlow(ctx context.Context, cmd *cli.Command, client stainless.Cli
 		return nil, err
 	}
 
-	group := Info("To authenticate, visit the verification URL")
+	group := console.Info("To authenticate, visit the verification URL")
 	group.Property("url", deviceResponse.VerificationURIComplete)
 	group.Property("code", deviceResponse.UserCode)
 
@@ -195,7 +197,7 @@ func pollForToken(ctx context.Context, client stainless.Client, clientID, device
 	deadline := time.Now().Add(time.Duration(expiresIn) * time.Second)
 	pollInterval := time.Duration(interval) * time.Second
 
-	Progress("Waiting for authentication to complete...")
+	console.Progress("Waiting for authentication to complete...")
 
 	for time.Now().Before(deadline) {
 		time.Sleep(pollInterval)

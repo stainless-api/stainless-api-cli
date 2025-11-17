@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stainless-api/stainless-api-cli/pkg/console"
+
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/term"
@@ -98,7 +100,7 @@ var initCommand = cli.Command{
 }
 
 func singleFieldForm(field huh.Field) error {
-	return huh.NewForm(huh.NewGroup(field)).WithTheme(GetFormTheme(0)).Run()
+	return huh.NewForm(huh.NewGroup(field)).WithTheme(console.GetFormTheme(0)).Run()
 }
 
 func handleInit(ctx context.Context, cmd *cli.Command) error {
@@ -112,7 +114,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	var existingConfig WorkspaceConfig
 	if found, err := existingConfig.Find(); err == nil && found {
 		title := fmt.Sprintf("Existing workspace detected: %s (project: %s)", existingConfig.ConfigPath, existingConfig.Project)
-		overwrite, err := Confirm(cmd, "", title, "Do you want to overwrite your existing workplace configuration?", true)
+		overwrite, err := console.Confirm(cmd, "", title, "Do you want to overwrite your existing workplace configuration?", true)
 		if err != nil || !overwrite {
 			return err
 		}
@@ -126,14 +128,14 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 
 	if len(orgs) == 0 {
 		signupURL := "https://app.stainless.com/signup?source=cli"
-		group := Info("Creating organization for user...")
+		group := console.Info("Creating organization for user...")
 		group.Property("url", signupURL)
 
-		ok, err := Confirm(cmd, "browser", "Open browser?", "", true)
+		ok, err := console.Confirm(cmd, "browser", "Open browser?", "", true)
 		if err != nil {
 			return err
 		} else if ok && browser.OpenURL(signupURL) != nil {
-			Info("Opening browser...")
+			console.Info("Opening browser...")
 		}
 
 		group.Progress("Waiting for organization to be created...")
@@ -146,7 +148,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 			}
 		}
 
-		Spacer()
+		console.Spacer()
 	}
 
 	// Determine organization
@@ -167,7 +169,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 			return err
 		}
 	}
-	Property("org", org)
+	console.Property("org", org)
 
 	var projects []stainless.Project
 	if projectsResponse, err := cc.client.Projects.List(ctx, stainless.ProjectListParams{Org: stainless.String(org)}); err == nil {
@@ -190,7 +192,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		if !projectExists {
-			confirm, err := Confirm(cmd, "", fmt.Sprintf("Project '%s' does not exist", project), "Do you want to create a new project?", true)
+			confirm, err := console.Confirm(cmd, "", fmt.Sprintf("Project '%s' does not exist", project), "Do you want to create a new project?", true)
 			if err != nil {
 				return err
 			}
@@ -233,13 +235,13 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 			return err
 		}
 	}
-	Property("project", project)
+	console.Property("project", project)
 
 	return initializeWorkspace(ctx, cmd, cc, project, targets)
 }
 
 func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext, org, projectName string) (string, []stainless.Target, error) {
-	info := Info("Creating a new project")
+	info := console.Info("Creating a new project")
 
 	if projectName == "" {
 		err := singleFieldForm(huh.NewInput().
@@ -367,7 +369,7 @@ func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext,
 }
 
 func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandContext, projectSlug string, targets []stainless.Target) error {
-	info := Info("Initializing workspace...")
+	info := console.Info("Initializing workspace...")
 
 	var openAPISpecPath string
 	if cmd.IsSet("openapi-spec") {
@@ -400,13 +402,13 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandCo
 
 	info.Success("Workspace initialized at %s", config.ConfigPath)
 
-	Spacer()
+	console.Spacer()
 
 	if err := downloadConfigFiles(ctx, cc.client, config); err != nil {
 		return fmt.Errorf("project created but downloading configuration files failed: %v", err)
 	}
 
-	Spacer()
+	console.Spacer()
 
 	if len(targets) > 0 {
 		if err := configureTargets(projectSlug, targets, &config); err != nil {
@@ -414,7 +416,7 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandCo
 		}
 	}
 
-	Spacer()
+	console.Spacer()
 
 	// Wait for build and pull outputs
 	build, err := waitForLatestBuild(ctx, cc.client, projectSlug)
@@ -423,13 +425,13 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandCo
 	}
 
 	if len(config.Targets) > 0 {
-		Spacer()
+		console.Spacer()
 		if err := pullConfiguredTargets(ctx, cc.client, *build, config); err != nil {
 			return fmt.Errorf("pull targets failed: %v", err)
 		}
 	}
 
-	Spacer()
+	console.Spacer()
 
 	// Get terminal width or use a sensible default
 	width, _, err := term.GetSize(os.Stderr.Fd())
@@ -526,7 +528,7 @@ func chooseOpenAPISpecLocation() (string, error) {
 		return "", err
 	}
 
-	Property("OpenAPI file", path)
+	console.Property("OpenAPI file", path)
 	return path, nil
 }
 
@@ -555,7 +557,7 @@ func chooseStainlessConfigLocation() (string, error) {
 		return "", err
 	}
 
-	Property("Stainless config file", path)
+	console.Property("Stainless config file", path)
 	return path, nil
 }
 
@@ -567,7 +569,7 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, config Wo
 		return fmt.Errorf("No destination for the OpenAPI specification file")
 	}
 
-	group := Info("Downloading Stainless config...")
+	group := console.Info("Downloading Stainless config...")
 	params := stainless.ProjectConfigGetParams{
 		Project: stainless.String(config.Project),
 		Include: stainless.String("openapi"),
@@ -655,7 +657,7 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 		return nil
 	}
 
-	group := Info("Configuring targets...")
+	group := console.Info("Configuring targets...")
 
 	// Initialize target configs with default paths
 	targetConfigs := make(map[string]*TargetConfig, len(targets))
@@ -678,8 +680,8 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 
 	// Run the form
 	form := huh.NewForm(huh.NewGroup(fields...)).
-		WithTheme(GetFormTheme(1)).
-		WithKeyMap(GetFormKeyMap())
+		WithTheme(console.GetFormTheme(1)).
+		WithKeyMap(console.GetFormKeyMap())
 	if err := form.Run(); err != nil {
 		return fmt.Errorf("failed to get target output paths: %v", err)
 	}
@@ -710,7 +712,7 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 
 // waitForLatestBuild waits for the latest build to complete
 func waitForLatestBuild(ctx context.Context, client stainless.Client, slug string) (*stainless.Build, error) {
-	waitGroup := Info("Waiting for build to complete...")
+	waitGroup := console.Info("Waiting for build to complete...")
 
 	// Try to get the latest build for this project (which should have been created automatically)
 	build, err := getLatestBuild(ctx, client, slug, "main")
@@ -728,7 +730,7 @@ func pullConfiguredTargets(ctx context.Context, client stainless.Client, build s
 		return nil
 	}
 
-	pullGroup := Info("Pulling build outputs...")
+	pullGroup := console.Info("Pulling build outputs...")
 
 	// Create target paths map from workspace config
 	targetPaths := make(map[string]string, len(config.Targets))

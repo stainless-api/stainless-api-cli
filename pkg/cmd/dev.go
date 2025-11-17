@@ -16,6 +16,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessviews"
 	"github.com/stainless-api/stainless-api-go"
@@ -210,7 +211,7 @@ func (m BuildModel) downloadTarget(target stainless.Target) tea.Cmd {
 		if err != nil {
 			return errorMsg(err)
 		}
-		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.downloads[target].Path, &Group{silent: true})
+		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.downloads[target].Path, &console.Group{})
 		if err != nil {
 			return errorMsg(err)
 		}
@@ -318,7 +319,7 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 
 	gitUser, err := getGitUsername()
 	if err != nil {
-		Warn("Couldn't get a git user: %s", err)
+		console.Warn("Couldn't get a git user: %s", err)
 		gitUser = "user"
 	}
 
@@ -331,7 +332,7 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 			return err
 		}
 	}
-	Property("branch", selectedBranch)
+	console.Property("branch", selectedBranch)
 
 	// Phase 2: Language selection
 	var selectedTargets []string
@@ -351,7 +352,7 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("no languages selected")
 	}
 
-	Property("targets", strings.Join(selectedTargets, ", "))
+	console.Property("targets", strings.Join(selectedTargets, ", "))
 
 	// Convert string targets to stainless.Target
 	targets := make([]stainless.Target, len(selectedTargets))
@@ -384,8 +385,8 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 		// Clear the screen and move the cursor to the top
 		fmt.Print("\nRebuilding...\n\n\033[2J\033[H")
 		os.Stdout.Sync()
-		Property("branch", selectedBranch)
-		Property("targets", strings.Join(selectedTargets, ", "))
+		console.Property("branch", selectedBranch)
+		console.Property("targets", strings.Join(selectedTargets, ", "))
 	}
 	return nil
 }
@@ -417,7 +418,7 @@ func chooseBranch(gitUser string) (string, error) {
 				Options(branchOptions...).
 				Value(&selectedBranch),
 		),
-	).WithTheme(GetFormTheme(0))
+	).WithTheme(console.GetFormTheme(0))
 
 	if err := branchForm.Run(); err != nil {
 		return selectedBranch, fmt.Errorf("branch selection failed: %v", err)
@@ -438,7 +439,7 @@ func chooseSelectedTargets(targetInfos []TargetInfo) ([]string, error) {
 				Options(targetOptions...).
 				Value(&selectedTargets),
 		),
-	).WithTheme(GetFormTheme(0))
+	).WithTheme(console.GetFormTheme(0))
 
 	if err := targetForm.Run(); err != nil {
 		return nil, fmt.Errorf("target selection failed: %v", err)
