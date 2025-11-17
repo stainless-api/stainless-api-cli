@@ -1,4 +1,4 @@
-package cmd
+package console
 
 import (
 	"fmt"
@@ -17,6 +17,10 @@ type Group struct {
 	prefix string
 	indent int
 	silent bool
+}
+
+func NewGroup(silent bool) Group {
+	return Group{silent: silent}
 }
 
 func Header(format string, args ...any) Group {

@@ -180,7 +180,6 @@ type DownloadStatus struct {
 	Path   string
 }
 
-
 // ViewBuildPipeline renders the build pipeline for a target
 func ViewBuildPipeline(build *stainless.Build, target stainless.Target, downloads map[stainless.Target]DownloadStatus) string {
 	buildObj := stainlessutils.NewBuild(build)
