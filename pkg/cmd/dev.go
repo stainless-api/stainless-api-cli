@@ -17,6 +17,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
+	"github.com/stainless-api/stainless-api-cli/pkg/stainlessviews"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -34,11 +35,8 @@ type BuildModel struct {
 	branch      string
 	help        help.Model
 	diagnostics []stainless.BuildDiagnostic
-	downloads   map[stainless.Target]struct {
-		status string
-		path   string
-	}
-	view string
+	downloads   map[stainless.Target]stainlessviews.DownloadStatus
+	view        string
 
 	cc          *apiCommandContext
 	ctx         context.Context
@@ -97,7 +95,7 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case downloadMsg:
 		download := m.downloads[stainless.Target(msg)]
-		download.status = "completed"
+		download.Status = "completed"
 		m.downloads[stainless.Target(msg)] = download
 
 	case tickMsg:
@@ -112,17 +110,11 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case fetchBuildMsg:
 		if m.build == nil {
 			m.build = msg
-			m.downloads = make(map[stainless.Target]struct {
-				status string
-				path   string
-			})
+			m.downloads = make(map[stainless.Target]stainlessviews.DownloadStatus)
 			for targetName, targetConfig := range m.cc.workspaceConfig.Targets {
-				m.downloads[stainless.Target(targetName)] = struct {
-					status string
-					path   string
-				}{
-					status: "not started",
-					path:   targetConfig.OutputPath,
+				m.downloads[stainless.Target(targetName)] = stainlessviews.DownloadStatus{
+					Status: "not started",
+					Path:   targetConfig.OutputPath,
 				}
 			}
 			cmds = append(cmds, m.updateView("header"))
@@ -153,8 +145,8 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			status, _, conclusion := buildTarget.StepInfo("commit")
 			if status == "completed" && conclusion != "fatal" {
-				if download, ok := m.downloads[target]; ok && download.status == "not started" {
-					download.status = "started"
+				if download, ok := m.downloads[target]; ok && download.Status == "not started" {
+					download.Status = "started"
 					cmds = append(cmds, m.downloadTarget(target))
 					m.downloads[target] = download
 				}
@@ -218,7 +210,7 @@ func (m BuildModel) downloadTarget(target stainless.Target) tea.Cmd {
 		if err != nil {
 			return errorMsg(err)
 		}
-		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.downloads[target].path, &Group{silent: true})
+		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.downloads[target].Path, &Group{silent: true})
 		if err != nil {
 			return errorMsg(err)
 		}
