@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
+	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 
@@ -629,7 +630,7 @@ func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainles
 
 // hasFailedCommitStep checks if a target has a fatal commit conclusion
 func hasFailedCommitStep(build stainless.Build, target stainless.Target) bool {
-	buildObj := NewBuild(&build)
+	buildObj := stainlessutils.NewBuild(&build)
 	buildTarget := buildObj.BuildTarget(target)
 	if buildTarget == nil {
 		return false

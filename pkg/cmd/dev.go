@@ -16,6 +16,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -128,7 +129,7 @@ func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.build = msg
-		buildObj := NewBuild(m.build)
+		buildObj := stainlessutils.NewBuild(m.build)
 		if !m.isCompleted {
 			// Check if all commit steps are completed
 			allCommitsCompleted := true
@@ -262,7 +263,7 @@ func (m *BuildModel) getBuildDuration() time.Duration {
 		return time.Since(m.started)
 	}
 
-	buildObj := NewBuild(m.build)
+	buildObj := stainlessutils.NewBuild(m.build)
 	if buildObj.IsCompleted() {
 		if m.ended == nil {
 			now := time.Now()
