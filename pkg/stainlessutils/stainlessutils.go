@@ -9,23 +9,16 @@ import (
 
 // Build wraps stainless.Build to provide convenience methods
 type Build struct {
-	*stainless.Build
+	stainless.Build
 }
 
 // NewBuild creates a new Build wrapper
-func NewBuild(build *stainless.Build) *Build {
-	if build == nil {
-		return nil
-	}
+func NewBuild(build stainless.Build) *Build {
 	return &Build{Build: build}
 }
 
 // BuildTarget returns the build target wrapper for a given target type, replacing getBuildTarget
 func (b *Build) BuildTarget(target stainless.Target) *BuildTarget {
-	if b.Build == nil {
-		return nil
-	}
-
 	switch target {
 	case "node":
 		if b.Targets.JSON.Node.Valid() {
@@ -77,10 +70,6 @@ func (b *Build) BuildTarget(target stainless.Target) *BuildTarget {
 
 // Languages returns all available build languages/targets for this build
 func (b *Build) Languages() []stainless.Target {
-	if b.Build == nil {
-		return []stainless.Target{}
-	}
-
 	var languages []stainless.Target
 	targets := b.Targets
 
@@ -230,7 +219,6 @@ func (bt *BuildTarget) Steps() []string {
 	return steps
 }
 
-// IsCompleted checks if all steps in this build target are completed
 func (bt *BuildTarget) IsCompleted() bool {
 	steps := []string{"commit", "lint", "build", "test"}
 	for _, step := range steps {
@@ -245,7 +233,6 @@ func (bt *BuildTarget) IsCompleted() bool {
 	return true
 }
 
-// IsInProgress checks if any step in this build target is in progress
 func (bt *BuildTarget) IsInProgress() bool {
 	steps := []string{"commit", "lint", "build", "test", "upload"}
 	for _, step := range steps {
@@ -257,8 +244,12 @@ func (bt *BuildTarget) IsInProgress() bool {
 	return false
 }
 
-// IsCommitCompleted checks if the commit step is completed
 func (bt *BuildTarget) IsCommitCompleted() bool {
 	status, _, _ := bt.StepInfo("commit")
 	return status == "completed"
+}
+
+func (bt *BuildTarget) IsCommitFailed() bool {
+	status, _, conclusion := bt.StepInfo("commit")
+	return status == "completed" && conclusion == "fatal"
 }

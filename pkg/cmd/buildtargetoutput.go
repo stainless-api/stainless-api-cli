@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
+	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
@@ -106,7 +107,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 
 	group := console.Info("Downloading output")
 	if cmd.Bool("pull") {
-		return pullOutput(res.Output, res.URL, res.Ref, "", &group)
+		return build.PullOutput(res.Output, res.URL, res.Ref, "", &group)
 	}
 
 	return nil

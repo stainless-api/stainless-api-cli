@@ -218,8 +218,8 @@ func (c *apiCommandContext) HasWorkspaceTargets() bool {
 }
 
 // GetWorkspaceTargetPaths returns a map of target names to their output paths from workspace config
-func (c *apiCommandContext) GetWorkspaceTargetPaths() map[string]string {
-	targetPaths := make(map[string]string)
+func (c *apiCommandContext) GetWorkspaceTargetPaths() map[stainless.Target]string {
+	targetPaths := make(map[stainless.Target]string)
 	if c.workspaceConfig.ConfigPath != "" && c.workspaceConfig.Targets != nil {
 		for targetName, targetConfig := range c.workspaceConfig.Targets {
 			if targetConfig.OutputPath != "" {

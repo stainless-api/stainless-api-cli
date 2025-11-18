@@ -20,7 +20,7 @@ type WorkspaceConfig struct {
 	Project         string                   `json:"project"`
 	OpenAPISpec     string                   `json:"openapi_spec,omitempty"`
 	StainlessConfig string                   `json:"stainless_config,omitempty"`
-	Targets         map[string]*TargetConfig `json:"targets,omitempty"`
+	Targets         map[stainless.Target]*TargetConfig `json:"targets,omitempty"`
 
 	ConfigPath string `json:"-"`
 }
