@@ -12,7 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/stainless-api/stainless-api-cli/pkg/stainlessviews"
+	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/urfave/cli/v3"
 )
@@ -75,7 +75,7 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if msg.String() == "ctrl+c" {
 			m.watching = false
-			m.error = ErrUserCancelled
+			m.error = build.ErrUserCancelled
 			return m, tea.Quit
 		} else if msg.String() == "enter" {
 			m.watching = false
@@ -133,7 +133,7 @@ func (m lintModel) View() string {
 			content = m.spinner.View() + " Linting"
 		}
 	} else {
-		content = stainlessviews.ViewDiagnosticsPrint(m.diagnostics, -1)
+		// content = build.ViewDiagnosticsPrint(m.diagnostics, -1)
 		if m.skipped {
 			content += "\nContinuing..."
 		} else if m.watching {

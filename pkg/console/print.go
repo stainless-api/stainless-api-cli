@@ -57,6 +57,10 @@ func Confirm(cmd *cli.Command, flagName, title, description string, defaultValue
 	return value, err
 }
 
+func Field(field huh.Field) error {
+	return Group{}.Field(field)
+}
+
 func Spacer() {
 	fmt.Fprintf(os.Stderr, "\n")
 }
@@ -172,4 +176,8 @@ func (g Group) Confirm(cmd *cli.Command, flagName, title, description string, de
 	).WithTheme(t).WithKeyMap(GetFormKeyMap()).Run()
 
 	return value, Group{prefix: "✱", indent: g.indent + 1}, err
+}
+
+func (g Group) Field(field huh.Field) error {
+	return huh.NewForm(huh.NewGroup(field)).WithTheme(GetFormTheme(g.indent)).Run()
 }

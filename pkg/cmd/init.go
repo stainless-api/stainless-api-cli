@@ -4,16 +4,20 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"io"
 	"io/fs"
-	"maps"
+	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"time"
 
+	cbuild "github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
+	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/term"
@@ -99,10 +103,6 @@ var initCommand = cli.Command{
 	HideHelpCommand: true,
 }
 
-func singleFieldForm(field huh.Field) error {
-	return huh.NewForm(huh.NewGroup(field)).WithTheme(console.GetFormTheme(0)).Run()
-}
-
 func handleInit(ctx context.Context, cmd *cli.Command) error {
 	cc := getAPICommandContext(cmd)
 
@@ -110,71 +110,23 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	// Check for existing workspace configuration
-	var existingConfig WorkspaceConfig
-	if found, err := existingConfig.Find(); err == nil && found {
-		title := fmt.Sprintf("Existing workspace detected: %s (project: %s)", existingConfig.ConfigPath, existingConfig.Project)
-		overwrite, err := console.Confirm(cmd, "", title, "Do you want to overwrite your existing workplace configuration?", true)
-		if err != nil || !overwrite {
-			return err
-		}
-		if err := os.Remove(existingConfig.ConfigPath); err != nil {
-			return err
-		}
-		existingConfig = WorkspaceConfig{}
+	if err := ensureExistingWorkspaceIsDeleted(cmd); err != nil {
+		return err
 	}
 
 	orgs := fetchUserOrgs(cc.client, ctx)
 
-	if len(orgs) == 0 {
-		signupURL := "https://app.stainless.com/signup?source=cli"
-		group := console.Info("Creating organization for user...")
-		group.Property("url", signupURL)
-
-		ok, err := console.Confirm(cmd, "browser", "Open browser?", "", true)
-		if err != nil {
-			return err
-		} else if ok && browser.OpenURL(signupURL) != nil {
-			console.Info("Opening browser...")
-		}
-
-		group.Progress("Waiting for organization to be created...")
-
-		for {
-			time.Sleep(5 * time.Second)
-			if orgs = fetchUserOrgs(cc.client, ctx); len(orgs) > 0 {
-				group.Success("Organization found! Continuing...")
-				break
-			}
-		}
-
-		console.Spacer()
+	orgs, err := ensureUserHasOrg(ctx, cmd, cc.client, orgs)
+	if err != nil {
+		return err
 	}
 
-	// Determine organization
-	var org string
-	switch {
-	case cmd.IsSet("org") && cmd.String("org") != "":
-		org = cmd.String("org")
-	case len(orgs) == 1:
-		org = orgs[0]
-	default:
-		err := singleFieldForm(huh.NewSelect[string]().
-			Title("org").
-			Description("Enter the organization for this project").
-			Options(huh.NewOptions(slices.Sorted(slices.Values(orgs))...)...).
-			Height(len(orgs) + 2).
-			Value(&org))
-		if err != nil {
-			return err
-		}
+	org, err := askSelectOrganization(cmd, orgs)
+	if err != nil {
+		return err
 	}
-	console.Property("org", org)
 
-	var projects []stainless.Project
-	if projectsResponse, err := cc.client.Projects.List(ctx, stainless.ProjectListParams{Org: stainless.String(org)}); err == nil {
-		projects = projectsResponse.Data
-	}
+	projects := fetchUserProjects(ctx, cc.client, org)
 
 	var targets []stainless.Target
 	project := ""
@@ -192,60 +144,136 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		if !projectExists {
-			confirm, err := console.Confirm(cmd, "", fmt.Sprintf("Project '%s' does not exist", project), "Do you want to create a new project?", true)
-			if err != nil {
-				return err
-			}
-			if !confirm {
-				return fmt.Errorf("project '%s' does not exist", project)
-			}
-			if project, targets, err = createProject(ctx, cmd, cc, org, project); err != nil {
-				return err
-			}
+			return fmt.Errorf("project '%s' does not exist", project)
 		}
-	} else if len(projects) > 0 {
-		options := make([]huh.Option[*stainless.Project], 0, len(projects)+1)
-		projects = slices.SortedFunc(slices.Values(projects), func(p1, p2 stainless.Project) int {
-			if p1.Slug < p2.Slug {
-				return -1
-			}
-			return 1
-		})
-		for _, project := range projects {
-			options = append(options, huh.NewOption(project.Slug, &project))
-		}
-		options = append(options, huh.NewOption[*stainless.Project]("New Project", &stainless.Project{}))
-
-		var picked *stainless.Project
-		err := singleFieldForm(huh.NewSelect[*stainless.Project]().
-			Title("project").
-			Description("Choose a project for this workspace").
-			Options(options...).
-			Value(&picked))
+	} else {
+		project, targets, err = askSelectProject(projects)
 		if err != nil {
 			return err
 		}
-		project = picked.Slug
-		targets = picked.Targets
-	}
 
-	if project == "" {
-		var err error
-		if project, targets, err = createProject(ctx, cmd, cc, org, ""); err != nil {
-			return err
+		// If project is empty, that means the user selected <New Project>
+		if project == "" {
+			var err error
+			if project, targets, err = askCreateProject(ctx, cmd, cc, org, ""); err != nil {
+				return err
+			}
+		} else {
+			console.Property("project", project)
 		}
 	}
-	console.Property("project", project)
+
+	console.Spacer()
 
 	return initializeWorkspace(ctx, cmd, cc, project, targets)
 }
 
-func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext, org, projectName string) (string, []stainless.Target, error) {
-	info := console.Info("Creating a new project")
+func ensureExistingWorkspaceIsDeleted(cmd *cli.Command) error {
+	var existingConfig WorkspaceConfig
+	if found, err := existingConfig.Find(); err == nil && found {
+		title := fmt.Sprintf("Existing workspace detected: %s (project: %s)", existingConfig.ConfigPath, existingConfig.Project)
+		overwrite, err := console.Confirm(cmd, "", title, "Do you want to overwrite your existing workplace configuration?", true)
+		if err != nil || !overwrite {
+			return err
+		}
+		if err := os.Remove(existingConfig.ConfigPath); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureUserHasOrg ensures the user has at least one organization, prompting to create one if needed
+func ensureUserHasOrg(ctx context.Context, cmd *cli.Command, client stainless.Client, orgs []string) ([]string, error) {
+	if len(orgs) == 0 {
+		signupURL := "https://app.stainless.com/signup?source=cli"
+		group := console.Info("Creating organization for user...")
+		group.Property("url", signupURL)
+
+		ok, err := console.Confirm(cmd, "browser", "Open browser?", "", true)
+		if err != nil {
+			return nil, err
+		} else if ok && browser.OpenURL(signupURL) != nil {
+			console.Info("Opening browser...")
+		}
+
+		group.Progress("Waiting for organization to be created...")
+
+		for {
+			time.Sleep(5 * time.Second)
+			if orgs = fetchUserOrgs(client, ctx); len(orgs) > 0 {
+				group.Success("Organization found! Continuing...")
+				break
+			}
+		}
+
+		console.Spacer()
+	}
+	return orgs, nil
+}
+
+func askSelectOrganization(cmd *cli.Command, orgs []string) (string, error) {
+	var org string
+	switch {
+	case cmd.IsSet("org") && cmd.String("org") != "":
+		org = cmd.String("org")
+	case len(orgs) == 1:
+		org = orgs[0]
+	default:
+		err := console.Field(huh.NewSelect[string]().
+			Title("org").
+			Description("Enter the organization for this project").
+			Options(huh.NewOptions(slices.Sorted(slices.Values(orgs))...)...).
+			Height(len(orgs) + 2).
+			Value(&org))
+		if err != nil {
+			return "", err
+		}
+	}
+	console.Property("org", org)
+	return org, nil
+}
+
+func fetchUserProjects(ctx context.Context, client stainless.Client, org string) []stainless.Project {
+	var projects []stainless.Project
+	if projectsResponse, err := client.Projects.List(ctx, stainless.ProjectListParams{Org: stainless.String(org)}); err == nil {
+		projects = projectsResponse.Data
+	}
+	return projects
+}
+
+// askSelectProject prompts the user to select from existing projects or create a new one
+func askSelectProject(projects []stainless.Project) (string, []stainless.Target, error) {
+	options := make([]huh.Option[*stainless.Project], 0, len(projects)+1)
+	options = append(options, huh.NewOption("<New Project>", &stainless.Project{}))
+	projects = slices.SortedFunc(slices.Values(projects), func(p1, p2 stainless.Project) int {
+		if p1.Slug < p2.Slug {
+			return -1
+		}
+		return 1
+	})
+	for _, project := range projects {
+		options = append(options, huh.NewOption(project.Slug, &project))
+	}
+
+	var picked *stainless.Project
+	err := console.Field(huh.NewSelect[*stainless.Project]().
+		Title("project").
+		Description("Choose or create a new project").
+		Options(options...).
+		Value(&picked))
+	if err != nil {
+		return "", nil, err
+	}
+	return picked.Slug, picked.Targets, nil
+}
+
+func askCreateProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext, org, projectName string) (string, []stainless.Target, error) {
+	info := console.Info("project (new)")
 
 	if projectName == "" {
-		err := singleFieldForm(huh.NewInput().
-			Title("project").
+		err := info.Field(huh.NewInput().
+			Title("name").
 			Description("Enter a display name for your new project").
 			Value(&projectName).
 			DescriptionFunc(func() string {
@@ -264,7 +292,7 @@ func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext,
 			return "", nil, err
 		}
 	}
-	info.Property("project", projectName)
+	info.Property("name", projectName)
 
 	// Determine targets
 	var selectedTargets []stainless.Target
@@ -284,7 +312,7 @@ func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext,
 		for i, target := range allTargets {
 			options[i] = huh.NewOption(target.DisplayName, stainless.Target(target.Name)).Selected(target.DefaultSelected)
 		}
-		err := singleFieldForm(huh.NewMultiSelect[stainless.Target]().
+		err := info.Field(huh.NewMultiSelect[stainless.Target]().
 			Title("targets").
 			Description("Select target languages for code generation").
 			Options(options...).
@@ -311,43 +339,22 @@ func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext,
 		Revision:    make(map[string]stainless.FileInputUnionParam),
 	}
 
-	var openAPISpecPath string
-	if cmd.IsSet("openapi-spec") {
-		openAPISpecPath = cmd.String("openapi-spec")
-	} else if path, err := chooseOpenAPISpecLocation(); err != nil {
+	// Get OpenAPI spec content
+	oasContent, err := askExistingOpenAPISpec(info)
+	if err != nil {
 		return "", nil, err
-	} else {
-		openAPISpecPath = path
-		cmd.Set("openapi-spec", openAPISpecPath)
 	}
 
+	// Determine format based on content (JSON starts with '{', otherwise assume YAML)
 	var oasName string
-	if strings.HasSuffix(openAPISpecPath, ".json") {
+	trimmedContent := strings.TrimSpace(oasContent)
+	if strings.HasPrefix(trimmedContent, "{") {
 		oasName = "openapi.json"
-	} else if strings.HasSuffix(openAPISpecPath, ".yaml") {
-		oasName = "openapi.yaml"
 	} else {
 		oasName = "openapi.yml"
 	}
 
-	var oasContent string
-	if fileBytes, err := os.ReadFile(openAPISpecPath); err == nil {
-		oasContent = string(fileBytes)
-		info.Property("openapi", "loaded from "+openAPISpecPath)
-	} else {
-		if strings.HasSuffix(openAPISpecPath, ".json") {
-			oasContent = exampleSpecJSON
-		} else {
-			oasContent = exampleSpecYAML
-		}
-		if err := os.MkdirAll(filepath.Dir(openAPISpecPath), 0755); err != nil {
-			return "", nil, fmt.Errorf("failed to create directory for OpenAPI spec: %w", err)
-		}
-		if err := os.WriteFile(openAPISpecPath, []byte(oasContent), 0644); err != nil {
-			return "", nil, fmt.Errorf("failed to write OpenAPI spec to %s: %w", openAPISpecPath, err)
-		}
-		info.Property("openapi", "placeholder stored at "+openAPISpecPath)
-	}
+	info.Property("openapi", "petstore.yml")
 
 	params.Revision[oasName] = stainless.FileInputUnionParam{
 		OfFileInputContent: &stainless.FileInputContentParam{
@@ -355,7 +362,7 @@ func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext,
 		},
 	}
 
-	_, err := cc.client.Projects.New(
+	_, err = cc.client.Projects.New(
 		ctx,
 		params,
 		option.WithMiddleware(cc.AsMiddleware()),
@@ -368,13 +375,15 @@ func createProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext,
 	return slug, selectedTargets, nil
 }
 
+// initializeWorkspace sets up the local workspace configuration and downloads files
 func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandContext, projectSlug string, targets []stainless.Target) error {
-	info := console.Info("Initializing workspace...")
+	group := console.Info("Configuring .stainless/workspace.json")
 
 	var openAPISpecPath string
 	if cmd.IsSet("openapi-spec") {
 		openAPISpecPath = cmd.String("openapi-spec")
-	} else if path, err := chooseOpenAPISpecLocation(); err != nil {
+		group.Property("openapi_spec", openAPISpecPath)
+	} else if path, err := askOpenAPISpecLocation(group); err != nil {
 		return err
 	} else {
 		openAPISpecPath = path
@@ -383,7 +392,8 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandCo
 	var stainlessConfigPath string
 	if cmd.IsSet("stainless-config") {
 		stainlessConfigPath = cmd.String("stainless-config")
-	} else if path, err := chooseStainlessConfigLocation(); err != nil {
+		group.Property("stainless_config", stainlessConfigPath)
+	} else if path, err := chooseStainlessConfigLocation(group); err != nil {
 		return err
 	} else {
 		stainlessConfigPath = path
@@ -391,16 +401,16 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandCo
 
 	config, err := NewWorkspaceConfig(projectSlug, openAPISpecPath, stainlessConfigPath)
 	if err != nil {
-		info.Error("Failed to create workspace config: %v", err)
+		group.Error("Failed to create workspace config: %v", err)
 		return fmt.Errorf("project created but workspace initialization failed: %v", err)
 	}
 
 	if err = config.Save(); err != nil {
-		info.Error("Failed to save workspace config: %v", err)
+		group.Error("Failed to save workspace config: %v", err)
 		return fmt.Errorf("project created but workspace initialization failed: %v", err)
 	}
 
-	info.Success("Workspace initialized at %s", config.ConfigPath)
+	group.Success("Workspace initialized at %s", config.ConfigPath)
 
 	console.Spacer()
 
@@ -418,17 +428,23 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandCo
 
 	console.Spacer()
 
-	// Wait for build and pull outputs
-	build, err := waitForLatestBuild(ctx, cc.client, projectSlug)
+	console.Info("Waiting for build to complete...")
+
+	// Try to get the latest build for this project (which should have been created automatically)
+	build, err := getLatestBuild(ctx, cc.client, projectSlug, "main")
 	if err != nil {
-		return fmt.Errorf("build wait failed: %v", err)
+		return fmt.Errorf("expected build to exist after project creation, but none found: %v", err)
 	}
 
-	if len(config.Targets) > 0 {
-		console.Spacer()
-		if err := pullConfiguredTargets(ctx, cc.client, *build, config); err != nil {
-			return fmt.Errorf("pull targets failed: %v", err)
-		}
+	downloadPaths := make(map[stainless.Target]string, len(config.Targets))
+	for targetName, targetConfig := range config.Targets {
+		downloadPaths[stainless.Target(targetName)] = targetConfig.OutputPath
+	}
+
+	model := buildCompletionModel{cbuild.NewModel(cc.client, ctx, *build, downloadPaths)}
+	_, err = tea.NewProgram(model).Run()
+	if err != nil {
+		console.Warn(err.Error())
 	}
 
 	console.Spacer()
@@ -459,51 +475,103 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandCo
 	return nil
 }
 
-// nameToSlug converts a project name to a URL-friendly slug
-func nameToSlug(name string) string {
-	// Convert to lowercase
-	slug := strings.ToLower(name)
+// askExistingOpenAPISpec provides the location of an _existing_ openapi spec. We first ask how the user would like
+// provide the openapi spec, either 1. from computer, 2. from url, or 3. from an example. Then, we should fan
+// out to the various options.
+func askExistingOpenAPISpec(group console.Group) (content string, err error) {
+	type Source string
+	const (
+		SourceComputer Source = "computer"
+		SourceURL      Source = "url"
+		SourceExample  Source = "example"
+	)
 
-	// Replace spaces and common punctuation with hyphens
-	replacements := []string{" ", "_", ".", "/", "\\"}
-	for _, r := range replacements {
-		slug = strings.ReplaceAll(slug, r, "-")
+	var source Source
+	err = group.Field(huh.NewSelect[Source]().
+		Title("openapi_spec").
+		Description("How would you like to provide your OpenAPI spec?").
+		Options(
+			huh.NewOption("From a file on my computer", SourceComputer),
+			huh.NewOption("From a URL", SourceURL),
+			huh.NewOption("Use an example", SourceExample),
+		).
+		Value(&source))
+	if err != nil {
+		return "", err
 	}
 
-	// Remove any characters that aren't alphanumeric or hyphens
-	var result strings.Builder
-	for _, r := range slug {
-		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
-			result.WriteRune(r)
-		}
-	}
-	slug = result.String()
-
-	// Remove multiple consecutive hyphens
-	for strings.Contains(slug, "--") {
-		slug = strings.ReplaceAll(slug, "--", "-")
-	}
-
-	// Trim hyphens from start and end
-	return strings.Trim(slug, "-")
-}
-
-func findFile(name string) string {
-	var foundPath string
-	_ = filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
+	switch source {
+	case SourceComputer:
+		// Use file picker to select file
+		var filePath string
+		err = group.Field(huh.NewFilePicker().
+			Title("openapi_spec (file)").
+			Description("Select your OpenAPI spec file").
+			CurrentDirectory(".").
+			AllowedTypes([]string{".json", ".yaml", ".yml"}).
+			Value(&filePath))
 		if err != nil {
-			return err
+			return "", err
 		}
-		if !d.IsDir() && d.Name() == name {
-			foundPath = path
-			return filepath.SkipAll
+
+		if filePath == "" {
+			return "", fmt.Errorf("no file selected")
 		}
-		return nil
-	})
-	return foundPath
+
+		// Read the file
+		fileBytes, err := os.ReadFile(filePath)
+		if err != nil {
+			return "", fmt.Errorf("failed to read OpenAPI spec from %s: %w", filePath, err)
+		}
+
+		return string(fileBytes), nil
+
+	case SourceURL:
+		// Ask for URL
+		var urlStr string
+		err = group.Field(huh.NewInput().
+			Title("openapi_spec (url)").
+			Description("Enter the URL to your OpenAPI spec file").
+			Value(&urlStr).
+			Validate(func(s string) error {
+				if strings.TrimSpace(s) == "" {
+					return fmt.Errorf("URL is required")
+				}
+				return nil
+			}))
+		if err != nil {
+			return "", err
+		}
+
+		// Fetch content from URL
+		resp, err := http.Get(urlStr)
+		if err != nil {
+			return "", fmt.Errorf("failed to fetch OpenAPI spec from URL: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return "", fmt.Errorf("failed to fetch OpenAPI spec: HTTP %d", resp.StatusCode)
+		}
+
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return "", fmt.Errorf("failed to read response body: %w", err)
+		}
+
+		return string(bodyBytes), nil
+
+	case SourceExample:
+		return exampleSpecJSON, nil
+
+	default:
+		group.Property("openapi_spec", "example.yml")
+		return "", fmt.Errorf("unknown source: %s", source)
+	}
 }
 
-func chooseOpenAPISpecLocation() (string, error) {
+// askOpenAPISpecLocation should ask where to store the OpenAPI spec on disk.
+func askOpenAPISpecLocation(group console.Group) (string, error) {
 	commonOpenAPIFiles := []string{
 		"openapi.json", "openapi.yml", "openapi.yaml",
 		"api.yml", "api.yaml", "spec.yml", "spec.yaml",
@@ -518,9 +586,9 @@ func chooseOpenAPISpecLocation() (string, error) {
 	}
 
 	path := suggestion
-	err := singleFieldForm(huh.NewInput().
-		Title("OpenAPI specification location").
-		Description("Path where the OpenAPI specification file should be stored").
+	err := group.Field(huh.NewInput().
+		Title("openapi_spec").
+		Description("Path to where the OpenAPI spec file should be stored").
 		Value(&path).
 		Placeholder(suggestion))
 
@@ -528,11 +596,11 @@ func chooseOpenAPISpecLocation() (string, error) {
 		return "", err
 	}
 
-	console.Property("OpenAPI file", path)
+	group.Property("openapi_spec", path)
 	return path, nil
 }
 
-func chooseStainlessConfigLocation() (string, error) {
+func chooseStainlessConfigLocation(group console.Group) (string, error) {
 	commonStainlessFiles := []string{
 		"openapi.stainless.yml", "openapi.stainless.yaml",
 		"stainless.yml", "stainless.yaml",
@@ -547,8 +615,8 @@ func chooseStainlessConfigLocation() (string, error) {
 	}
 
 	path := suggestion
-	err := singleFieldForm(huh.NewInput().
-		Title("Stainless config location").
+	err := group.Field(huh.NewInput().
+		Title("stainless_config").
 		Description("Path where the Stainless config file should be stored").
 		Value(&path).
 		Placeholder(suggestion))
@@ -557,19 +625,20 @@ func chooseStainlessConfigLocation() (string, error) {
 		return "", err
 	}
 
-	console.Property("Stainless config file", path)
+	group.Property("stainless_config", path)
 	return path, nil
 }
 
+// downloadConfigFiles downloads the OpenAPI spec and Stainless config from the API
 func downloadConfigFiles(ctx context.Context, client stainless.Client, config WorkspaceConfig) error {
 	if config.StainlessConfig == "" {
 		return fmt.Errorf("No destination for the stainless configuration file")
 	}
 	if config.OpenAPISpec == "" {
-		return fmt.Errorf("No destination for the OpenAPI specification file")
+		return fmt.Errorf("No destination for the OpenAPI spec file")
 	}
 
-	group := console.Info("Downloading Stainless config...")
+	group := console.Info("Downloading configuration files")
 	params := stainless.ProjectConfigGetParams{
 		Project: stainless.String(config.Project),
 		Include: stainless.String("openapi"),
@@ -579,8 +648,6 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, config Wo
 	if err != nil {
 		return fmt.Errorf("config download failed: %v", err)
 	}
-
-	group.Property("Available config files:", strings.Join(slices.Collect(maps.Keys(*configRes)), ", "))
 
 	// Helper function to write a file with confirmation if it exists
 	writeFileWithConfirm := func(path string, content []byte, description string) error {
@@ -643,7 +710,7 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, config Wo
 		}
 
 		// TODO: we should warn or confirm if the downloaded file has a different file extension than the destination filename
-		if err := writeFileWithConfirm(config.OpenAPISpec, []byte(openAPISpec), "OpenAPI specification"); err != nil {
+		if err := writeFileWithConfirm(config.OpenAPISpec, []byte(openAPISpec), "OpenAPI spec"); err != nil {
 			return err
 		}
 	}
@@ -660,10 +727,10 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 	group := console.Info("Configuring targets...")
 
 	// Initialize target configs with default paths
-	targetConfigs := make(map[string]*TargetConfig, len(targets))
+	targetConfigs := make(map[stainless.Target]*TargetConfig, len(targets))
 	for _, target := range targets {
 		defaultPath := filepath.Join("sdks", fmt.Sprintf("%s-%s", slug, target))
-		targetConfigs[string(target)] = &TargetConfig{OutputPath: defaultPath}
+		targetConfigs[target] = &TargetConfig{OutputPath: defaultPath}
 	}
 
 	// Create form fields for each target
@@ -671,7 +738,7 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 	fields := make([]huh.Field, 0, len(targets))
 
 	for _, target := range targets {
-		pathVar := targetConfigs[string(target)].OutputPath
+		pathVar := targetConfigs[target].OutputPath
 		pathVars[target] = &pathVar
 		fields = append(fields, huh.NewInput().
 			Title(fmt.Sprintf("%s output path", target)).
@@ -689,9 +756,9 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 	// Update config with user-provided paths
 	for target, pathVar := range pathVars {
 		if path := strings.TrimSpace(*pathVar); path != "" {
-			targetConfigs[string(target)] = &TargetConfig{OutputPath: path}
+			targetConfigs[target] = &TargetConfig{OutputPath: path}
 		} else {
-			delete(targetConfigs, string(target))
+			delete(targetConfigs, target)
 		}
 	}
 
@@ -703,57 +770,20 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 	}
 
 	for target, targetConfig := range targetConfigs {
-		group.Property(target+".output_path", targetConfig.OutputPath)
+		group.Property(string(target)+".output_path", targetConfig.OutputPath)
 	}
 
 	group.Success("Targets configured to output locally")
 	return nil
 }
 
-// waitForLatestBuild waits for the latest build to complete
-func waitForLatestBuild(ctx context.Context, client stainless.Client, slug string) (*stainless.Build, error) {
-	waitGroup := console.Info("Waiting for build to complete...")
-
-	// Try to get the latest build for this project (which should have been created automatically)
-	build, err := getLatestBuild(ctx, client, slug, "main")
-	if err != nil {
-		return nil, fmt.Errorf("expected build to exist after project creation, but none found: %v", err)
-	}
-
-	waitGroup.Property("build_id", build.ID)
-	return waitForBuildCompletion(ctx, client, build, &waitGroup)
-}
-
-// pullConfiguredTargets pulls build outputs for configured targets
-func pullConfiguredTargets(ctx context.Context, client stainless.Client, build stainless.Build, config WorkspaceConfig) error {
-	if len(config.Targets) == 0 {
-		return nil
-	}
-
-	pullGroup := console.Info("Pulling build outputs...")
-
-	// Create target paths map from workspace config
-	targetPaths := make(map[string]string, len(config.Targets))
-	for targetName, targetConfig := range config.Targets {
-		targetPaths[targetName] = targetConfig.OutputPath
-	}
-
-	if err := pullBuildOutputs(ctx, client, build, targetPaths, &pullGroup); err != nil {
-		pullGroup.Error("Failed to pull outputs: %v", err)
-		return err
-	}
-
-	return nil
-}
-
 // TargetInfo represents a target with its display name and default selection
 type TargetInfo struct {
 	DisplayName     string
-	Name            string
+	Name            stainless.Target
 	DefaultSelected bool
 }
 
-// getAllTargetInfo returns all available targets with their display names
 func getAllTargetInfo() []TargetInfo {
 	return []TargetInfo{
 		{"TypeScript", "typescript", false},
@@ -770,7 +800,7 @@ func getAllTargetInfo() []TargetInfo {
 	}
 }
 
-func isValidTarget(targetInfos []TargetInfo, name string) bool {
+func isValidTarget(targetInfos []TargetInfo, name stainless.Target) bool {
 	for _, info := range targetInfos {
 		if info.Name == name {
 			return true
@@ -779,11 +809,10 @@ func isValidTarget(targetInfos []TargetInfo, name string) bool {
 	return false
 }
 
-// targetInfoToOptions converts TargetInfo slice to huh.Options
 func targetInfoToOptions(targets []TargetInfo) []huh.Option[string] {
 	options := make([]huh.Option[string], len(targets))
 	for i, target := range targets {
-		options[i] = huh.NewOption(target.DisplayName, target.Name).Selected(target.DefaultSelected)
+		options[i] = huh.NewOption(target.DisplayName, string(target.Name)).Selected(target.DefaultSelected)
 	}
 	return options
 }
@@ -820,8 +849,8 @@ func getAvailableTargetInfo(ctx context.Context, client stainless.Client, projec
 		return targetInfo
 	}
 
-	buildTargets := getBuildTargetInfo(*build)
-	if len(buildTargets) == 0 {
+	buildObj := stainlessutils.NewBuild(*build)
+	if len(buildObj.Languages()) == 0 {
 		return targetInfo
 	}
 
@@ -831,11 +860,56 @@ func getAvailableTargetInfo(ctx context.Context, client stainless.Client, projec
 				return false
 			}
 		}
-		for _, target := range buildTargets {
-			if target.name == item.Name {
+		for _, target := range buildObj.Languages() {
+			if target == item.Name {
 				return false
 			}
 		}
 		return true
 	})
+}
+
+// nameToSlug converts a project name to a URL-friendly slug
+func nameToSlug(name string) string {
+	// Convert to lowercase
+	slug := strings.ToLower(name)
+
+	// Replace spaces and common punctuation with hyphens
+	replacements := []string{" ", "_", ".", "/", "\\"}
+	for _, r := range replacements {
+		slug = strings.ReplaceAll(slug, r, "-")
+	}
+
+	// Remove any characters that aren't alphanumeric or hyphens
+	var result strings.Builder
+	for _, r := range slug {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
+			result.WriteRune(r)
+		}
+	}
+	slug = result.String()
+
+	// Remove multiple consecutive hyphens
+	for strings.Contains(slug, "--") {
+		slug = strings.ReplaceAll(slug, "--", "-")
+	}
+
+	// Trim hyphens from start and end
+	return strings.Trim(slug, "-")
+}
+
+// findFile searches for a file by name in the current directory tree
+func findFile(name string) string {
+	var foundPath string
+	_ = filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() && d.Name() == name {
+			foundPath = path
+			return filepath.SkipAll
+		}
+		return nil
+	})
+	return foundPath
 }

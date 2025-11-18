@@ -3,22 +3,17 @@
 package cmd
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
-	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
+	cbuild "github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
+	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
-	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 
@@ -27,21 +22,15 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-// BuildTargetInfo holds information about a build target
-type BuildTargetInfo struct {
-	name   string
-	status stainless.BuildTargetStatus
-}
-
 // parseTargetPaths processes target flags to extract target:path syntax with workspace config
 // Returns a map of target names to their custom paths
-func parseTargetPaths(workspaceConfig WorkspaceConfig) map[string]string {
-	targetPaths := make(map[string]string)
+func parseTargetPaths(workspaceConfig WorkspaceConfig) map[stainless.Target]string {
+	targetPaths := make(map[stainless.Target]string)
 
 	// Check workspace configuration for target paths if loaded
 	for targetName, targetConfig := range workspaceConfig.Targets {
 		if targetConfig.OutputPath != "" {
-			targetPaths[targetName] = targetConfig.OutputPath
+			targetPaths[stainless.Target(targetName)] = targetConfig.OutputPath
 		}
 	}
 
@@ -65,7 +54,7 @@ func parseTargetPaths(workspaceConfig WorkspaceConfig) map[string]string {
 		cleanTargets = append(cleanTargets, cleanTarget)
 		if path != "" {
 			// Command line target:path overrides workspace configuration
-			targetPaths[cleanTarget] = path
+			targetPaths[stainless.Target(cleanTarget)] = path
 		}
 	}
 
@@ -105,125 +94,6 @@ func processSingleTarget(target string) (string, string) {
 	targetName := strings.TrimSpace(parts[0])
 	targetPath := strings.TrimSpace(parts[1])
 	return targetName, targetPath
-}
-
-// getBuildTargetInfo extracts completed targets from a build response
-func getBuildTargetInfo(buildRes stainless.Build) []BuildTargetInfo {
-	targets := []BuildTargetInfo{}
-
-	// Check each target and add it to the list if it's completed or in postgen
-	if buildRes.Targets.JSON.Node.Valid() {
-		targets = append(targets, BuildTargetInfo{
-			name:   "node",
-			status: buildRes.Targets.Node.Status,
-		})
-	}
-	if buildRes.Targets.JSON.Typescript.Valid() {
-		targets = append(targets, BuildTargetInfo{
-			name:   "typescript",
-			status: buildRes.Targets.Typescript.Status,
-		})
-	}
-	if buildRes.Targets.JSON.Python.Valid() {
-		targets = append(targets, BuildTargetInfo{
-			name:   "python",
-			status: buildRes.Targets.Python.Status,
-		})
-	}
-	if buildRes.Targets.JSON.Go.Valid() {
-		targets = append(targets, BuildTargetInfo{
-			name:   "go",
-			status: buildRes.Targets.Go.Status,
-		})
-	}
-	if buildRes.Targets.JSON.Cli.Valid() {
-		targets = append(targets, BuildTargetInfo{
-			name:   "cli",
-			status: buildRes.Targets.Cli.Status,
-		})
-	}
-	if buildRes.Targets.JSON.Kotlin.Valid() {
-		targets = append(targets, BuildTargetInfo{
-			name:   "kotlin",
-			status: buildRes.Targets.Kotlin.Status,
-		})
-	}
-	if buildRes.Targets.JSON.Java.Valid() {
-		targets = append(targets, BuildTargetInfo{
-			name:   "java",
-			status: buildRes.Targets.Java.Status,
-		})
-	}
-	if buildRes.Targets.JSON.Ruby.Valid() {
-		targets = append(targets, BuildTargetInfo{
-			name:   "ruby",
-			status: buildRes.Targets.Ruby.Status,
-		})
-	}
-	if buildRes.Targets.JSON.Terraform.Valid() {
-		targets = append(targets, BuildTargetInfo{
-			name:   "terraform",
-			status: buildRes.Targets.Terraform.Status,
-		})
-	}
-
-	return targets
-}
-
-// isTargetCompleted checks if a target is in a completed state
-func isTargetCompleted(status stainless.BuildTargetStatus) bool {
-	return status == "completed" || status == "postgen"
-}
-
-// waitForBuildCompletion polls a build until completion and shows progress updates
-func waitForBuildCompletion(ctx context.Context, client stainless.Client, build *stainless.Build, waitGroup *console.Group) (*stainless.Build, error) {
-	ticker := time.NewTicker(3 * time.Second)
-	defer ticker.Stop()
-
-	targetProgress := make(map[string]string)
-
-	for {
-		targets := getBuildTargetInfo(*build)
-		allCompleted := true
-
-		for _, target := range targets {
-			prevStatus := targetProgress[target.name]
-
-			if string(target.status) != prevStatus {
-				targetProgress[target.name] = string(target.status)
-
-				if isTargetCompleted(target.status) {
-					waitGroup.Success("%s: %s", target.name, "completed")
-				} else if target.status == "failed" {
-					waitGroup.Error("%s: %s", target.name, string(target.status))
-				}
-			}
-
-			if !isTargetCompleted(target.status) && target.status != "failed" {
-				allCompleted = false
-			}
-		}
-
-		if allCompleted && len(targets) > 0 {
-			if allCompleted {
-				waitGroup.Success("Build completed successfully")
-				return build, nil
-			}
-		}
-
-		select {
-		case <-ticker.C:
-			var err error
-			build, err = client.Builds.Get(ctx, build.ID)
-			if err != nil {
-				waitGroup.Error("Error polling build status: %v", err)
-				return nil, fmt.Errorf("build polling failed: %v", err)
-			}
-
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		}
-	}
 }
 
 var buildsCreate = cli.Command{
@@ -478,8 +348,6 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	// Parse target paths using cached workspace config
-	targetPaths := parseTargetPaths(cc.workspaceConfig)
 	buildGroup := console.Info("Creating build...")
 	params := stainless.BuildNewParams{}
 	build, err := cc.client.Builds.New(
@@ -493,25 +361,18 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 	buildGroup.Property("build_id", build.ID)
 
+	downloadPaths := parseTargetPaths(cc.workspaceConfig)
+
 	if cmd.Bool("wait") {
-		waitGroup := console.Info("Waiting for latest build to complete...")
-
-		build, err = waitForBuildCompletion(context.TODO(), cc.client, build, &waitGroup)
+		console.Spacer()
+		model := tea.Model(buildCompletionModel{cbuild.NewModel(cc.client, ctx, *build, downloadPaths)})
+		model, err = tea.NewProgram(model).Run()
 		if err != nil {
-			return err
+			console.Warn(err.Error())
 		}
-
-		// Pull if explicitly set via --pull flag, or if workspace has configured targets and --pull wasn't explicitly set to false
-		shouldPull := cmd.Bool("pull") || (cc.HasWorkspaceTargets() && !cmd.IsSet("pull"))
-
-		if shouldPull {
-			pullGroup := console.Info("Downloading build outputs...")
-			if err := pullBuildOutputs(context.TODO(), cc.client, *build, targetPaths, &pullGroup); err != nil {
-				pullGroup.Error("Failed to download outputs: %v", err)
-			} else {
-				pullGroup.Success("Successfully downloaded all outputs")
-			}
-		}
+		b := model.(buildCompletionModel).Build
+		build = &b.Build
+		console.Spacer()
 	}
 
 	data := gjson.Parse(string(build.RawJSON()))
@@ -532,6 +393,32 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	return nil
+}
+
+type buildCompletionModel struct {
+	Build cbuild.Model
+}
+
+func (c buildCompletionModel) Init() tea.Cmd {
+	return c.Build.Init()
+}
+
+func (c buildCompletionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	c.Build, cmd = c.Build.Update(msg)
+
+	if stainlessutils.NewBuild(c.Build.Build).IsCompleted() {
+		return c, tea.Sequence(
+			cmd,
+			tea.Quit,
+		)
+	}
+
+	return c, cmd
+}
+
+func (c buildCompletionModel) View() string {
+	return c.Build.View()
 }
 
 func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
@@ -559,275 +446,6 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
 	return ShowJSON("builds retrieve", json, format, transform)
-}
-
-// pullBuildOutputs pulls the outputs for a completed build
-func pullBuildOutputs(ctx context.Context, client stainless.Client, res stainless.Build, targetPaths map[string]string, pullGroup *console.Group) error {
-	// Get all targets
-	allTargets := getBuildTargetInfo(res)
-
-	// Filter to only completed targets without fatal conclusions
-	var targets []string
-	for _, target := range allTargets {
-		if isTargetCompleted(target.status) && !hasFailedCommitStep(res, stainless.Target(target.name)) {
-			targets = append(targets, target.name)
-		}
-	}
-
-	if len(targets) == 0 {
-		return fmt.Errorf("no completed targets found in build %s", res.ID)
-	}
-
-	// Pull each target
-	for _, target := range targets {
-		// Use custom path if specified, otherwise use default
-		var targetDir string
-		if customPath, exists := targetPaths[target]; exists {
-			targetDir = customPath
-		}
-
-		targetGroup := pullGroup.Progress("downloading %s → %s", target, targetDir)
-
-		// Get the output details
-		outputRes, err := client.Builds.TargetOutputs.Get(
-			ctx,
-			stainless.BuildTargetOutputGetParams{
-				BuildID: res.ID,
-				Target:  stainless.BuildTargetOutputGetParamsTarget(target),
-				Type:    "source",
-				Output:  "git",
-			},
-		)
-		if err != nil {
-			targetGroup.Error("Failed to get output details for %s: %v", target, err)
-			continue
-		}
-
-		// Handle based on output type
-		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, targetDir, &targetGroup)
-		if err != nil {
-			targetGroup.Error("Failed to pull %s: %v", target, err)
-			continue
-		}
-
-		// Get the appropriate success message based on output type
-		if outputRes.Output == "git" {
-			// Extract repository name from git URL for success message
-			repoName := filepath.Base(outputRes.URL)
-			if strings.HasSuffix(repoName, ".git") {
-				repoName = strings.TrimSuffix(repoName, ".git")
-			}
-			if repoName == "" || repoName == "." || repoName == "/" {
-				repoName = "repository"
-			}
-			targetGroup.Success("Successfully downloaded")
-		} else {
-			filename := extractFilenameFromURL(outputRes.URL)
-			targetGroup.Success("Successfully downloaded %s", filename)
-		}
-	}
-
-	return nil
-}
-
-// hasFailedCommitStep checks if a target has a fatal commit conclusion
-func hasFailedCommitStep(build stainless.Build, target stainless.Target) bool {
-	buildObj := stainlessutils.NewBuild(&build)
-	buildTarget := buildObj.BuildTarget(target)
-	if buildTarget == nil {
-		return false
-	}
-
-	status, _, conclusion := buildTarget.StepInfo("commit")
-	if status == "completed" && conclusion == "fatal" {
-		return true
-	}
-
-	return false
-}
-
-// stripHTTPAuth removes HTTP authentication credentials from a URL for display purposes
-func stripHTTPAuth(urlStr string) string {
-	parsedURL, err := url.Parse(urlStr)
-	if err != nil {
-		return urlStr
-	}
-
-	// Remove user info (username:password)
-	parsedURL.User = nil
-	return parsedURL.String()
-}
-
-// extractFilenameFromURL extracts the filename from just the URL path (without query parameters)
-func extractFilenameFromURL(urlStr string) string {
-	// Parse URL to remove query parameters
-	parsedURL, err := url.Parse(urlStr)
-	if err != nil {
-		// If URL parsing fails, use the original approach
-		filename := filepath.Base(urlStr)
-		if filename == "." || filename == "/" || filename == "" {
-			return "download"
-		}
-		return filename
-	}
-
-	// Extract filename from URL path (without query parameters)
-	filename := filepath.Base(parsedURL.Path)
-	if filename == "." || filename == "/" || filename == "" {
-		return "download"
-	}
-
-	return filename
-}
-
-// extractFilename extracts the filename from a URL and HTTP response headers
-func extractFilename(urlStr string, resp *http.Response) string {
-	// First, try to get filename from Content-Disposition header
-	if contentDisp := resp.Header.Get("Content-Disposition"); contentDisp != "" {
-		// Parse Content-Disposition header for filename
-		// Format: attachment; filename="example.txt" or attachment; filename=example.txt
-		if strings.Contains(contentDisp, "filename=") {
-			parts := strings.Split(contentDisp, "filename=")
-			if len(parts) > 1 {
-				filename := strings.TrimSpace(parts[1])
-				// Remove quotes if present
-				filename = strings.Trim(filename, `"`)
-				// Remove any additional parameters after semicolon
-				if idx := strings.Index(filename, ";"); idx != -1 {
-					filename = filename[:idx]
-				}
-				filename = strings.TrimSpace(filename)
-				if filename != "" {
-					return filename
-				}
-			}
-		}
-	}
-
-	// Fallback to URL path parsing
-	return extractFilenameFromURL(urlStr)
-}
-
-// pullOutput handles downloading or cloning a build target output
-func pullOutput(output, url, ref, targetDir string, targetGroup *console.Group) error {
-	switch output {
-	case "git":
-		// Extract repository name from git URL for directory name
-		// Handle formats like:
-		// - https://github.com/owner/repo.git
-		// - https://github.com/owner/repo
-		// - git@github.com:owner/repo.git
-		if targetDir == "" {
-			targetDir = filepath.Base(url)
-		}
-
-		// Remove .git suffix if present
-		targetDir = strings.TrimSuffix(targetDir, ".git")
-
-		// Handle empty or invalid names
-		if targetDir == "" || targetDir == "." || targetDir == "/" {
-			targetDir = "repository"
-		}
-
-		// Check if directory exists
-		if _, err := os.Stat(targetDir); err == nil {
-			// Check if it's a git directory
-			if _, err := os.Stat(filepath.Join(targetDir, ".git")); err != nil {
-				// Not a git directory, return error
-				return fmt.Errorf("directory %s already exists and is not a git repository", targetDir)
-			}
-		} else {
-			// Directory doesn't exist, create it and initialize git repo
-			if err := os.MkdirAll(targetDir, 0755); err != nil {
-				return fmt.Errorf("failed to create directory %s: %v", targetDir, err)
-			}
-
-			// Initialize git repository
-			cmd := exec.Command("git", "-C", targetDir, "init")
-			var stderr bytes.Buffer
-			cmd.Stdout = nil
-			cmd.Stderr = &stderr
-			if err := cmd.Run(); err != nil {
-				return fmt.Errorf("git init failed: %v\nGit error: %s", err, stderr.String())
-			}
-		}
-
-		{
-			// Check if origin remote exists, add it if not present
-			cmd := exec.Command("git", "-C", targetDir, "remote", "get-url", "origin")
-			var stderr bytes.Buffer
-			cmd.Stdout = nil
-			cmd.Stderr = &stderr
-			if err := cmd.Run(); err != nil {
-				// Origin doesn't exist, add it with stripped auth
-				targetGroup.Property("adding remote origin", stripHTTPAuth(url))
-				addCmd := exec.Command("git", "-C", targetDir, "remote", "add", "origin", stripHTTPAuth(url))
-				var addStderr bytes.Buffer
-				addCmd.Stdout = nil
-				addCmd.Stderr = &addStderr
-				if err := addCmd.Run(); err != nil {
-					return fmt.Errorf("git remote add failed: %v\nGit error: %s", err, addStderr.String())
-				}
-			}
-
-			targetGroup.Property("fetching from", stripHTTPAuth(url))
-			cmd = exec.Command("git", "-C", targetDir, "fetch", url, ref)
-			cmd.Stdout = nil
-			cmd.Stderr = &stderr
-			if err := cmd.Run(); err != nil {
-				return fmt.Errorf("git fetch failed: %v\nGit error: %s", err, stderr.String())
-			}
-		}
-
-		// Checkout the specific ref
-		{
-			targetGroup.Property("checking out ref", ref)
-			cmd := exec.Command("git", "-C", targetDir, "checkout", ref)
-			var stderr bytes.Buffer
-			cmd.Stdout = nil // Suppress git checkout output
-			cmd.Stderr = &stderr
-			if err := cmd.Run(); err != nil {
-				return fmt.Errorf("git checkout failed: %v\nGit error: %s", err, stderr.String())
-			}
-		}
-
-	case "url":
-		// Download the file directly to current directory
-		targetGroup.Property("downloading url", url)
-
-		// Download the file
-		resp, err := http.Get(url)
-		if err != nil {
-			return fmt.Errorf("failed to download file: %v", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("download failed with status: %s", resp.Status)
-		}
-
-		// Extract filename from URL and Content-Disposition header
-		filename := extractFilename(url, resp)
-		targetGroup.Property("downloaded", filename)
-
-		// Create the output file in current directory
-		outFile, err := os.Create(filename)
-		if err != nil {
-			return fmt.Errorf("failed to create output file: %v", err)
-		}
-		defer outFile.Close()
-
-		// Copy the response body to the output file
-		_, err = io.Copy(outFile, resp.Body)
-		if err != nil {
-			return fmt.Errorf("failed to save downloaded file: %v", err)
-		}
-
-	default:
-		return fmt.Errorf("unsupported output type: %s. Supported types are 'git' and 'url'", output)
-	}
-
-	return nil
 }
 
 func handleBuildsList(ctx context.Context, cmd *cli.Command) error {

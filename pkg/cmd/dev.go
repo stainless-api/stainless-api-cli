@@ -12,261 +12,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/help"
-	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
+	"github.com/stainless-api/stainless-api-cli/pkg/components/dev"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
-	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
-	"github.com/stainless-api/stainless-api-cli/pkg/stainlessviews"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
-
-var ErrUserCancelled = errors.New("user cancelled")
-
-// BuildModel represents the bubbletea model for build monitoring
-type BuildModel struct {
-	start       func() (*stainless.Build, error)
-	started     time.Time
-	ended       *time.Time
-	build       *stainless.Build
-	branch      string
-	help        help.Model
-	diagnostics []stainless.BuildDiagnostic
-	downloads   map[stainless.Target]stainlessviews.DownloadStatus
-	view        string
-
-	cc          *apiCommandContext
-	ctx         context.Context
-	err         error
-	isCompleted bool
-}
-
-type tickMsg time.Time
-type fetchBuildMsg *stainless.Build
-type fetchDiagnosticsMsg []stainless.BuildDiagnostic
-type errorMsg error
-type downloadMsg stainless.Target
-type fileChangeMsg struct{}
-
-func NewBuildModel(cc *apiCommandContext, ctx context.Context, branch string, fn func() (*stainless.Build, error)) BuildModel {
-	return BuildModel{
-		start:   fn,
-		started: time.Now(),
-		cc:      cc,
-		ctx:     ctx,
-		branch:  branch,
-		help:    help.New(),
-	}
-}
-
-func (m BuildModel) Init() tea.Cmd {
-	return tea.Batch(
-		tea.Tick(time.Second, func(t time.Time) tea.Msg {
-			return tickMsg(t)
-		}),
-		func() tea.Msg {
-			build, err := m.start()
-			if err != nil {
-				return errorMsg(err)
-			}
-			return fetchBuildMsg(build)
-		},
-	)
-}
-
-func (m BuildModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	cmds := []tea.Cmd{}
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.help.Width = msg.Width
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c":
-			m.err = ErrUserCancelled
-			cmds = append(cmds, tea.Quit)
-		case "enter":
-			if m.cc.cmd.Bool("watch") {
-				cmds = append(cmds, tea.Quit)
-			}
-		}
-
-	case downloadMsg:
-		download := m.downloads[stainless.Target(msg)]
-		download.Status = "completed"
-		m.downloads[stainless.Target(msg)] = download
-
-	case tickMsg:
-		if m.build != nil {
-			cmds = append(cmds, m.fetchBuildStatus())
-		}
-		m.getBuildDuration()
-		cmds = append(cmds, tea.Tick(time.Second, func(t time.Time) tea.Msg {
-			return tickMsg(t)
-		}))
-
-	case fetchBuildMsg:
-		if m.build == nil {
-			m.build = msg
-			m.downloads = make(map[stainless.Target]stainlessviews.DownloadStatus)
-			for targetName, targetConfig := range m.cc.workspaceConfig.Targets {
-				m.downloads[stainless.Target(targetName)] = stainlessviews.DownloadStatus{
-					Status: "not started",
-					Path:   targetConfig.OutputPath,
-				}
-			}
-			cmds = append(cmds, m.updateView("header"))
-		}
-
-		m.build = msg
-		buildObj := stainlessutils.NewBuild(m.build)
-		if !m.isCompleted {
-			// Check if all commit steps are completed
-			allCommitsCompleted := true
-			for _, target := range buildObj.Languages() {
-				buildTarget := buildObj.BuildTarget(target)
-				if buildTarget != nil && !buildTarget.IsCommitCompleted() {
-					allCommitsCompleted = false
-					break
-				}
-			}
-			if allCommitsCompleted {
-				m.isCompleted = true
-				cmds = append(cmds, m.fetchDiagnostics())
-			}
-		}
-		languages := buildObj.Languages()
-		for _, target := range languages {
-			buildTarget := buildObj.BuildTarget(target)
-			if buildTarget == nil {
-				continue
-			}
-			status, _, conclusion := buildTarget.StepInfo("commit")
-			if status == "completed" && conclusion != "fatal" {
-				if download, ok := m.downloads[target]; ok && download.Status == "not started" {
-					download.Status = "started"
-					cmds = append(cmds, m.downloadTarget(target))
-					m.downloads[target] = download
-				}
-			}
-		}
-
-	case fetchDiagnosticsMsg:
-		if m.diagnostics == nil {
-			m.diagnostics = msg
-			cmds = append(cmds, m.updateView("diagnostics"))
-		}
-
-	case errorMsg:
-		m.err = msg
-		cmds = append(cmds, tea.Quit)
-
-	case fileChangeMsg:
-		// File change detected, exit with success
-		cmds = append(cmds, tea.Quit)
-	}
-	return m, tea.Sequence(cmds...)
-}
-
-func (m BuildModel) ShortHelp() []key.Binding {
-	if m.cc.cmd.Bool("watch") {
-		return []key.Binding{
-			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit")),
-			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "rebuild")),
-		}
-	} else {
-		return []key.Binding{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}
-	}
-}
-
-func (m BuildModel) FullHelp() [][]key.Binding {
-	if m.cc.cmd.Bool("watch") {
-		return [][]key.Binding{{
-			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit")),
-			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "rebuild")),
-		}}
-	} else {
-		return [][]key.Binding{{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}}
-	}
-}
-
-func (m BuildModel) downloadTarget(target stainless.Target) tea.Cmd {
-	return func() tea.Msg {
-		if m.build == nil {
-			return errorMsg(fmt.Errorf("no current build to download target from"))
-		}
-		params := stainless.BuildTargetOutputGetParams{
-			BuildID: m.build.ID,
-			Target:  stainless.BuildTargetOutputGetParamsTarget(target),
-			Type:    "source",
-			Output:  "git",
-		}
-		outputRes, err := m.cc.client.Builds.TargetOutputs.Get(
-			context.TODO(),
-			params,
-		)
-		if err != nil {
-			return errorMsg(err)
-		}
-		err = pullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.downloads[target].Path, &console.Group{})
-		if err != nil {
-			return errorMsg(err)
-		}
-		return downloadMsg(target)
-	}
-}
-
-func (m BuildModel) fetchBuildStatus() tea.Cmd {
-	return func() tea.Msg {
-		if m.build == nil {
-			return errorMsg(fmt.Errorf("no current build to fetch status for"))
-		}
-		build, err := m.cc.client.Builds.Get(m.ctx, m.build.ID)
-		if err != nil {
-			return errorMsg(fmt.Errorf("failed to get build status: %v", err))
-		}
-		return fetchBuildMsg(build)
-	}
-}
-
-func (m BuildModel) fetchDiagnostics() tea.Cmd {
-	return func() tea.Msg {
-		if m.build == nil {
-			return errorMsg(fmt.Errorf("no current build to fetch diagnostics for"))
-		}
-		diags := []stainless.BuildDiagnostic{}
-		diagnostics := m.cc.client.Builds.Diagnostics.ListAutoPaging(m.ctx, m.build.ID, stainless.BuildDiagnosticListParams{
-			Limit: stainless.Float(100),
-		})
-		for diagnostics.Next() {
-			diag := diagnostics.Current()
-			if !diag.Ignored {
-				diags = append(diags, diag)
-			}
-		}
-		return fetchDiagnosticsMsg(diags)
-	}
-}
-
-func (m *BuildModel) getBuildDuration() time.Duration {
-	if m.build == nil {
-		return time.Since(m.started)
-	}
-
-	buildObj := stainlessutils.NewBuild(m.build)
-	if buildObj.IsCompleted() {
-		if m.ended == nil {
-			now := time.Now()
-			m.ended = &now
-		}
-		return m.ended.Sub(m.started)
-	}
-
-	return time.Since(m.started)
-}
 
 var devCommand = cli.Command{
 	Name:    "preview",
@@ -340,7 +95,7 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 	if cmd.IsSet("target") {
 		selectedTargets = cmd.StringSlice("target")
 		for _, target := range selectedTargets {
-			if !isValidTarget(targetInfos, target) {
+			if !isValidTarget(targetInfos, stainless.Target(target)) {
 				return fmt.Errorf("invalid language target: %s", target)
 			}
 		}
@@ -364,7 +119,7 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 	for {
 		// Make the user get past linter errors
 		if err := runLinter(ctx, cmd, true); err != nil {
-			if errors.Is(err, ErrUserCancelled) {
+			if errors.Is(err, build.ErrUserCancelled) {
 				return nil
 			}
 			return err
@@ -372,7 +127,7 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 
 		// Start the build process
 		if err := runDevBuild(ctx, cc, cmd, selectedBranch, targets); err != nil {
-			if errors.Is(err, ErrUserCancelled) {
+			if errors.Is(err, build.ErrUserCancelled) {
 				return nil
 			}
 			return err
@@ -464,13 +219,25 @@ func runDevBuild(ctx context.Context, cc *apiCommandContext, cmd *cli.Command, b
 		AllowEmpty: stainless.Bool(true),
 	}
 
-	model := NewBuildModel(cc, ctx, branch, func() (*stainless.Build, error) {
-		build, err := cc.client.Builds.New(ctx, buildReq, option.WithMiddleware(cc.AsMiddleware()))
-		if err != nil {
-			return nil, fmt.Errorf("failed to create build: %v", err)
-		}
-		return build, err
-	})
+	downloads := make(map[stainless.Target]string)
+	for targetName, targetConfig := range cc.workspaceConfig.Targets {
+		downloads[stainless.Target(targetName)] = targetConfig.OutputPath
+	}
+
+	model := dev.NewModel(
+		cc.client,
+		ctx,
+		branch,
+		func() (*stainless.Build, error) {
+			build, err := cc.client.Builds.New(ctx, buildReq, option.WithMiddleware(cc.AsMiddleware()))
+			if err != nil {
+				return nil, fmt.Errorf("failed to create build: %v", err)
+			}
+			return build, err
+		},
+		downloads,
+		cmd.Bool("watch"),
+	)
 
 	p := tea.NewProgram(model)
 	finalModel, err := p.Run()
@@ -478,8 +245,8 @@ func runDevBuild(ctx context.Context, cc *apiCommandContext, cmd *cli.Command, b
 	if err != nil {
 		return fmt.Errorf("failed to run TUI: %v", err)
 	}
-	if buildModel, ok := finalModel.(BuildModel); ok {
-		return buildModel.err
+	if buildModel, ok := finalModel.(dev.Model); ok {
+		return buildModel.Err
 	}
 	return nil
 }
