@@ -70,10 +70,11 @@ func authenticate(ctx context.Context, cmd *cli.Command, forceAuthentication boo
 		}
 	}
 
+	group := console.Info("To authenticate, visit the verification URL")
 	cc := getAPICommandContext(cmd)
 	clientID := cmd.String("client-id")
 	scope := "*"
-	authResult, err := startDeviceFlow(ctx, cmd, cc.client, clientID, scope)
+	authResult, err := startDeviceFlow(ctx, cmd, cc.client, clientID, scope, group)
 	if err != nil {
 		return err
 	}
@@ -86,7 +87,7 @@ func authenticate(ctx context.Context, cmd *cli.Command, forceAuthentication boo
 		console.Error("Failed to save authentication: %v", err)
 		return fmt.Errorf("authentication failed")
 	}
-	console.Success("Authentication successful! Your credentials have been saved to %s", config.ConfigPath)
+	group.Success("Authentication successful! Your credentials have been saved to %s", config.ConfigPath)
 	return nil
 }
 
@@ -146,7 +147,7 @@ func handleAuthStatus(ctx context.Context, cmd *cli.Command) error {
 }
 
 // startDeviceFlow initiates the OAuth 2.0 device flow
-func startDeviceFlow(ctx context.Context, cmd *cli.Command, client stainless.Client, clientID, scope string) (*AuthConfig, error) {
+func startDeviceFlow(ctx context.Context, cmd *cli.Command, client stainless.Client, clientID, scope string, group console.Group) (*AuthConfig, error) {
 	var deviceResponse struct {
 		DeviceCode              string `json:"device_code"`
 		UserCode                string `json:"user_code"`
@@ -154,6 +155,10 @@ func startDeviceFlow(ctx context.Context, cmd *cli.Command, client stainless.Cli
 		VerificationURIComplete string `json:"verification_uri_complete"`
 		ExpiresIn               int    `json:"expires_in"`
 		Interval                int    `json:"interval"`
+	}
+
+	if clientID == "" {
+		clientID = defaultClientID
 	}
 
 	err := client.Post(ctx, "api/oauth/device", map[string]string{
@@ -166,7 +171,6 @@ func startDeviceFlow(ctx context.Context, cmd *cli.Command, client stainless.Cli
 		return nil, err
 	}
 
-	group := console.Info("To authenticate, visit the verification URL")
 	group.Property("url", deviceResponse.VerificationURIComplete)
 	group.Property("code", deviceResponse.UserCode)
 
@@ -189,15 +193,16 @@ func startDeviceFlow(ctx context.Context, cmd *cli.Command, client stainless.Cli
 		// Hard-code to 1 second for now, instead of using deviceResponse.Interval
 		1,
 		deviceResponse.ExpiresIn,
+		group,
 	)
 }
 
 // pollForToken polls the token endpoint until the user completes authentication
-func pollForToken(ctx context.Context, client stainless.Client, clientID, deviceCode string, interval, expiresIn int) (*AuthConfig, error) {
+func pollForToken(ctx context.Context, client stainless.Client, clientID, deviceCode string, interval, expiresIn int, group console.Group) (*AuthConfig, error) {
 	deadline := time.Now().Add(time.Duration(expiresIn) * time.Second)
 	pollInterval := time.Duration(interval) * time.Second
 
-	console.Progress("Waiting for authentication to complete...")
+	group.Progress("Waiting for authentication to complete...")
 
 	for time.Now().Before(deadline) {
 		time.Sleep(pollInterval)
