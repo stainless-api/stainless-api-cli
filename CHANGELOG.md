@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.0-alpha.56 (2025-11-25)
+
+Full Changelog: [v0.1.0-alpha.55...v0.1.0-alpha.56](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.55...v0.1.0-alpha.56)
+
+### Features
+
+* convert paths to absolute path in the .stainless/workspace.json ([14aeb23](https://github.com/stainless-api/stainless-api-cli/commit/14aeb23dbac9e1a6a3f24d88a50e349eef281502))
+
+
+### Refactors
+
+* significantly refactor builds viewer ([0677658](https://github.com/stainless-api/stainless-api-cli/commit/067765817d047937000f634731bb8aeea6e60346))
+
 ## 0.1.0-alpha.55 (2025-11-17)
 
 Full Changelog: [v0.1.0-alpha.54...v0.1.0-alpha.55](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.54...v0.1.0-alpha.55)
