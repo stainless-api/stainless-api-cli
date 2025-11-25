@@ -101,10 +101,8 @@ func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {
 	group.Property("project", cc.workspaceConfig.Project)
 
 	if cc.workspaceConfig.OpenAPISpec != "" {
-		// Check if OpenAPI spec file exists
-		configDir := filepath.Dir(cc.workspaceConfig.ConfigPath)
-		specPath := filepath.Join(configDir, cc.workspaceConfig.OpenAPISpec)
-		if _, err := os.Stat(specPath); err == nil {
+		// Check if OpenAPI spec file exists (path is already absolute)
+		if _, err := os.Stat(cc.workspaceConfig.OpenAPISpec); err == nil {
 			group.Property("openapi_spec", cc.workspaceConfig.OpenAPISpec)
 		} else {
 			group.Property("openapi_spec", cc.workspaceConfig.OpenAPISpec+" (not found)")
@@ -114,10 +112,8 @@ func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	if cc.workspaceConfig.StainlessConfig != "" {
-		// Check if Stainless config file exists
-		configDir := filepath.Dir(cc.workspaceConfig.ConfigPath)
-		stainlessPath := filepath.Join(configDir, cc.workspaceConfig.StainlessConfig)
-		if _, err := os.Stat(stainlessPath); err == nil {
+		// Check if Stainless config file exists (path is already absolute)
+		if _, err := os.Stat(cc.workspaceConfig.StainlessConfig); err == nil {
 			group.Property("stainless_config", cc.workspaceConfig.StainlessConfig)
 		} else {
 			group.Property("stainless_config", cc.workspaceConfig.StainlessConfig+" (not found)")

@@ -269,10 +269,10 @@ func askSelectProject(projects []stainless.Project) (string, []stainless.Target,
 }
 
 func askCreateProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext, org, projectName string) (string, []stainless.Target, error) {
-	info := console.Info("project (new)")
+	group := console.Property("project", "(new)")
 
 	if projectName == "" {
-		err := info.Field(huh.NewInput().
+		err := group.Field(huh.NewInput().
 			Title("name").
 			Description("Enter a display name for your new project").
 			Value(&projectName).
@@ -292,7 +292,7 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, cc *apiCommandConte
 			return "", nil, err
 		}
 	}
-	info.Property("name", projectName)
+	group.Property("name", projectName)
 
 	// Determine targets
 	var selectedTargets []stainless.Target
@@ -312,7 +312,7 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, cc *apiCommandConte
 		for i, target := range allTargets {
 			options[i] = huh.NewOption(target.DisplayName, stainless.Target(target.Name)).Selected(target.DefaultSelected)
 		}
-		err := info.Field(huh.NewMultiSelect[stainless.Target]().
+		err := group.Field(huh.NewMultiSelect[stainless.Target]().
 			Title("targets").
 			Description("Select target languages for code generation").
 			Options(options...).
@@ -328,7 +328,7 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, cc *apiCommandConte
 		}
 	}
 
-	info.Property("targets", fmt.Sprintf("%v", selectedTargets))
+	group.Property("targets", fmt.Sprintf("%v", selectedTargets))
 
 	slug := nameToSlug(projectName)
 	params := stainless.ProjectNewParams{
@@ -340,7 +340,7 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, cc *apiCommandConte
 	}
 
 	// Get OpenAPI spec content
-	oasContent, err := askExistingOpenAPISpec(info)
+	oasContent, err := askExistingOpenAPISpec(group)
 	if err != nil {
 		return "", nil, err
 	}
@@ -353,8 +353,6 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, cc *apiCommandConte
 	} else {
 		oasName = "openapi.yml"
 	}
-
-	info.Property("openapi", "petstore.yml")
 
 	params.Revision[oasName] = stainless.FileInputUnionParam{
 		OfFileInputContent: &stainless.FileInputContentParam{
@@ -371,7 +369,7 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, cc *apiCommandConte
 		return "", nil, err
 	}
 
-	info.Success("Project created successfully")
+	group.Success("Project created successfully")
 	return slug, selectedTargets, nil
 }
 
@@ -505,10 +503,12 @@ func askExistingOpenAPISpec(group console.Group) (content string, err error) {
 		// Use file picker to select file
 		var filePath string
 		err = group.Field(huh.NewFilePicker().
+			Picking(true).
+			CurrentDirectory(".").
 			Title("openapi_spec (file)").
 			Description("Select your OpenAPI spec file").
-			CurrentDirectory(".").
-			AllowedTypes([]string{".json", ".yaml", ".yml"}).
+			ShowHidden(true).
+			Height(10).
 			Value(&filePath))
 		if err != nil {
 			return "", err
@@ -523,6 +523,8 @@ func askExistingOpenAPISpec(group console.Group) (content string, err error) {
 		if err != nil {
 			return "", fmt.Errorf("failed to read OpenAPI spec from %s: %w", filePath, err)
 		}
+
+		group.Property("openapi", filePath)
 
 		return string(fileBytes), nil
 
@@ -559,9 +561,13 @@ func askExistingOpenAPISpec(group console.Group) (content string, err error) {
 			return "", fmt.Errorf("failed to read response body: %w", err)
 		}
 
+		group.Property("openapi", urlStr)
+
 		return string(bodyBytes), nil
 
 	case SourceExample:
+		group.Property("openapi", "petstore.yml")
+
 		return exampleSpecJSON, nil
 
 	default:
@@ -726,11 +732,15 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 
 	group := console.Info("Configuring targets...")
 
-	// Initialize target configs with default paths
+	// Initialize target configs with default absolute paths
 	targetConfigs := make(map[stainless.Target]*TargetConfig, len(targets))
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %w", err)
+	}
 	for _, target := range targets {
 		defaultPath := filepath.Join("sdks", fmt.Sprintf("%s-%s", slug, target))
-		targetConfigs[target] = &TargetConfig{OutputPath: defaultPath}
+		targetConfigs[target] = &TargetConfig{OutputPath: Resolve(cwd, defaultPath)}
 	}
 
 	// Create form fields for each target
@@ -753,10 +763,14 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 		return fmt.Errorf("failed to get target output paths: %v", err)
 	}
 
-	// Update config with user-provided paths
+	// Update config with user-provided paths (convert to absolute)
 	for target, pathVar := range pathVars {
 		if path := strings.TrimSpace(*pathVar); path != "" {
-			targetConfigs[target] = &TargetConfig{OutputPath: path}
+			absPath, err := filepath.Abs(path)
+			if err != nil {
+				return fmt.Errorf("failed to get absolute path for %s target: %w", target, err)
+			}
+			targetConfigs[target] = &TargetConfig{OutputPath: absPath}
 		} else {
 			delete(targetConfigs, target)
 		}
