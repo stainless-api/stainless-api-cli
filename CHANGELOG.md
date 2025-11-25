@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.57 (2025-11-25)
+
+Full Changelog: [v0.1.0-alpha.56...v0.1.0-alpha.57](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.56...v0.1.0-alpha.57)
+
+### Bug Fixes
+
+* fix init auth ([c840610](https://github.com/stainless-api/stainless-api-cli/commit/c84061006365d4236bab054b335ad596cf18d873))
+
 ## 0.1.0-alpha.56 (2025-11-25)
 
 Full Changelog: [v0.1.0-alpha.55...v0.1.0-alpha.56](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.55...v0.1.0-alpha.56)
