@@ -10,19 +10,35 @@ import (
 	"github.com/stainless-api/stainless-api-go"
 )
 
+// Resolve converts a path to absolute, resolving it relative to baseDir if it's not already absolute
+func Resolve(baseDir, path string) string {
+	if filepath.IsAbs(path) {
+		return filepath.Clean(path)
+	}
+	return filepath.Clean(filepath.Join(baseDir, path))
+}
+
 // TargetConfig stores configuration for a specific SDK target
 type TargetConfig struct {
 	OutputPath string `json:"output_path"`
 }
 
-// WorkspaceConfig stores workspace-level configuration
-type WorkspaceConfig struct {
-	Project         string                   `json:"project"`
-	OpenAPISpec     string                   `json:"openapi_spec,omitempty"`
-	StainlessConfig string                   `json:"stainless_config,omitempty"`
+// WorkspaceConfigExport represents the on-disk format with relative paths
+type WorkspaceConfigExport struct {
+	Project         string                             `json:"project"`
+	OpenAPISpec     string                             `json:"openapi_spec,omitempty"`
+	StainlessConfig string                             `json:"stainless_config,omitempty"`
 	Targets         map[stainless.Target]*TargetConfig `json:"targets,omitempty"`
+}
 
-	ConfigPath string `json:"-"`
+// WorkspaceConfig stores workspace-level configuration with absolute paths
+type WorkspaceConfig struct {
+	Project         string
+	OpenAPISpec     string
+	StainlessConfig string
+	Targets         map[stainless.Target]*TargetConfig
+
+	ConfigPath string
 }
 
 // Find searches for a stainless-workspace.json file starting from the current directory
@@ -82,18 +98,82 @@ func (config *WorkspaceConfig) Load(configPath string) error {
 		return nil
 	}
 
-	if err := json.NewDecoder(file).Decode(config); err != nil {
+	// Load into export format (with relative paths)
+	var export WorkspaceConfigExport
+	if err := json.NewDecoder(file).Decode(&export); err != nil {
 		return fmt.Errorf("failed to parse workspace config file %s: %w", configPath, err)
 	}
+
+	// Get the directory containing the config file
+	configDir := filepath.Dir(configPath)
+
+	// Convert relative paths to absolute paths
+	config.Project = export.Project
 	config.ConfigPath = configPath
+
+	if export.OpenAPISpec != "" {
+		config.OpenAPISpec = Resolve(configDir, export.OpenAPISpec)
+	}
+
+	if export.StainlessConfig != "" {
+		config.StainlessConfig = Resolve(configDir, export.StainlessConfig)
+	}
+
+	// Convert target paths to absolute
+	if export.Targets != nil {
+		config.Targets = make(map[stainless.Target]*TargetConfig, len(export.Targets))
+		for target, targetConfig := range export.Targets {
+			config.Targets[target] = &TargetConfig{
+				OutputPath: Resolve(configDir, targetConfig.OutputPath),
+			}
+		}
+	}
+
 	return nil
 }
 
 func (config *WorkspaceConfig) Save() error {
 	// Create parent directories if they don't exist
-	dir := filepath.Dir(config.ConfigPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	configDir := filepath.Dir(config.ConfigPath)
+	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return fmt.Errorf("failed to create directory for config file: %w", err)
+	}
+
+	// Convert absolute paths to relative paths for export
+	export := WorkspaceConfigExport{
+		Project: config.Project,
+	}
+
+	// Convert paths to relative (fallback to absolute if conversion fails)
+	if config.OpenAPISpec != "" {
+		if relPath, err := filepath.Rel(configDir, config.OpenAPISpec); err == nil {
+			export.OpenAPISpec = relPath
+		} else {
+			println(err.Error())
+			export.OpenAPISpec = config.OpenAPISpec
+		}
+	}
+
+	if config.StainlessConfig != "" {
+		if relPath, err := filepath.Rel(configDir, config.StainlessConfig); err == nil {
+			export.StainlessConfig = relPath
+		} else {
+			println(err.Error())
+			export.StainlessConfig = config.StainlessConfig
+		}
+	}
+
+	if config.Targets != nil {
+		export.Targets = make(map[stainless.Target]*TargetConfig, len(config.Targets))
+		for target, targetConfig := range config.Targets {
+			outputPath := targetConfig.OutputPath
+			if relPath, err := filepath.Rel(configDir, outputPath); err == nil {
+				outputPath = relPath
+			}
+			export.Targets[target] = &TargetConfig{
+				OutputPath: outputPath,
+			}
+		}
 	}
 
 	file, err := os.Create(config.ConfigPath)
@@ -104,7 +184,7 @@ func (config *WorkspaceConfig) Save() error {
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
-	return encoder.Encode(config)
+	return encoder.Encode(export)
 }
 
 func NewWorkspaceConfig(projectName, openAPISpecPath, stainlessConfigPath string) (WorkspaceConfig, error) {
@@ -113,10 +193,21 @@ func NewWorkspaceConfig(projectName, openAPISpecPath, stainlessConfigPath string
 		return WorkspaceConfig{}, err
 	}
 
+	// Convert paths to absolute
+	absOpenAPISpec, err := filepath.Abs(openAPISpecPath)
+	if err != nil {
+		return WorkspaceConfig{}, fmt.Errorf("failed to get absolute path for OpenAPI spec: %w", err)
+	}
+
+	absStainlessConfig, err := filepath.Abs(stainlessConfigPath)
+	if err != nil {
+		return WorkspaceConfig{}, fmt.Errorf("failed to get absolute path for Stainless config: %w", err)
+	}
+
 	return WorkspaceConfig{
 		Project:         projectName,
-		OpenAPISpec:     openAPISpecPath,
-		StainlessConfig: stainlessConfigPath,
+		OpenAPISpec:     absOpenAPISpec,
+		StainlessConfig: absStainlessConfig,
 		Targets:         nil,
 		ConfigPath:      filepath.Join(dir, ".stainless", "workspace.json"),
 	}, nil
