@@ -104,8 +104,6 @@ var initCommand = cli.Command{
 }
 
 func handleInit(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
-
 	if err := authenticate(ctx, cmd, false); err != nil {
 		return err
 	}
@@ -114,8 +112,9 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	orgs := fetchUserOrgs(cc.client, ctx)
+	cc := getAPICommandContext(cmd)
 
+	orgs := fetchUserOrgs(cc.client, ctx)
 	orgs, err := ensureUserHasOrg(ctx, cmd, cc.client, orgs)
 	if err != nil {
 		return err
