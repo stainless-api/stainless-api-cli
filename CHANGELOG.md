@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-alpha.58 (2025-11-26)
+
+Full Changelog: [v0.1.0-alpha.57...v0.1.0-alpha.58](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.57...v0.1.0-alpha.58)
+
+### Bug Fixes
+
+* consider merge conflict done ([f9ad68b](https://github.com/stainless-api/stainless-api-cli/commit/f9ad68b2a21c9f73f03aa6260f929288e94e680c))
+* fix auth issue ([11d5375](https://github.com/stainless-api/stainless-api-cli/commit/11d5375223687be5951f2f1eb3d77035e4ca00ba))
+
+
+### Refactors
+
+* rename commit step to codegen ([58e752a](https://github.com/stainless-api/stainless-api-cli/commit/58e752a40328b2e8c1d60ee3576daa92b59cc6f2))
+
 ## 0.1.0-alpha.57 (2025-11-25)
 
 Full Changelog: [v0.1.0-alpha.56...v0.1.0-alpha.57](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.56...v0.1.0-alpha.57)

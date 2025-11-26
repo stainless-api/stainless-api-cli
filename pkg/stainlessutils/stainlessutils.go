@@ -225,7 +225,10 @@ func (bt *BuildTarget) IsCompleted() bool {
 		if !gjson.Get(bt.RawJSON(), step).Exists() {
 			continue
 		}
-		status, _, _ := bt.StepInfo(step)
+		status, _, conclusion := bt.StepInfo(step)
+		if conclusion == "merge_conflict" {
+			return true
+		}
 		if status != "completed" {
 			return false
 		}
