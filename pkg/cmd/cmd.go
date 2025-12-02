@@ -107,7 +107,6 @@ func init() {
 				Commands: []*cli.Command{
 					&buildsCreate,
 					&buildsRetrieve,
-					&buildsList,
 					&buildsCompare,
 				},
 			},

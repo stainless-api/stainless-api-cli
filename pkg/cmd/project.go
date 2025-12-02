@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -17,45 +16,21 @@ var projectsCreate = cli.Command{
 	Name:  "create",
 	Usage: "Create a new project.",
 	Flags: []cli.Flag{
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "display-name",
 			Usage: "Human-readable project name",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "display_name",
-			},
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "org",
 			Usage: "Organization name",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "org",
-			},
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "slug",
 			Usage: "Project name/slug",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "slug",
-			},
 		},
-		&jsonflag.JSONStringFlag{
-			Name:  "targets",
+		&cli.StringSliceFlag{
+			Name:  "target",
 			Usage: "Targets to generate for",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "targets.#",
-			},
-		},
-		&jsonflag.JSONStringFlag{
-			Name:  "+target",
-			Usage: "Targets to generate for",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "targets.-1",
-			},
 		},
 	},
 	Action:          handleProjectsCreate,
@@ -63,13 +38,9 @@ var projectsCreate = cli.Command{
 }
 
 var projectsRetrieve = cli.Command{
-	Name:  "retrieve",
-	Usage: "Retrieve a project by name.",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name: "project",
-		},
-	},
+	Name:            "retrieve",
+	Usage:           "Retrieve a project by name.",
+	Flags:           []cli.Flag{},
 	Action:          handleProjectsRetrieve,
 	HideHelpCommand: true,
 }
@@ -79,14 +50,7 @@ var projectsUpdate = cli.Command{
 	Usage: "Update a project's properties.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name: "project",
-		},
-		&jsonflag.JSONStringFlag{
 			Name: "display-name",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "display_name",
-			},
 		},
 	},
 	Action:          handleProjectsUpdate,
@@ -97,29 +61,17 @@ var projectsList = cli.Command{
 	Name:  "list",
 	Usage: "List projects in an organization, from oldest to newest.",
 	Flags: []cli.Flag{
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "cursor",
 			Usage: "Pagination cursor from a previous response",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "cursor",
-			},
 		},
-		&jsonflag.JSONFloatFlag{
+		&cli.Float64Flag{
 			Name:  "limit",
 			Usage: "Maximum number of projects to return, defaults to 10 (maximum: 100).",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "limit",
-			},
 			Value: 10,
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name: "org",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "org",
-			},
 		},
 	},
 	Action:          handleProjectsList,
@@ -127,17 +79,25 @@ var projectsList = cli.Command{
 }
 
 func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectNewParams{}
+	if err := unmarshalStdinWithFlags(cmd, map[string]string{
+		"display-name": "display_name",
+		"org":          "org",
+		"slug":         "slug",
+		"targets":      "targets",
+	}, &params); err != nil {
+		return err
+	}
 	var res []byte
-	_, err := cc.client.Projects.New(
+	_, err := client.Projects.New(
 		ctx,
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
@@ -151,20 +111,17 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectGetParams{}
-	if cmd.IsSet("project") {
-		params.Project = stainless.String(cmd.Value("project").(string))
-	}
 	var res []byte
-	_, err := cc.client.Projects.Get(
+	_, err := client.Projects.Get(
 		ctx,
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
@@ -178,20 +135,22 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectUpdateParams{}
-	if cmd.IsSet("project") {
-		params.Project = stainless.String(cmd.Value("project").(string))
+	if err := unmarshalStdinWithFlags(cmd, map[string]string{
+		"display-name": "display_name",
+	}, &params); err != nil {
+		return err
 	}
 	var res []byte
-	_, err := cc.client.Projects.Update(
+	_, err := client.Projects.Update(
 		ctx,
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
@@ -205,17 +164,23 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-	params := stainless.ProjectListParams{}
+	params := stainless.ProjectListParams{
+		Cursor: stainless.String(cmd.Value("cursor").(string)),
+		Org:    stainless.String(cmd.Value("org").(string)),
+	}
+	if cmd.IsSet("limit") {
+		params.Limit = stainless.Opt(cmd.Value("limit").(float64))
+	}
 	var res []byte
-	_, err := cc.client.Projects.List(
+	_, err := client.Projects.List(
 		ctx,
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {

@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -18,23 +17,12 @@ var projectsConfigsRetrieve = cli.Command{
 	Usage: "Retrieve the configuration files for a given project.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name: "project",
-		},
-		&jsonflag.JSONStringFlag{
 			Name:  "branch",
 			Usage: `Branch name, defaults to "main".`,
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "branch",
-			},
 			Value: "main",
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name: "include",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "include",
-			},
 		},
 	},
 	Action:          handleProjectsConfigsRetrieve,
@@ -46,23 +34,12 @@ var projectsConfigsGuess = cli.Command{
 	Usage: "Generate suggestions for changes to config files based on an OpenAPI spec.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name: "project",
-		},
-		&jsonflag.JSONStringFlag{
 			Name:  "spec",
 			Usage: "OpenAPI spec",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "spec",
-			},
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "branch",
 			Usage: "Branch name",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "branch",
-			},
 			Value: "main",
 		},
 	},
@@ -71,20 +48,22 @@ var projectsConfigsGuess = cli.Command{
 }
 
 func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-	params := stainless.ProjectConfigGetParams{}
-	if cmd.IsSet("project") {
-		params.Project = stainless.String(cmd.Value("project").(string))
+	params := stainless.ProjectConfigGetParams{
+		Include: stainless.String(cmd.Value("include").(string)),
+	}
+	if cmd.IsSet("branch") {
+		params.Branch = stainless.Opt(cmd.Value("branch").(string))
 	}
 	var res []byte
-	_, err := cc.client.Projects.Configs.Get(
+	_, err := client.Projects.Configs.Get(
 		ctx,
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
@@ -98,20 +77,23 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 }
 
 func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectConfigGuessParams{}
-	if cmd.IsSet("project") {
-		params.Project = stainless.String(cmd.Value("project").(string))
+	if err := unmarshalStdinWithFlags(cmd, map[string]string{
+		"spec":   "spec",
+		"branch": "branch",
+	}, &params); err != nil {
+		return err
 	}
 	var res []byte
-	_, err := cc.client.Projects.Configs.Guess(
+	_, err := client.Projects.Configs.Guess(
 		ctx,
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {

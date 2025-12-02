@@ -28,7 +28,7 @@ var specRetrieveDecoratedSpec = cli.Command{
 }
 
 func handleSpecRetrieveDecoratedSpec(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("project-name") && len(unusedArgs) > 0 {
 		cmd.Set("project-name", unusedArgs[0])
@@ -37,16 +37,18 @@ func handleSpecRetrieveDecoratedSpec(ctx context.Context, cmd *cli.Command) erro
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-	params := stainless.SpecGetDecoratedSpecParams{}
+	params := stainless.SpecGetDecoratedSpecParams{
+		ClientID: cmd.Value("client-id").(string),
+	}
 	if cmd.IsSet("client-id") {
 		params.ClientID = cmd.Value("client-id").(string)
 	}
 	var res []byte
-	_, err := cc.client.Spec.GetDecoratedSpec(
+	_, err := client.Spec.GetDecoratedSpec(
 		ctx,
 		cmd.Value("project-name").(string),
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {

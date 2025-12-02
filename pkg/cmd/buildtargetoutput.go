@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -17,36 +16,20 @@ var buildsTargetOutputsRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Retrieve a method to download an output for a given build target.",
 	Flags: []cli.Flag{
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "build-id",
 			Usage: "Build ID",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "build_id",
-			},
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "target",
 			Usage: "SDK language target name",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "target",
-			},
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name: "type",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "type",
-			},
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "output",
 			Usage: "Output format: url (download URL) or git (temporary access token).",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "output",
-			},
 			Value: "url",
 		},
 	},
@@ -55,17 +38,24 @@ var buildsTargetOutputsRetrieve = cli.Command{
 }
 
 func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-	params := stainless.BuildTargetOutputGetParams{}
+	params := stainless.BuildTargetOutputGetParams{
+		BuildID: cmd.Value("build-id").(string),
+		Target:  cmd.Value("target").(stainless.BuildTargetOutputGetParamsTarget),
+		Type:    cmd.Value("type").(stainless.BuildTargetOutputGetParamsType),
+	}
+	if cmd.IsSet("output") {
+		params.Output = cmd.Value("output").(stainless.BuildTargetOutputGetParamsOutput)
+	}
 	var res []byte
-	_, err := cc.client.Builds.TargetOutputs.Get(
+	_, err := client.Builds.TargetOutputs.Get(
 		ctx,
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
