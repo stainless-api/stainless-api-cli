@@ -133,13 +133,6 @@ func init() {
 				},
 			},
 			{
-				Name:     "spec",
-				Category: "API RESOURCE",
-				Commands: []*cli.Command{
-					&specRetrieveDecoratedSpec,
-				},
-			},
-			{
 				Name:            "@manpages",
 				Usage:           "Generate documentation for 'man'",
 				UsageText:       "stl @manpages [-o stl.1] [--gzip]",
