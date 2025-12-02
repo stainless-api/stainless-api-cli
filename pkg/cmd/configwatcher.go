@@ -11,12 +11,12 @@ import (
 
 type configChangedEvent struct{}
 
-func waitTillConfigChanges(ctx context.Context, cmd *cli.Command, cc *apiCommandContext) error {
-	openapiSpecPath := cc.workspaceConfig.OpenAPISpec
+func waitTillConfigChanges(ctx context.Context, cmd *cli.Command, wc WorkspaceConfig) error {
+	openapiSpecPath := wc.OpenAPISpec
 	if cmd.IsSet("openapi-spec") {
 		openapiSpecPath = cmd.String("openapi-spec")
 	}
-	stainlessConfigPath := cc.workspaceConfig.StainlessConfig
+	stainlessConfigPath := wc.StainlessConfig
 	if cmd.IsSet("stainless-config") {
 		stainlessConfigPath = cmd.String("stainless-config")
 	}

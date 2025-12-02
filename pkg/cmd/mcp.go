@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/urfave/cli/v3"
 )
 
@@ -24,7 +25,10 @@ var mcpCommand = cli.Command{
 func handleMCP(ctx context.Context, cmd *cli.Command) error {
 	args := []string{"-y", "@stainless-api/mcp@latest"}
 
-	cc := getAPICommandContext(cmd)
+	wc := WorkspaceConfig{}
+	if _, err := wc.Find(); err != nil {
+		console.Warn("%s", err)
+	}
 
 	if cmd.Args().Len() > 0 {
 		args = append(args, cmd.Args().Slice()...)
@@ -41,8 +45,8 @@ func handleMCP(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	// Set STAINLESS_PROJECT from workspace config if available
-	if cc.workspaceConfig.Project != "" {
-		env = append(env, fmt.Sprintf("STAINLESS_PROJECT=%s", cc.workspaceConfig.Project))
+	if wc.Project != "" {
+		env = append(env, fmt.Sprintf("STAINLESS_PROJECT=%s", wc.Project))
 	}
 
 	npmCmd := exec.CommandContext(ctx, "npx", args...)

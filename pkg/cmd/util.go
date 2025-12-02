@@ -7,18 +7,17 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/logrusorgru/aurora/v4"
+	"github.com/stainless-api/stainless-api-cli/pkg/jsonview"
+	"github.com/stainless-api/stainless-api-go/option"
+	"golang.org/x/term"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"os"
-	"slices"
-	"strings"
-	"golang.org/x/term"
-	"github.com/logrusorgru/aurora/v4"
 	"reflect"
-	"github.com/stainless-api/stainless-api-cli/pkg/jsonview"
-	"github.com/stainless-api/stainless-api-go/option"
+	"strings"
 
 	"github.com/itchyny/json2yaml"
 	"github.com/tidwall/gjson"
@@ -73,8 +72,8 @@ func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 
 type fileReader struct {
 	workspaceConfig WorkspaceConfig
-	Value         io.Reader
-	Base64Encoded bool
+	Value           io.Reader
+	Base64Encoded   bool
 }
 
 func (f *fileReader) Set(filename string) error {
@@ -175,61 +174,6 @@ func unmarshalStdinWithFlags(cmd *cli.Command, flags map[string]string, target a
 
 func debugMiddleware(debug bool) option.Middleware {
 	return func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
-		q := r.URL.Query()
-		for key, values := range serializeQuery(query) {
-			for _, value := range values {
-				q.Set(key, value)
-			}
-		}
-		r.URL.RawQuery = q.Encode()
-
-		for key, values := range serializeHeader(header) {
-			for _, value := range values {
-				r.Header.Set(key, value)
-			}
-		}
-
-		// Handle request body merging if there's a body to process
-		if r.Body != nil || len(body) > 2 { // More than just "{}"
-			var existingBody []byte
-			var err error
-
-			// Read the existing request body if it exists
-			if r.Body != nil {
-				existingBody, err = io.ReadAll(r.Body)
-				r.Body.Close()
-				if err != nil {
-					return nil, fmt.Errorf("failed to read existing request body: %v", err)
-				}
-			}
-
-			// Start with existing body as base (default from API params)
-			mergedBody := existingBody
-			if len(existingBody) == 0 {
-				mergedBody = []byte("{}")
-			}
-
-			// Parse command body and merge top-level keys
-			commandResult := gjson.ParseBytes(body)
-			if commandResult.IsObject() {
-				commandResult.ForEach(func(key, value gjson.Result) bool {
-					// Set each top-level key from command body, overwriting existing values
-					var err error
-					mergedBody, err = sjson.SetBytes(mergedBody, key.String(), value.Value())
-					if err != nil {
-						// Continue on error to merge as much as possible
-						return true
-					}
-					return true
-				})
-			}
-
-			// Set the new body
-			r.Body = io.NopCloser(bytes.NewBuffer(mergedBody))
-			r.ContentLength = int64(len(mergedBody))
-			r.Header.Set("Content-Type", "application/json")
-		}
-
 		// Add debug logging if the --debug flag is set
 		if debug {
 			logger := log.Default()
@@ -254,65 +198,16 @@ func debugMiddleware(debug bool) option.Middleware {
 	}
 }
 
-func getAPICommandContext(cmd *cli.Command) *apiCommandContext {
-	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
-
-	var workspaceConfig WorkspaceConfig
-	found, _ := workspaceConfig.Find()
-
-	if found {
-		names := []string{}
-		for _, flag := range cmd.VisibleFlags() {
-			names = append(names, flag.Names()...)
-		}
-
-		config := workspaceConfig
-
-		if slices.Contains(names, "openapi-spec") && !cmd.IsSet("openapi-spec") && !cmd.IsSet("revision") && config.OpenAPISpec != "" {
-			// OpenAPI spec path is already absolute
-			cmd.Set("openapi-spec", config.OpenAPISpec)
-		}
-
-		if slices.Contains(names, "stainless-config") && !cmd.IsSet("stainless-config") && !cmd.IsSet("revision") && config.StainlessConfig != "" {
-			// Stainless config path is already absolute
-			cmd.Set("stainless-config", config.StainlessConfig)
-		}
-
-		if slices.Contains(names, "project") && !cmd.IsSet("project") && config.Project != "" {
-			cmd.Set("project", config.Project)
-		}
-	}
-
-	return &apiCommandContext{client, cmd, workspaceConfig}
-}
-
-// HasWorkspaceTargets returns true if workspace config has configured targets
-func (c *apiCommandContext) HasWorkspaceTargets() bool {
-	return c.workspaceConfig.ConfigPath != "" && c.workspaceConfig.Targets != nil && len(c.workspaceConfig.Targets) > 0
-}
-
-// GetWorkspaceTargetPaths returns a map of target names to their output paths from workspace config
-func (c *apiCommandContext) GetWorkspaceTargetPaths() map[stainless.Target]string {
-	targetPaths := make(map[stainless.Target]string)
-	if c.workspaceConfig.ConfigPath != "" && c.workspaceConfig.Targets != nil {
-		for targetName, targetConfig := range c.workspaceConfig.Targets {
-			if targetConfig.OutputPath != "" {
-				targetPaths[targetName] = targetConfig.OutputPath
-			}
-		}
-	}
-	return targetPaths
-}
-
-// applyFileFlag reads a file from a flag and mutates the JSON body
-func applyFileFlag(cmd *cli.Command, flagName, jsonPath string) error {
+// convertFileFlag reads a file from a flag and mutates the flag's contents to have the file contents rather
+// than the file values.
+func convertFileFlag(cmd *cli.Command, flagName, jsonPath string) error {
 	filePath := cmd.String(flagName)
 	if filePath != "" {
 		content, err := os.ReadFile(filePath)
 		if err != nil {
 			return fmt.Errorf("failed to read %s file: %v", flagName, err)
 		}
-		jsonflag.Mutate(jsonflag.Body, jsonPath, string(content))
+		cmd.Set(flagName, string(content))
 	}
 	return nil
 }

@@ -76,9 +76,12 @@ var workspaceStatus = cli.Command{
 }
 
 func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	wc := WorkspaceConfig{}
+	if _, err := wc.Find(); err != nil {
+		console.Warn("%s", err)
+	}
 
-	if cc.workspaceConfig.ConfigPath == "" {
+	if wc.ConfigPath == "" {
 		group := console.Warn("No workspace configuration found")
 		group.Info("Run 'stl workspace init' to initialize a workspace in this directory.")
 		return nil
@@ -91,32 +94,32 @@ func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	// Get relative path from cwd to config file
-	relPath, err := filepath.Rel(cwd, cc.workspaceConfig.ConfigPath)
+	relPath, err := filepath.Rel(cwd, wc.ConfigPath)
 	if err != nil {
-		relPath = cc.workspaceConfig.ConfigPath // fallback to absolute path
+		relPath = wc.ConfigPath // fallback to absolute path
 	}
 
 	group := console.Success("Workspace configuration found")
 	group.Property("path", relPath)
-	group.Property("project", cc.workspaceConfig.Project)
+	group.Property("project", wc.Project)
 
-	if cc.workspaceConfig.OpenAPISpec != "" {
+	if wc.OpenAPISpec != "" {
 		// Check if OpenAPI spec file exists (path is already absolute)
-		if _, err := os.Stat(cc.workspaceConfig.OpenAPISpec); err == nil {
-			group.Property("openapi_spec", cc.workspaceConfig.OpenAPISpec)
+		if _, err := os.Stat(wc.OpenAPISpec); err == nil {
+			group.Property("openapi_spec", wc.OpenAPISpec)
 		} else {
-			group.Property("openapi_spec", cc.workspaceConfig.OpenAPISpec+" (not found)")
+			group.Property("openapi_spec", wc.OpenAPISpec+" (not found)")
 		}
 	} else {
 		group.Property("openapi_spec", "(not configured)")
 	}
 
-	if cc.workspaceConfig.StainlessConfig != "" {
+	if wc.StainlessConfig != "" {
 		// Check if Stainless config file exists (path is already absolute)
-		if _, err := os.Stat(cc.workspaceConfig.StainlessConfig); err == nil {
-			group.Property("stainless_config", cc.workspaceConfig.StainlessConfig)
+		if _, err := os.Stat(wc.StainlessConfig); err == nil {
+			group.Property("stainless_config", wc.StainlessConfig)
 		} else {
-			group.Property("stainless_config", cc.workspaceConfig.StainlessConfig+" (not found)")
+			group.Property("stainless_config", wc.StainlessConfig+" (not found)")
 		}
 	} else {
 		group.Property("stainless_config", "(not configured)")
