@@ -13,6 +13,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
+	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/urfave/cli/v3"
 )
@@ -61,7 +62,8 @@ type lintModel struct {
 	canSkip     bool
 	ctx         context.Context
 	cmd         *cli.Command
-	cc          *apiCommandContext
+	client      stainless.Client
+	wc          WorkspaceConfig
 	stopPolling chan struct{}
 	help        help.Model
 }
@@ -88,7 +90,7 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.error = msg.err
 		m.ctx = msg.ctx
 		m.cmd = msg.cmd
-		m.cc = msg.cc
+		m.client = msg.client
 
 		if m.canSkip && !hasBlockingDiagnostic(m.diagnostics) {
 			m.watching = false
@@ -97,7 +99,7 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if m.watching {
 			return m, func() tea.Msg {
-				if err := waitTillConfigChanges(m.ctx, m.cmd, m.cc); err != nil {
+				if err := waitTillConfigChanges(m.ctx, m.cmd, m.wc); err != nil {
 					log.Fatal(err)
 				}
 				return configChangedEvent{}
@@ -107,7 +109,7 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case configChangedEvent:
 		m.diagnostics = nil // Clear diagnostics while linting
-		return m, getDiagnosticsCmd(m.ctx, m.cmd, m.cc)
+		return m, getDiagnosticsCmd(m.ctx, m.cmd, m.client, m.wc)
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd
@@ -150,18 +152,18 @@ type diagnosticsMsg struct {
 	err         error
 	ctx         context.Context
 	cmd         *cli.Command
-	cc          *apiCommandContext
+	client      stainless.Client
 }
 
-func getDiagnosticsCmd(ctx context.Context, cmd *cli.Command, cc *apiCommandContext) tea.Cmd {
+func getDiagnosticsCmd(ctx context.Context, cmd *cli.Command, client stainless.Client, wc WorkspaceConfig) tea.Cmd {
 	return func() tea.Msg {
-		diagnostics, err := getDiagnostics(ctx, cmd, cc)
+		diagnostics, err := getDiagnostics(ctx, cmd, client, wc)
 		return diagnosticsMsg{
 			diagnostics: diagnostics,
 			err:         err,
 			ctx:         ctx,
 			cmd:         cmd,
-			cc:          cc,
+			client:      client,
 		}
 	}
 }
@@ -189,7 +191,12 @@ func (m lintModel) FullHelp() [][]key.Binding {
 }
 
 func runLinter(ctx context.Context, cmd *cli.Command, canSkip bool) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
+
+	wc := WorkspaceConfig{}
+	if _, err := wc.Find(); err != nil {
+		console.Warn("%s", err)
+	}
 
 	s := spinner.New()
 	s.Spinner = spinner.MiniDot
@@ -201,7 +208,7 @@ func runLinter(ctx context.Context, cmd *cli.Command, canSkip bool) error {
 		canSkip:     canSkip,
 		ctx:         ctx,
 		cmd:         cmd,
-		cc:          cc,
+		client:      client,
 		stopPolling: make(chan struct{}),
 		help:        help.New(),
 	}
@@ -211,7 +218,7 @@ func runLinter(ctx context.Context, cmd *cli.Command, canSkip bool) error {
 	// Start the diagnostics process
 	go func() {
 		time.Sleep(100 * time.Millisecond) // Small delay to let the UI initialize
-		p.Send(getDiagnosticsCmd(ctx, cmd, cc)())
+		p.Send(getDiagnosticsCmd(ctx, cmd, client, wc)())
 	}()
 
 	model, err := p.Run()

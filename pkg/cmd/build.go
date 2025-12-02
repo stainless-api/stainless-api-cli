@@ -17,82 +17,49 @@ import (
 	"github.com/stainless-api/stainless-api-go/option"
 
 	"github.com/tidwall/gjson"
-	"github.com/tidwall/sjson"
 	"github.com/urfave/cli/v3"
 )
 
 // parseTargetPaths processes target flags to extract target:path syntax with workspace config
 // Returns a map of target names to their custom paths
-func parseTargetPaths(workspaceConfig WorkspaceConfig) map[stainless.Target]string {
-	targetPaths := make(map[stainless.Target]string)
+func parseTargetPaths(workspaceConfig WorkspaceConfig, targetsSlice []string) (downloadPaths map[stainless.Target]string, targets []stainless.Target) {
+	downloadPaths = make(map[stainless.Target]string)
 
 	// Check workspace configuration for target paths if loaded
 	for targetName, targetConfig := range workspaceConfig.Targets {
 		if targetConfig.OutputPath != "" {
-			targetPaths[stainless.Target(targetName)] = targetConfig.OutputPath
+			downloadPaths[stainless.Target(targetName)] = targetConfig.OutputPath
 		}
 	}
 
-	// Get the current JSON body with all mutations applied
-	body, _, _, err := jsonflag.ApplyMutations([]byte("{}"), []byte("{}"), []byte("{}"))
-	if err != nil {
-		return targetPaths // If we can't parse, return map with workspace paths
-	}
-
-	// Check if there are any targets in the body
-	targetsResult := gjson.GetBytes(body, "targets")
-	if !targetsResult.Exists() {
-		return targetPaths
-	}
-
-	// Process the targets array
-	var cleanTargets []string
-	for _, targetResult := range targetsResult.Array() {
-		target := targetResult.String()
+	// Process the targets array from the CLI
+	for _, target := range targetsSlice {
 		cleanTarget, path := processSingleTarget(target)
-		cleanTargets = append(cleanTargets, cleanTarget)
+		targets = append(targets, cleanTarget)
 		if path != "" {
 			// Command line target:path overrides workspace configuration
-			targetPaths[stainless.Target(cleanTarget)] = path
+			downloadPaths[stainless.Target(cleanTarget)] = path
 		}
 	}
 
-	// Update the JSON body with cleaned targets
-	if len(cleanTargets) > 0 {
-		body, err = sjson.SetBytes(body, "targets", cleanTargets)
-		if err != nil {
-			return targetPaths
-		}
-
-		// Clear mutations and re-apply the cleaned JSON
-		jsonflag.ClearMutations()
-
-		// Re-register the cleaned body
-		bodyObj := gjson.ParseBytes(body)
-		bodyObj.ForEach(func(key, value gjson.Result) bool {
-			jsonflag.Mutate(jsonflag.Body, key.String(), value.Value())
-			return true
-		})
-	}
-
-	return targetPaths
+	return downloadPaths, targets
 }
 
 // processSingleTarget extracts path from target:path and returns clean target name and path
-func processSingleTarget(target string) (string, string) {
+func processSingleTarget(target string) (stainless.Target, string) {
 	target = strings.TrimSpace(target)
 	if !strings.Contains(target, ":") {
-		return target, ""
+		return stainless.Target(target), ""
 	}
 
 	parts := strings.SplitN(target, ":", 2)
 	if len(parts) != 2 {
-		return target, ""
+		return stainless.Target(target), ""
 	}
 
 	targetName := strings.TrimSpace(parts[0])
 	targetPath := strings.TrimSpace(parts[1])
-	return targetName, targetPath
+	return stainless.Target(targetName), targetPath
 }
 
 var buildsCreate = cli.Command{
@@ -133,16 +100,6 @@ var buildsCreate = cli.Command{
 			Name:  "target",
 			Usage: "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
 		},
-		&jsonflag.JSONStringFlag{
-			Name: "target",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "targets.-1",
-			},
-			Hidden: true,
-		},
-		&jsonflag.JSONStringFlag{,
-		},
 	},
 	Action:          handleBuildsCreate,
 	HideHelpCommand: true,
@@ -176,25 +133,40 @@ var buildsCompare = cli.Command{
 
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
+
+	wc := WorkspaceConfig{}
+	if _, err := wc.Find(); err != nil {
+		console.Warn("%s", err)
+	}
+
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
 	// Handle file flags by reading files and mutating JSON body
-	if err := applyFileFlag(cmd, "openapi-spec", "revision.openapi\\.yml.content"); err != nil {
+	if err := convertFileFlag(cmd, "openapi-spec", "revision.openapi\\.yml.content"); err != nil {
 		return err
 	}
-	if err := applyFileFlag(cmd, "stainless-config", "revision.openapi\\.stainless\\.yml.content"); err != nil {
+	if err := convertFileFlag(cmd, "stainless-config", "revision.openapi\\.stainless\\.yml.content"); err != nil {
 		return err
 	}
 
 	buildGroup := console.Info("Creating build...")
 	params := stainless.BuildNewParams{}
-	build, err := cc.client.Builds.New(
+	if err := unmarshalStdinWithFlags(cmd, map[string]string{
+		"targets": "targets",
+	}, &params); err != nil {
+		return err
+	}
+
+	downloadPaths, targets := parseTargetPaths(wc, cmd.StringSlice("target"))
+	params.Targets = targets
+
+	build, err := client.Builds.New(
 		ctx,
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 	)
 	if err != nil {
 		return err
@@ -202,11 +174,9 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 	buildGroup.Property("build_id", build.ID)
 
-	downloadPaths := parseTargetPaths(cc.workspaceConfig)
-
 	if cmd.Bool("wait") {
 		console.Spacer()
-		model := tea.Model(buildCompletionModel{cbuild.NewModel(cc.client, ctx, *build, downloadPaths)})
+		model := tea.Model(buildCompletionModel{cbuild.NewModel(client, ctx, *build, downloadPaths)})
 		model, err = tea.NewProgram(model).Run()
 		if err != nil {
 			console.Warn(err.Error())

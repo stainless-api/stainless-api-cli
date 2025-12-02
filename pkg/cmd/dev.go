@@ -70,7 +70,12 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 		os.Stdout.Sync()
 	}
 
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
+
+	wc := WorkspaceConfig{}
+	if _, err := wc.Find(); err != nil {
+		console.Warn("%s", err)
+	}
 
 	gitUser, err := getGitUsername()
 	if err != nil {
@@ -91,7 +96,7 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 
 	// Phase 2: Language selection
 	var selectedTargets []string
-	targetInfos := getAvailableTargetInfo(ctx, cc.client, cmd.String("project"), cc.workspaceConfig)
+	targetInfos := getAvailableTargetInfo(ctx, client, cmd.String("project"), wc)
 	if cmd.IsSet("target") {
 		selectedTargets = cmd.StringSlice("target")
 		for _, target := range selectedTargets {
@@ -126,7 +131,7 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		// Start the build process
-		if err := runDevBuild(ctx, cc, cmd, selectedBranch, targets); err != nil {
+		if err := runDevBuild(ctx, client, wc, cmd, selectedBranch, targets); err != nil {
 			if errors.Is(err, build.ErrUserCancelled) {
 				return nil
 			}
@@ -202,12 +207,12 @@ func chooseSelectedTargets(targetInfos []TargetInfo) ([]string, error) {
 	return selectedTargets, nil
 }
 
-func runDevBuild(ctx context.Context, cc *apiCommandContext, cmd *cli.Command, branch string, languages []stainless.Target) error {
+func runDevBuild(ctx context.Context, client stainless.Client, wc WorkspaceConfig, cmd *cli.Command, branch string, languages []stainless.Target) error {
 	// Handle file flags by reading files and mutating JSON body
-	if err := applyFileFlag(cmd, "openapi-spec", "revision.openapi\\.yml.content"); err != nil {
+	if err := convertFileFlag(cmd, "openapi-spec", "revision.openapi\\.yml.content"); err != nil {
 		return err
 	}
-	if err := applyFileFlag(cmd, "stainless-config", "revision.openapi\\.stainless\\.yml.content"); err != nil {
+	if err := convertFileFlag(cmd, "stainless-config", "revision.openapi\\.stainless\\.yml.content"); err != nil {
 		return err
 	}
 
@@ -220,16 +225,20 @@ func runDevBuild(ctx context.Context, cc *apiCommandContext, cmd *cli.Command, b
 	}
 
 	downloads := make(map[stainless.Target]string)
-	for targetName, targetConfig := range cc.workspaceConfig.Targets {
+	for targetName, targetConfig := range wc.Targets {
 		downloads[stainless.Target(targetName)] = targetConfig.OutputPath
 	}
 
 	model := dev.NewModel(
-		cc.client,
+		client,
 		ctx,
 		branch,
 		func() (*stainless.Build, error) {
-			build, err := cc.client.Builds.New(ctx, buildReq, option.WithMiddleware(cc.AsMiddleware()))
+			build, err := client.Builds.New(
+				ctx,
+				buildReq,
+				option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
+			)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create build: %v", err)
 			}
@@ -291,16 +300,16 @@ type GenerateSpecParams struct {
 	} `json:"source"`
 }
 
-func getDiagnostics(ctx context.Context, cmd *cli.Command, cc *apiCommandContext) ([]stainless.BuildDiagnostic, error) {
+func getDiagnostics(ctx context.Context, cmd *cli.Command, client stainless.Client, wc WorkspaceConfig) ([]stainless.BuildDiagnostic, error) {
 	var specParams GenerateSpecParams
 	if cmd.IsSet("project") {
 		specParams.Project = cmd.String("project")
 	} else {
-		specParams.Project = cc.workspaceConfig.Project
+		specParams.Project = wc.Project
 	}
 	specParams.Source.Type = "upload"
 
-	configPath := cc.workspaceConfig.StainlessConfig
+	configPath := wc.StainlessConfig
 	if cmd.IsSet("stainless-config") {
 		configPath = cmd.String("stainless-config")
 	} else if configPath == "" {
@@ -313,7 +322,7 @@ func getDiagnostics(ctx context.Context, cmd *cli.Command, cc *apiCommandContext
 	}
 	specParams.Source.StainlessConfig = string(stainlessConfig)
 
-	oasPath := cc.workspaceConfig.OpenAPISpec
+	oasPath := wc.OpenAPISpec
 	if cmd.IsSet("openapi-spec") {
 		oasPath = cmd.String("openapi-spec")
 	} else if oasPath == "" {
@@ -327,7 +336,13 @@ func getDiagnostics(ctx context.Context, cmd *cli.Command, cc *apiCommandContext
 	specParams.Source.OpenAPISpec = string(openAPISpec)
 
 	var result []byte
-	err = cc.client.Post(ctx, "api/generate/spec", specParams, &result, option.WithMiddleware(cc.AsMiddleware()))
+	err = client.Post(
+		ctx,
+		"api/generate/spec",
+		specParams,
+		&result,
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
+	)
 	if err != nil {
 		return nil, err
 	}

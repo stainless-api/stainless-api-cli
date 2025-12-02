@@ -6,8 +6,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
+	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -59,7 +59,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 
 	buildID := cmd.String("build-id")
 	if buildID == "" {
-		latestBuild, err := getLatestBuild(ctx, cc.client, cmd.String("project"), cmd.String("branch"))
+		latestBuild, err := getLatestBuild(ctx, client, cmd.String("project"), cmd.String("branch"))
 		if err != nil {
 			return fmt.Errorf("failed to get latest build: %v", err)
 		}

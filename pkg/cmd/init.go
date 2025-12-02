@@ -22,7 +22,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/term"
 	"github.com/pkg/browser"
-	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/urfave/cli/v3"
@@ -38,45 +37,21 @@ var initCommand = cli.Command{
 	Name:  "init",
 	Usage: "Initialize a Stainless project",
 	Flags: []cli.Flag{
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "org",
 			Usage: "Organization name",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "org",
-			},
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "display-name",
 			Usage: "Project display name",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "display_name",
-			},
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "slug",
 			Usage: "Project slug",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "slug",
-			},
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "targets",
 			Usage: "Comma-separated list of target languages",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "targets.#",
-			},
-		},
-		&jsonflag.JSONStringFlag{
-			Name:  "+target",
-			Usage: "Add a single target language",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "targets.-1",
-			},
 		},
 		&cli.StringFlag{
 			Name:    "openapi-spec",
@@ -112,10 +87,15 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 
-	orgs := fetchUserOrgs(cc.client, ctx)
-	orgs, err := ensureUserHasOrg(ctx, cmd, cc.client, orgs)
+	wc := WorkspaceConfig{}
+	if _, err := wc.Find(); err != nil {
+		console.Warn("%s", err)
+	}
+
+	orgs := fetchUserOrgs(client, ctx)
+	orgs, err := ensureUserHasOrg(ctx, cmd, client, orgs)
 	if err != nil {
 		return err
 	}
@@ -125,7 +105,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	projects := fetchUserProjects(ctx, cc.client, org)
+	projects := fetchUserProjects(ctx, client, org)
 
 	var targets []stainless.Target
 	project := ""
@@ -154,7 +134,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 		// If project is empty, that means the user selected <New Project>
 		if project == "" {
 			var err error
-			if project, targets, err = askCreateProject(ctx, cmd, cc, org, ""); err != nil {
+			if project, targets, err = askCreateProject(ctx, cmd, client, org, ""); err != nil {
 				return err
 			}
 		} else {
@@ -164,7 +144,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 
 	console.Spacer()
 
-	return initializeWorkspace(ctx, cmd, cc, project, targets)
+	return initializeWorkspace(ctx, cmd, client, project, targets)
 }
 
 func ensureExistingWorkspaceIsDeleted(cmd *cli.Command) error {
@@ -267,7 +247,7 @@ func askSelectProject(projects []stainless.Project) (string, []stainless.Target,
 	return picked.Slug, picked.Targets, nil
 }
 
-func askCreateProject(ctx context.Context, cmd *cli.Command, cc *apiCommandContext, org, projectName string) (string, []stainless.Target, error) {
+func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Client, org, projectName string) (string, []stainless.Target, error) {
 	group := console.Property("project", "(new)")
 
 	if projectName == "" {
@@ -359,10 +339,10 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, cc *apiCommandConte
 		},
 	}
 
-	_, err = cc.client.Projects.New(
+	_, err = client.Projects.New(
 		ctx,
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 	)
 	if err != nil {
 		return "", nil, err
@@ -373,7 +353,7 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, cc *apiCommandConte
 }
 
 // initializeWorkspace sets up the local workspace configuration and downloads files
-func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandContext, projectSlug string, targets []stainless.Target) error {
+func initializeWorkspace(ctx context.Context, cmd *cli.Command, client stainless.Client, projectSlug string, targets []stainless.Target) error {
 	group := console.Info("Configuring .stainless/workspace.json")
 
 	var openAPISpecPath string
@@ -411,7 +391,7 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandCo
 
 	console.Spacer()
 
-	if err := downloadConfigFiles(ctx, cc.client, config); err != nil {
+	if err := downloadConfigFiles(ctx, client, config); err != nil {
 		return fmt.Errorf("project created but downloading configuration files failed: %v", err)
 	}
 
@@ -428,7 +408,7 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandCo
 	console.Info("Waiting for build to complete...")
 
 	// Try to get the latest build for this project (which should have been created automatically)
-	build, err := getLatestBuild(ctx, cc.client, projectSlug, "main")
+	build, err := getLatestBuild(ctx, client, projectSlug, "main")
 	if err != nil {
 		return fmt.Errorf("expected build to exist after project creation, but none found: %v", err)
 	}
@@ -438,7 +418,7 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, cc *apiCommandCo
 		downloadPaths[stainless.Target(targetName)] = targetConfig.OutputPath
 	}
 
-	model := buildCompletionModel{cbuild.NewModel(cc.client, ctx, *build, downloadPaths)}
+	model := buildCompletionModel{cbuild.NewModel(client, ctx, *build, downloadPaths)}
 	_, err = tea.NewProgram(model).Run()
 	if err != nil {
 		console.Warn(err.Error())

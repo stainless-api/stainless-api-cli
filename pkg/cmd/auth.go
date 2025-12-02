@@ -71,10 +71,9 @@ func authenticate(ctx context.Context, cmd *cli.Command, forceAuthentication boo
 	}
 
 	group := console.Info("To authenticate, visit the verification URL")
-	cc := getAPICommandContext(cmd)
-	clientID := cmd.String("client-id")
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	scope := "*"
-	authResult, err := startDeviceFlow(ctx, cmd, cc.client, clientID, scope, group)
+	authResult, err := startDeviceFlow(ctx, cmd, client, cmd.String("client-id"), scope, group)
 	if err != nil {
 		return err
 	}
