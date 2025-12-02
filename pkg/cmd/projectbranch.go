@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -18,33 +17,16 @@ var projectsBranchesCreate = cli.Command{
 	Usage: "Create a new branch for a project.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name: "project",
-		},
-		&jsonflag.JSONStringFlag{
 			Name:  "branch",
 			Usage: "Branch name",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "branch",
-			},
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "branch-from",
 			Usage: "Branch or commit SHA to branch from",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Body,
-				Path: "branch_from",
-			},
 		},
-		&jsonflag.JSONBoolFlag{
+		&cli.BoolFlag{
 			Name:  "force",
 			Usage: "Whether to throw an error if the branch already exists. Defaults to false.",
-			Config: jsonflag.JSONConfig{
-				Kind:     jsonflag.Body,
-				Path:     "force",
-				SetValue: true,
-			},
-			Value: false,
 		},
 	},
 	Action:          handleProjectsBranchesCreate,
@@ -55,9 +37,6 @@ var projectsBranchesRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Retrieve a project branch by name.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name: "project",
-		},
 		&cli.StringFlag{
 			Name: "branch",
 		},
@@ -71,23 +50,12 @@ var projectsBranchesList = cli.Command{
 	Usage: "Retrieve a project branch by name.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name: "project",
-		},
-		&jsonflag.JSONStringFlag{
 			Name:  "cursor",
 			Usage: "Pagination cursor from a previous response",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "cursor",
-			},
 		},
-		&jsonflag.JSONFloatFlag{
+		&cli.Float64Flag{
 			Name:  "limit",
 			Usage: "Maximum number of items to return, defaults to 10 (maximum: 100).",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "limit",
-			},
 			Value: 10,
 		},
 	},
@@ -99,9 +67,6 @@ var projectsBranchesDelete = cli.Command{
 	Name:  "delete",
 	Usage: "Delete a project branch by name.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name: "project",
-		},
 		&cli.StringFlag{
 			Name: "branch",
 		},
@@ -115,18 +80,11 @@ var projectsBranchesRebase = cli.Command{
 	Usage: "Rebase a project branch.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name: "project",
-		},
-		&cli.StringFlag{
 			Name: "branch",
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "base",
 			Usage: `The branch or commit SHA to rebase onto. Defaults to "main".`,
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "base",
-			},
 			Value: "main",
 		},
 	},
@@ -139,18 +97,11 @@ var projectsBranchesReset = cli.Command{
 	Usage: "Reset a project branch.",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name: "project",
-		},
-		&cli.StringFlag{
 			Name: "branch",
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "target-config-sha",
 			Usage: "The commit SHA to reset the main branch to. Required if resetting the main branch; disallowed otherwise.",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "target_config_sha",
-			},
 		},
 	},
 	Action:          handleProjectsBranchesReset,
@@ -158,20 +109,24 @@ var projectsBranchesReset = cli.Command{
 }
 
 func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectBranchNewParams{}
-	if cmd.IsSet("project") {
-		params.Project = stainless.String(cmd.Value("project").(string))
+	if err := unmarshalStdinWithFlags(cmd, map[string]string{
+		"branch":      "branch",
+		"branch-from": "branch_from",
+		"force":       "force",
+	}, &params); err != nil {
+		return err
 	}
 	var res []byte
-	_, err := cc.client.Projects.Branches.New(
+	_, err := client.Projects.Branches.New(
 		ctx,
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
@@ -185,7 +140,7 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
 		cmd.Set("branch", unusedArgs[0])
@@ -195,15 +150,12 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectBranchGetParams{}
-	if cmd.IsSet("project") {
-		params.Project = stainless.String(cmd.Value("project").(string))
-	}
 	var res []byte
-	_, err := cc.client.Projects.Branches.Get(
+	_, err := client.Projects.Branches.Get(
 		ctx,
 		cmd.Value("branch").(string),
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
@@ -217,20 +169,22 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 }
 
 func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-	params := stainless.ProjectBranchListParams{}
-	if cmd.IsSet("project") {
-		params.Project = stainless.String(cmd.Value("project").(string))
+	params := stainless.ProjectBranchListParams{
+		Cursor: stainless.String(cmd.Value("cursor").(string)),
+	}
+	if cmd.IsSet("limit") {
+		params.Limit = stainless.Opt(cmd.Value("limit").(float64))
 	}
 	var res []byte
-	_, err := cc.client.Projects.Branches.List(
+	_, err := client.Projects.Branches.List(
 		ctx,
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
@@ -244,7 +198,7 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
 		cmd.Set("branch", unusedArgs[0])
@@ -254,15 +208,12 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectBranchDeleteParams{}
-	if cmd.IsSet("project") {
-		params.Project = stainless.String(cmd.Value("project").(string))
-	}
 	var res []byte
-	_, err := cc.client.Projects.Branches.Delete(
+	_, err := client.Projects.Branches.Delete(
 		ctx,
 		cmd.Value("branch").(string),
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
@@ -276,7 +227,7 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
 		cmd.Set("branch", unusedArgs[0])
@@ -286,15 +237,15 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectBranchRebaseParams{}
-	if cmd.IsSet("project") {
-		params.Project = stainless.String(cmd.Value("project").(string))
+	if cmd.IsSet("base") {
+		params.Base = stainless.Opt(cmd.Value("base").(string))
 	}
 	var res []byte
-	_, err := cc.client.Projects.Branches.Rebase(
+	_, err := client.Projects.Branches.Rebase(
 		ctx,
 		cmd.Value("branch").(string),
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
@@ -308,7 +259,7 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("branch") && len(unusedArgs) > 0 {
 		cmd.Set("branch", unusedArgs[0])
@@ -317,16 +268,15 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-	params := stainless.ProjectBranchResetParams{}
-	if cmd.IsSet("project") {
-		params.Project = stainless.String(cmd.Value("project").(string))
+	params := stainless.ProjectBranchResetParams{
+		TargetConfigSha: stainless.String(cmd.Value("target-config-sha").(string)),
 	}
 	var res []byte
-	_, err := cc.client.Projects.Branches.Reset(
+	_, err := client.Projects.Branches.Reset(
 		ctx,
 		cmd.Value("branch").(string),
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {

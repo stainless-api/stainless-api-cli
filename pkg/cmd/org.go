@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
@@ -32,7 +33,7 @@ var orgsList = cli.Command{
 }
 
 func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("org") && len(unusedArgs) > 0 {
 		cmd.Set("org", unusedArgs[0])
@@ -42,10 +43,10 @@ func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	var res []byte
-	_, err := cc.client.Orgs.Get(
+	_, err := client.Orgs.Get(
 		ctx,
 		cmd.Value("org").(string),
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
@@ -59,15 +60,15 @@ func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 }
 
 func handleOrgsList(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	var res []byte
-	_, err := cc.client.Orgs.List(
+	_, err := client.Orgs.List(
 		ctx,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {

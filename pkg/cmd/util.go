@@ -4,25 +4,23 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
-	"net/url"
 	"os"
 	"slices"
 	"strings"
-
 	"golang.org/x/term"
-
 	"github.com/logrusorgru/aurora/v4"
+	"reflect"
+	"github.com/stainless-api/stainless-api-cli/pkg/jsonview"
+	"github.com/stainless-api/stainless-api-go/option"
 
 	"github.com/itchyny/json2yaml"
-	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
-	"github.com/stainless-api/stainless-api-cli/pkg/jsonview"
-	"github.com/stainless-api/stainless-api-go"
-	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/pretty"
 	"github.com/tidwall/sjson"
@@ -73,28 +71,109 @@ func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 	return opts
 }
 
-type apiCommandContext struct {
-	client          stainless.Client
-	cmd             *cli.Command
+type fileReader struct {
 	workspaceConfig WorkspaceConfig
+	Value         io.Reader
+	Base64Encoded bool
 }
 
-func (c apiCommandContext) AsMiddleware() option.Middleware {
-	body := getStdInput()
-	if body == nil {
-		body = []byte("{}")
-	}
-	var query = []byte("{}")
-	var header = []byte("{}")
-
-	// Apply JSON flag mutations
-	body, query, header, err := jsonflag.ApplyMutations(body, query, header)
+func (f *fileReader) Set(filename string) error {
+	reader, err := os.Open(filename)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to read file %q: %w", filename, err)
+	}
+	f.Value = reader
+	return nil
+}
+
+func (f *fileReader) String() string {
+	if f.Value == nil {
+		return ""
+	}
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(f.Value)
+	if f.Base64Encoded {
+		return base64.StdEncoding.EncodeToString(buf.Bytes())
+	}
+	return buf.String()
+}
+
+func (f *fileReader) Get() any {
+	return f.String()
+}
+
+func unmarshalWithReaders(data []byte, v any) error {
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
 	}
 
-	debug := c.cmd.Bool("debug")
+	rv := reflect.ValueOf(v).Elem()
+	rt := rv.Type()
 
+	for i := 0; i < rv.NumField(); i++ {
+		fv := rv.Field(i)
+		ft := rt.Field(i)
+
+		jsonKey := ft.Tag.Get("json")
+		if jsonKey == "" {
+			jsonKey = ft.Name
+		} else if idx := strings.Index(jsonKey, ","); idx != -1 {
+			jsonKey = jsonKey[:idx]
+		}
+
+		rawVal, ok := fields[jsonKey]
+		if !ok {
+			continue
+		}
+
+		if ft.Type == reflect.TypeOf((*io.Reader)(nil)).Elem() {
+			var s string
+			if err := json.Unmarshal(rawVal, &s); err != nil {
+				return fmt.Errorf("field %s: %w", ft.Name, err)
+			}
+			fv.Set(reflect.ValueOf(strings.NewReader(s)))
+		} else {
+			ptr := fv.Addr().Interface()
+			if err := json.Unmarshal(rawVal, ptr); err != nil {
+				return fmt.Errorf("field %s: %w", ft.Name, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func unmarshalStdinWithFlags(cmd *cli.Command, flags map[string]string, target any) error {
+	var data []byte
+	if isInputPiped() {
+		var err error
+		if data, err = io.ReadAll(os.Stdin); err != nil {
+			return err
+		}
+	}
+
+	// Merge CLI flags into the body
+	for flag, path := range flags {
+		if cmd.IsSet(flag) {
+			var err error
+			data, err = sjson.SetBytes(data, path, cmd.Value(flag))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	if data != nil {
+		if err := unmarshalWithReaders(data, target); err != nil {
+			return fmt.Errorf("failed to unmarshal JSON: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func debugMiddleware(debug bool) option.Middleware {
 	return func(r *http.Request, mn option.MiddlewareNext) (*http.Response, error) {
 		q := r.URL.Query()
 		for key, values := range serializeQuery(query) {
@@ -236,79 +315,6 @@ func applyFileFlag(cmd *cli.Command, flagName, jsonPath string) error {
 		jsonflag.Mutate(jsonflag.Body, jsonPath, string(content))
 	}
 	return nil
-}
-
-func serializeQuery(params []byte) url.Values {
-	serialized := url.Values{}
-
-	var serialize func(value gjson.Result, path string)
-	serialize = func(res gjson.Result, path string) {
-		if res.IsObject() {
-			for key, value := range res.Map() {
-				newPath := path
-				if len(newPath) == 0 {
-					newPath += key
-				} else {
-					newPath = "[" + key + "]"
-				}
-
-				serialize(value, newPath)
-			}
-		} else if res.IsArray() {
-			for _, value := range res.Array() {
-				serialize(value, path)
-			}
-		} else {
-			serialized.Add(path, res.String())
-		}
-	}
-	serialize(gjson.GetBytes(params, "@this"), "")
-
-	for key, values := range serialized {
-		serialized.Set(key, strings.Join(values, ","))
-	}
-
-	return serialized
-}
-
-func serializeHeader(params []byte) http.Header {
-	serialized := http.Header{}
-
-	var serialize func(value gjson.Result, path string)
-	serialize = func(res gjson.Result, path string) {
-		if res.IsObject() {
-			for key, value := range res.Map() {
-				newPath := path
-				if len(newPath) > 0 {
-					newPath += "."
-				}
-				newPath += key
-
-				serialize(value, newPath)
-			}
-		} else if res.IsArray() {
-			for _, value := range res.Array() {
-				serialize(value, path)
-			}
-		} else {
-			serialized.Add(path, res.String())
-		}
-	}
-	serialize(gjson.GetBytes(params, "@this"), "")
-
-	return serialized
-}
-
-func getStdInput() []byte {
-	if !isInputPiped() {
-		return nil
-	}
-	data, err := io.ReadAll(os.Stdin)
-	if err != nil {
-		log.Fatal(err)
-		return nil
-	}
-	return data
 }
 
 func isInputPiped() bool {
