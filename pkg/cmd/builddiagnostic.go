@@ -6,9 +6,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stainless-api/stainless-api-cli/pkg/jsonflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/stainless-api/stainless-api-go/shared"
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
@@ -21,46 +21,22 @@ var buildsDiagnosticsList = cli.Command{
 			Name:  "build-id",
 			Usage: "Build ID",
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "cursor",
 			Usage: "Pagination cursor from a previous response",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "cursor",
-			},
 		},
-		&jsonflag.JSONFloatFlag{
+		&cli.Float64Flag{
 			Name:  "limit",
 			Usage: "Maximum number of diagnostics to return, defaults to 100 (maximum: 100)",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "limit",
-			},
 			Value: 100,
 		},
-		&jsonflag.JSONStringFlag{
+		&cli.StringFlag{
 			Name:  "severity",
 			Usage: "Includes the given severity and above (fatal > error > warning > note).",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "severity",
-			},
 		},
-		&jsonflag.JSONStringFlag{
-			Name:  "targets",
+		&cli.StringSliceFlag{
+			Name:  "target",
 			Usage: "Optional list of language targets to filter diagnostics by",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "targets.#",
-			},
-		},
-		&jsonflag.JSONStringFlag{
-			Name:  "+target",
-			Usage: "Optional list of language targets to filter diagnostics by",
-			Config: jsonflag.JSONConfig{
-				Kind: jsonflag.Query,
-				Path: "targets.-1",
-			},
 		},
 	},
 	Action:          handleBuildsDiagnosticsList,
@@ -68,7 +44,7 @@ var buildsDiagnosticsList = cli.Command{
 }
 
 func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
-	cc := getAPICommandContext(cmd)
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
 	if !cmd.IsSet("build-id") && len(unusedArgs) > 0 {
 		cmd.Set("build-id", unusedArgs[0])
@@ -77,13 +53,20 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-	params := stainless.BuildDiagnosticListParams{}
+	params := stainless.BuildDiagnosticListParams{
+		Cursor:   stainless.String(cmd.Value("cursor").(string)),
+		Severity: cmd.Value("severity").(stainless.BuildDiagnosticListParamsSeverity),
+		Targets:  cmd.Value("target").([]shared.Target),
+	}
+	if cmd.IsSet("limit") {
+		params.Limit = stainless.Opt(cmd.Value("limit").(float64))
+	}
 	var res []byte
-	_, err := cc.client.Builds.Diagnostics.List(
+	_, err := client.Builds.Diagnostics.List(
 		ctx,
 		cmd.Value("build-id").(string),
 		params,
-		option.WithMiddleware(cc.AsMiddleware()),
+		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
 		option.WithResponseBodyInto(&res),
 	)
 	if err != nil {
