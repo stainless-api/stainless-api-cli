@@ -39,6 +39,7 @@ var buildsDiagnosticsList = cli.Command{
 			Usage: "Optional list of language targets to filter diagnostics by",
 		},
 	},
+	Before:          before,
 	Action:          handleBuildsDiagnosticsList,
 	HideHelpCommand: true,
 }

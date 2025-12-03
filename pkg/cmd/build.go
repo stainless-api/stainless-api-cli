@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/stainless-api/stainless-api-go/shared"
 
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
@@ -22,7 +24,7 @@ import (
 
 // parseTargetPaths processes target flags to extract target:path syntax with workspace config
 // Returns a map of target names to their custom paths
-func parseTargetPaths(workspaceConfig WorkspaceConfig, targetsSlice []string) (downloadPaths map[stainless.Target]string, targets []stainless.Target) {
+func parseTargetPaths(workspaceConfig WorkspaceConfig, targetsSlice []string) (downloadPaths map[stainless.Target]string, targets []stainless.Target, specifiedPath bool) {
 	downloadPaths = make(map[stainless.Target]string)
 
 	// Check workspace configuration for target paths if loaded
@@ -39,10 +41,11 @@ func parseTargetPaths(workspaceConfig WorkspaceConfig, targetsSlice []string) (d
 		if path != "" {
 			// Command line target:path overrides workspace configuration
 			downloadPaths[stainless.Target(cleanTarget)] = path
+			specifiedPath = true
 		}
 	}
 
-	return downloadPaths, targets
+	return downloadPaths, targets, specifiedPath
 }
 
 // processSingleTarget extracts path from target:path and returns clean target name and path
@@ -102,6 +105,7 @@ var buildsCreate = cli.Command{
 		},
 	},
 	Action:          handleBuildsCreate,
+	Before:          before,
 	HideHelpCommand: true,
 }
 
@@ -115,6 +119,7 @@ var buildsRetrieve = cli.Command{
 		},
 	},
 	Action:          handleBuildsRetrieve,
+	Before:          before,
 	HideHelpCommand: true,
 }
 
@@ -128,39 +133,56 @@ var buildsCompare = cli.Command{
 		},
 	},
 	Action:          handleBuildsCompare,
+	Before:          before,
 	HideHelpCommand: true,
 }
 
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 
-	wc := WorkspaceConfig{}
-	if _, err := wc.Find(); err != nil {
-		console.Warn("%s", err)
-	}
-
 	unusedArgs := cmd.Args().Slice()
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	// Handle file flags by reading files and mutating JSON body
-	if err := convertFileFlag(cmd, "openapi-spec", "revision.openapi\\.yml.content"); err != nil {
-		return err
-	}
-	if err := convertFileFlag(cmd, "stainless-config", "revision.openapi\\.stainless\\.yml.content"); err != nil {
-		return err
-	}
+	wc := getWorkspace(ctx)
 
 	buildGroup := console.Info("Creating build...")
 	params := stainless.BuildNewParams{}
 	if err := unmarshalStdinWithFlags(cmd, map[string]string{
-		"targets": "targets",
+		"allow-empty":    "allow_empty",
+		"branch":         "branch",
+		"commit-message": "commit_message",
+		"targets":        "targets",
 	}, &params); err != nil {
 		return err
 	}
 
-	downloadPaths, targets := parseTargetPaths(wc, cmd.StringSlice("target"))
+	if name, oas, err := convertFileFlag(cmd, "openapi-spec"); err != nil {
+		return err
+	} else if oas != nil {
+		if params.Revision.OfFileInputMap == nil {
+			params.Revision.OfFileInputMap = make(map[string]shared.FileInputUnionParam)
+		}
+		params.Revision.OfFileInputMap["openapi"+path.Ext(name)] = shared.FileInputParamOfFileInputContent(string(oas))
+	}
+
+	if name, config, err := convertFileFlag(cmd, "stainless-config"); err != nil {
+		return err
+	} else if config != nil {
+		if params.Revision.OfFileInputMap == nil {
+			params.Revision.OfFileInputMap = make(map[string]shared.FileInputUnionParam)
+		}
+		params.Revision.OfFileInputMap["stainless"+path.Ext(name)] = shared.FileInputParamOfFileInputContent(string(config))
+	}
+
+	downloadPaths, targets, specifiedPath := parseTargetPaths(wc, cmd.StringSlice("target"))
+
+	shouldDownload := specifiedPath || cmd.Bool("pull")
+	if !shouldDownload {
+		downloadPaths = make(map[stainless.Target]string)
+	}
+
 	params.Targets = targets
 
 	build, err := client.Builds.New(
@@ -176,7 +198,9 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 	if cmd.Bool("wait") {
 		console.Spacer()
-		model := tea.Model(buildCompletionModel{cbuild.NewModel(client, ctx, *build, downloadPaths)})
+		model := tea.Model(buildCompletionModel{
+			Build: cbuild.NewModel(client, ctx, *build, downloadPaths),
+		})
 		model, err = tea.NewProgram(model).Run()
 		if err != nil {
 			console.Warn(err.Error())
@@ -218,7 +242,7 @@ func (c buildCompletionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	c.Build, cmd = c.Build.Update(msg)
 
-	if stainlessutils.NewBuild(c.Build.Build).IsCompleted() {
+	if c.IsCompleted() {
 		return c, tea.Sequence(
 			cmd,
 			tea.Quit,
@@ -226,6 +250,30 @@ func (c buildCompletionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return c, cmd
+}
+
+func (c buildCompletionModel) IsCompleted() bool {
+	b := stainlessutils.NewBuild(c.Build.Build)
+	for _, target := range b.Languages() {
+		buildTarget := b.BuildTarget(target)
+
+		downloadIsCompleted := true
+		if buildTarget.IsCompleted() {
+			if download, ok := c.Build.Downloads[target]; ok {
+				if download.Status != "completed" {
+					downloadIsCompleted = false
+				}
+			}
+		}
+
+		if buildTarget == nil ||
+			!buildTarget.IsCompleted() ||
+			!downloadIsCompleted {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (c buildCompletionModel) View() string {

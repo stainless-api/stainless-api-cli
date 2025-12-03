@@ -32,8 +32,9 @@ type Model struct {
 }
 
 type DownloadStatus struct {
-	Status string
-	Path   string
+	Status     string // one of "not_started" "in_progress" "completed"
+	Conclusion string
+	Path       string
 }
 
 type TickMsg time.Time
@@ -45,7 +46,8 @@ func NewModel(client stainless.Client, ctx context.Context, build stainless.Buil
 	downloads := map[stainless.Target]DownloadStatus{}
 	for target, path := range downloadPaths {
 		downloads[target] = DownloadStatus{
-			Path: path,
+			Path:   path,
+			Status: "not_started",
 		}
 	}
 
@@ -95,13 +97,14 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			if buildTarget == nil {
 				continue
 			}
+
+			// Start download when the commit step is done, and m.Downloads[target] is specified
 			status, _, conclusion := buildTarget.StepInfo("commit")
-			if status == "completed" && conclusion != "fatal" {
-				if download, ok := m.Downloads[target]; ok && download.Status == "not started" {
-					download.Status = "started"
-					cmds = append(cmds, m.downloadTarget(target))
-					m.Downloads[target] = download
-				}
+			downloadable := status == "completed" && conclusion != "fatal"
+			if download, ok := m.Downloads[target]; ok && downloadable && download.Status == "not_started" {
+				download.Status = "started"
+				cmds = append(cmds, m.downloadTarget(target))
+				m.Downloads[target] = download
 			}
 		}
 
@@ -127,7 +130,7 @@ func (m Model) downloadTarget(target stainless.Target) tea.Cmd {
 		if err != nil {
 			return ErrorMsg(err)
 		}
-		err = PullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.Downloads[target].Path, &console.Group{})
+		err = PullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.Downloads[target].Path, console.NewGroup(true))
 		if err != nil {
 			return ErrorMsg(err)
 		}
@@ -208,7 +211,7 @@ func extractFilename(urlStr string, resp *http.Response) string {
 }
 
 // PullOutput handles downloading or cloning a build target output
-func PullOutput(output, url, ref, targetDir string, targetGroup *console.Group) error {
+func PullOutput(output, url, ref, targetDir string, targetGroup console.Group) error {
 	switch output {
 	case "git":
 		// Extract repository name from git URL for directory name

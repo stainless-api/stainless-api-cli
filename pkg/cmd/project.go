@@ -33,6 +33,7 @@ var projectsCreate = cli.Command{
 			Usage: "Targets to generate for",
 		},
 	},
+	Before:          before,
 	Action:          handleProjectsCreate,
 	HideHelpCommand: true,
 }
@@ -41,6 +42,7 @@ var projectsRetrieve = cli.Command{
 	Name:            "retrieve",
 	Usage:           "Retrieve a project by name.",
 	Flags:           []cli.Flag{},
+	Before:          before,
 	Action:          handleProjectsRetrieve,
 	HideHelpCommand: true,
 }
@@ -53,6 +55,7 @@ var projectsUpdate = cli.Command{
 			Name: "display-name",
 		},
 	},
+	Before:          before,
 	Action:          handleProjectsUpdate,
 	HideHelpCommand: true,
 }
@@ -74,6 +77,7 @@ var projectsList = cli.Command{
 			Name: "org",
 		},
 	},
+	Before:          before,
 	Action:          handleProjectsList,
 	HideHelpCommand: true,
 }

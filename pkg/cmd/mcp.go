@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/urfave/cli/v3"
 )
 
@@ -16,6 +15,7 @@ var mcpCommand = cli.Command{
 	Name:            "mcp",
 	Usage:           "Run Stainless MCP server",
 	Description:     "Wrapper around @stainless-api/mcp@latest with environment variables set",
+	Before:          before,
 	Action:          handleMCP,
 	ArgsUsage:       "[MCP_ARGS...]",
 	HideHelpCommand: true,
@@ -25,10 +25,7 @@ var mcpCommand = cli.Command{
 func handleMCP(ctx context.Context, cmd *cli.Command) error {
 	args := []string{"-y", "@stainless-api/mcp@latest"}
 
-	wc := WorkspaceConfig{}
-	if _, err := wc.Find(); err != nil {
-		console.Warn("%s", err)
-	}
+	wc := getWorkspace(ctx)
 
 	if cmd.Args().Len() > 0 {
 		args = append(args, cmd.Args().Slice()...)

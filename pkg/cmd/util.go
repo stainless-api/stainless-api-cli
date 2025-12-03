@@ -7,17 +7,19 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/logrusorgru/aurora/v4"
-	"github.com/stainless-api/stainless-api-cli/pkg/jsonview"
-	"github.com/stainless-api/stainless-api-go/option"
-	"golang.org/x/term"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"path"
 	"reflect"
 	"strings"
+
+	"github.com/logrusorgru/aurora/v4"
+	"github.com/stainless-api/stainless-api-cli/pkg/jsonview"
+	"github.com/stainless-api/stainless-api-go/option"
+	"golang.org/x/term"
 
 	"github.com/itchyny/json2yaml"
 	"github.com/tidwall/gjson"
@@ -200,16 +202,16 @@ func debugMiddleware(debug bool) option.Middleware {
 
 // convertFileFlag reads a file from a flag and mutates the flag's contents to have the file contents rather
 // than the file values.
-func convertFileFlag(cmd *cli.Command, flagName, jsonPath string) error {
+func convertFileFlag(cmd *cli.Command, flagName string) (string, []byte, error) {
 	filePath := cmd.String(flagName)
 	if filePath != "" {
 		content, err := os.ReadFile(filePath)
 		if err != nil {
-			return fmt.Errorf("failed to read %s file: %v", flagName, err)
+			return path.Base(filePath), nil, fmt.Errorf("failed to read %s file: %v", flagName, err)
 		}
-		cmd.Set(flagName, string(content))
+		return path.Base(filePath), content, nil
 	}
-	return nil
+	return "", nil, nil
 }
 
 func isInputPiped() bool {

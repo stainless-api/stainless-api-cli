@@ -2,6 +2,13 @@
 
 set -e
 
-cd "$(dirname "$0")/.."
+ORIGINAL_DIR="$(pwd)"
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
-go run ./cmd/stl "$@"
+# Build the binary in the project root
+cd "$PROJECT_ROOT"
+go build -o /tmp/stl-dev ./cmd/stl
+
+# Run it from the original directory
+cd "$ORIGINAL_DIR"
+/tmp/stl-dev "$@"
