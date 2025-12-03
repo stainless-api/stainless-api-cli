@@ -13,7 +13,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
-	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/urfave/cli/v3"
 )
@@ -43,6 +42,7 @@ var lintCommand = cli.Command{
 			Usage:   "Watch for files to change and re-run linting",
 		},
 	},
+	Before: before,
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		if cmd.Bool("watch") {
 			// Clear the screen and move the cursor to the top
@@ -193,10 +193,7 @@ func (m lintModel) FullHelp() [][]key.Binding {
 func runLinter(ctx context.Context, cmd *cli.Command, canSkip bool) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 
-	wc := WorkspaceConfig{}
-	if _, err := wc.Find(); err != nil {
-		console.Warn("%s", err)
-	}
+	wc := getWorkspace(ctx)
 
 	s := spinner.New()
 	s.Spinner = spinner.MiniDot

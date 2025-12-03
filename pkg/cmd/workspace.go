@@ -64,6 +64,7 @@ var workspaceInit = cli.Command{
 			Value: true,
 		},
 	},
+	Before:          before,
 	Action:          handleInit,
 	HideHelpCommand: true,
 }
@@ -71,15 +72,13 @@ var workspaceInit = cli.Command{
 var workspaceStatus = cli.Command{
 	Name:            "status",
 	Usage:           "Show workspace configuration status",
+	Before:          before,
 	Action:          handleWorkspaceStatus,
 	HideHelpCommand: true,
 }
 
 func handleWorkspaceStatus(ctx context.Context, cmd *cli.Command) error {
-	wc := WorkspaceConfig{}
-	if _, err := wc.Find(); err != nil {
-		console.Warn("%s", err)
-	}
+	wc := getWorkspace(ctx)
 
 	if wc.ConfigPath == "" {
 		group := console.Warn("No workspace configuration found")

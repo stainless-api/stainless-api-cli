@@ -25,6 +25,7 @@ var projectsConfigsRetrieve = cli.Command{
 			Name: "include",
 		},
 	},
+	Before:          before,
 	Action:          handleProjectsConfigsRetrieve,
 	HideHelpCommand: true,
 }
@@ -43,6 +44,7 @@ var projectsConfigsGuess = cli.Command{
 			Value: "main",
 		},
 	},
+	Before:          before,
 	Action:          handleProjectsConfigsGuess,
 	HideHelpCommand: true,
 }

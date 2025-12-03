@@ -29,6 +29,7 @@ var projectsBranchesCreate = cli.Command{
 			Usage: "Whether to throw an error if the branch already exists. Defaults to false.",
 		},
 	},
+	Before:          before,
 	Action:          handleProjectsBranchesCreate,
 	HideHelpCommand: true,
 }
@@ -41,6 +42,7 @@ var projectsBranchesRetrieve = cli.Command{
 			Name: "branch",
 		},
 	},
+	Before:          before,
 	Action:          handleProjectsBranchesRetrieve,
 	HideHelpCommand: true,
 }
@@ -59,6 +61,7 @@ var projectsBranchesList = cli.Command{
 			Value: 10,
 		},
 	},
+	Before:          before,
 	Action:          handleProjectsBranchesList,
 	HideHelpCommand: true,
 }
@@ -71,6 +74,7 @@ var projectsBranchesDelete = cli.Command{
 			Name: "branch",
 		},
 	},
+	Before:          before,
 	Action:          handleProjectsBranchesDelete,
 	HideHelpCommand: true,
 }
@@ -88,6 +92,7 @@ var projectsBranchesRebase = cli.Command{
 			Value: "main",
 		},
 	},
+	Before:          before,
 	Action:          handleProjectsBranchesRebase,
 	HideHelpCommand: true,
 }
@@ -104,6 +109,7 @@ var projectsBranchesReset = cli.Command{
 			Usage: "The commit SHA to reset the main branch to. Required if resetting the main branch; disallowed otherwise.",
 		},
 	},
+	Before:          before,
 	Action:          handleProjectsBranchesReset,
 	HideHelpCommand: true,
 }

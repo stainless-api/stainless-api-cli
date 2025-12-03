@@ -35,6 +35,7 @@ var authLogin = cli.Command{
 			Usage: "OAuth client ID",
 		},
 	},
+	Before:          before,
 	Action:          handleAuthLogin,
 	HideHelpCommand: true,
 }
@@ -42,6 +43,7 @@ var authLogin = cli.Command{
 var authLogout = cli.Command{
 	Name:            "logout",
 	Usage:           "Log out and remove saved credentials",
+	Before:          before,
 	Action:          handleAuthLogout,
 	HideHelpCommand: true,
 }
@@ -49,6 +51,7 @@ var authLogout = cli.Command{
 var authStatus = cli.Command{
 	Name:            "status",
 	Usage:           "Check authentication status",
+	Before:          before,
 	Action:          handleAuthStatus,
 	HideHelpCommand: true,
 }

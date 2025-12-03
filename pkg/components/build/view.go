@@ -65,27 +65,18 @@ func ViewBuildPipeline(build stainless.Build, target stainless.Target, downloads
 		if status == "" {
 			continue // Skip steps that don't exist for this target
 		}
-		symbol := ViewStepSymbol(status, conclusion)
 		if pipeline.Len() > 0 {
 			pipeline.WriteString("  ")
 		}
-		// align our naming of the commit step with the 
+		// align our naming of the commit step with the
 		if step == "commit" {
 			step = "codegen"
 		}
-		pipeline.WriteString(symbol + " " + console.Hyperlink(url, step))
+		pipeline.WriteString(ViewStepSymbol(status, conclusion) + " " + console.Hyperlink(url, step))
 	}
 
 	if download, ok := downloads[target]; ok {
-		if download.Status == "not started" {
-			// do nothing
-		} else if download.Status == "started" {
-			pipeline.WriteString("  " + "downloading")
-		} else if download.Status == "completed" {
-			pipeline.WriteString("  " + "downloaded")
-		} else {
-			pipeline.WriteString("  " + download.Status)
-		}
+		pipeline.WriteString("  " + ViewStepSymbol(download.Status, download.Conclusion) + " " + "download")
 	}
 
 	return pipeline.String()

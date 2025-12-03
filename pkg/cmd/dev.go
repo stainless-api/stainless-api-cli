@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/stainless-api/stainless-api-go/shared"
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
@@ -60,6 +62,7 @@ var devCommand = cli.Command{
 			Usage:   "Run in 'watch' mode to loop and rebuild when files change.",
 		},
 	},
+	Before: before,
 	Action: runPreview,
 }
 
@@ -72,10 +75,7 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 
-	wc := WorkspaceConfig{}
-	if _, err := wc.Find(); err != nil {
-		console.Warn("%s", err)
-	}
+	wc := getWorkspace(ctx)
 
 	gitUser, err := getGitUsername()
 	if err != nil {
@@ -208,20 +208,30 @@ func chooseSelectedTargets(targetInfos []TargetInfo) ([]string, error) {
 }
 
 func runDevBuild(ctx context.Context, client stainless.Client, wc WorkspaceConfig, cmd *cli.Command, branch string, languages []stainless.Target) error {
-	// Handle file flags by reading files and mutating JSON body
-	if err := convertFileFlag(cmd, "openapi-spec", "revision.openapi\\.yml.content"); err != nil {
-		return err
-	}
-	if err := convertFileFlag(cmd, "stainless-config", "revision.openapi\\.stainless\\.yml.content"); err != nil {
-		return err
-	}
-
 	projectName := cmd.String("project")
 	buildReq := stainless.BuildNewParams{
 		Project:    stainless.String(projectName),
 		Branch:     stainless.String(branch),
 		Targets:    languages,
 		AllowEmpty: stainless.Bool(true),
+	}
+
+	if name, oas, err := convertFileFlag(cmd, "openapi-spec"); err != nil {
+		return err
+	} else if oas != nil {
+		if buildReq.Revision.OfFileInputMap == nil {
+			buildReq.Revision.OfFileInputMap = make(map[string]shared.FileInputUnionParam)
+		}
+		buildReq.Revision.OfFileInputMap["openapi"+path.Ext(name)] = shared.FileInputParamOfFileInputContent(string(oas))
+	}
+
+	if name, config, err := convertFileFlag(cmd, "stainless-config"); err != nil {
+		return err
+	} else if config != nil {
+		if buildReq.Revision.OfFileInputMap == nil {
+			buildReq.Revision.OfFileInputMap = make(map[string]shared.FileInputUnionParam)
+		}
+		buildReq.Revision.OfFileInputMap["stainless"+path.Ext(name)] = shared.FileInputParamOfFileInputContent(string(config))
 	}
 
 	downloads := make(map[stainless.Target]string)

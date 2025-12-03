@@ -74,6 +74,7 @@ var initCommand = cli.Command{
 			Value: true,
 		},
 	},
+	Before:          before,
 	Action:          handleInit,
 	HideHelpCommand: true,
 }
@@ -88,11 +89,6 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
-
-	wc := WorkspaceConfig{}
-	if _, err := wc.Find(); err != nil {
-		console.Warn("%s", err)
-	}
 
 	orgs := fetchUserOrgs(client, ctx)
 	orgs, err := ensureUserHasOrg(ctx, cmd, client, orgs)
@@ -418,7 +414,10 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, client stainless
 		downloadPaths[stainless.Target(targetName)] = targetConfig.OutputPath
 	}
 
-	model := buildCompletionModel{cbuild.NewModel(client, ctx, *build, downloadPaths)}
+	model := buildCompletionModel{
+		Build:           cbuild.NewModel(client, ctx, *build, downloadPaths),
+	}
+
 	_, err = tea.NewProgram(model).Run()
 	if err != nil {
 		console.Warn(err.Error())

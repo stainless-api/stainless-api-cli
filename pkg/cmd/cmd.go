@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	docs "github.com/urfave/cli-docs/v3"
 	"github.com/urfave/cli/v3"
 )
@@ -197,6 +198,35 @@ stl builds create --branch <branch>`,
 		ShellCompletionCommandName: "@completion",
 		HideHelpCommand:            true,
 	}
+}
+
+func before(ctx context.Context, cmd *cli.Command) (context.Context, error) {
+	wc := WorkspaceConfig{}
+	if _, err := wc.Find(); err != nil {
+		console.Warn("%s", err)
+	}
+	ctx = context.WithValue(ctx, "workspace_config", wc)
+
+	var names []string
+	for _, flag := range cmd.Flags {
+		names = append(names, flag.Names()...)
+	}
+
+	if slices.Contains(names, "project") && wc.Project != "" {
+		cmd.Set("project", wc.Project)
+	}
+	if slices.Contains(names, "openapi-spec") && wc.OpenAPISpec != "" {
+		cmd.Set("openapi-spec", wc.OpenAPISpec)
+	}
+	if slices.Contains(names, "stainless-config") && wc.StainlessConfig != "" {
+		cmd.Set("stainless-config", wc.StainlessConfig)
+	}
+
+	return ctx, nil
+}
+
+func getWorkspace(ctx context.Context) WorkspaceConfig {
+	return ctx.Value("workspace_config").(WorkspaceConfig)
 }
 
 func generateManpages(ctx context.Context, c *cli.Command) error {

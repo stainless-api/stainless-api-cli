@@ -47,6 +47,7 @@ var buildsTargetOutputsRetrieve = cli.Command{
 			Value: "url",
 		},
 	},
+	Before: before,
 	Action: handleBuildsTargetOutputsRetrieve,
 }
 
@@ -89,7 +90,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 
 	group := console.Info("Downloading output")
 	if cmd.Bool("pull") {
-		return build.PullOutput(res.Output, res.URL, res.Ref, "", &group)
+		return build.PullOutput(res.Output, res.URL, res.Ref, "", group)
 	}
 
 	return nil
