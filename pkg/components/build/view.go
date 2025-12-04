@@ -100,14 +100,18 @@ func ViewStepSymbol(status, conclusion string) string {
 		return yellowStyle.Render("●")
 	case "completed":
 		switch conclusion {
-		case "success":
+		case "success", "note":
 			return greenStyle.Render("✓")
-		case "failure":
-			return redStyle.Render("✗")
 		case "warning":
 			return yellowStyle.Render("⚠")
+		case "error":
+			return redStyle.Render("⚠")
+		case "fatal":
+			return redStyle.Render("✗")
+		case "merge_conflict", "upstream_merge_conflict":
+			return yellowStyle.Render("m")
 		default:
-			return greenStyle.Render("✓")
+			return grayStyle.Render(conclusion)
 		}
 	default:
 		return grayStyle.Render("○")
