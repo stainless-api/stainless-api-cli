@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
+	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -16,17 +18,26 @@ var projectsBranchesCreate = cli.Command{
 	Name:  "create",
 	Usage: "Create a new branch for a project.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "branch",
 			Usage: "Branch name",
+			Config: requestflag.RequestConfig{
+				BodyPath: "branch",
+			},
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "branch-from",
 			Usage: "Branch or commit SHA to branch from",
+			Config: requestflag.RequestConfig{
+				BodyPath: "branch_from",
+			},
 		},
-		&cli.BoolFlag{
+		&requestflag.BoolFlag{
 			Name:  "force",
 			Usage: "Whether to throw an error if the branch already exists. Defaults to false.",
+			Config: requestflag.RequestConfig{
+				BodyPath: "force",
+			},
 		},
 	},
 	Action:          handleProjectsBranchesCreate,
@@ -37,7 +48,7 @@ var projectsBranchesRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Retrieve a project branch by name.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name: "branch",
 		},
 	},
@@ -49,14 +60,20 @@ var projectsBranchesList = cli.Command{
 	Name:  "list",
 	Usage: "Retrieve a project branch by name.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "cursor",
 			Usage: "Pagination cursor from a previous response",
+			Config: requestflag.RequestConfig{
+				QueryPath: "cursor",
+			},
 		},
-		&cli.Float64Flag{
+		&requestflag.FloatFlag{
 			Name:  "limit",
 			Usage: "Maximum number of items to return, defaults to 10 (maximum: 100).",
 			Value: 10,
+			Config: requestflag.RequestConfig{
+				QueryPath: "limit",
+			},
 		},
 	},
 	Action:          handleProjectsBranchesList,
@@ -67,7 +84,7 @@ var projectsBranchesDelete = cli.Command{
 	Name:  "delete",
 	Usage: "Delete a project branch by name.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name: "branch",
 		},
 	},
@@ -79,13 +96,16 @@ var projectsBranchesRebase = cli.Command{
 	Name:  "rebase",
 	Usage: "Rebase a project branch.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name: "branch",
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "base",
 			Usage: `The branch or commit SHA to rebase onto. Defaults to "main".`,
 			Value: "main",
+			Config: requestflag.RequestConfig{
+				QueryPath: "base",
+			},
 		},
 	},
 	Action:          handleProjectsBranchesRebase,
@@ -96,12 +116,15 @@ var projectsBranchesReset = cli.Command{
 	Name:  "reset",
 	Usage: "Reset a project branch.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name: "branch",
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "target-config-sha",
 			Usage: "The commit SHA to reset the main branch to. Required if resetting the main branch; disallowed otherwise.",
+			Config: requestflag.RequestConfig{
+				QueryPath: "target_config_sha",
+			},
 		},
 	},
 	Action:          handleProjectsBranchesReset,
@@ -115,19 +138,22 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectBranchNewParams{}
-	if err := unmarshalStdinWithFlags(cmd, map[string]string{
-		"branch":      "branch",
-		"branch-from": "branch_from",
-		"force":       "force",
-	}, &params); err != nil {
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
 		return err
 	}
 	var res []byte
-	_, err := client.Projects.Branches.New(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Projects.Branches.New(
 		ctx,
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		options...,
 	)
 	if err != nil {
 		return err
@@ -150,13 +176,23 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectBranchGetParams{}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
+	}
 	var res []byte
-	_, err := client.Projects.Branches.Get(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Projects.Branches.Get(
 		ctx,
-		cmd.Value("branch").(string),
+		requestflag.CommandRequestValue[string](cmd, "branch"),
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		options...,
 	)
 	if err != nil {
 		return err
@@ -174,18 +210,23 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-	params := stainless.ProjectBranchListParams{
-		Cursor: stainless.String(cmd.Value("cursor").(string)),
-	}
-	if cmd.IsSet("limit") {
-		params.Limit = stainless.Opt(cmd.Value("limit").(float64))
+	params := stainless.ProjectBranchListParams{}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
 	}
 	var res []byte
-	_, err := client.Projects.Branches.List(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Projects.Branches.List(
 		ctx,
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		options...,
 	)
 	if err != nil {
 		return err
@@ -208,13 +249,23 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectBranchDeleteParams{}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
+	}
 	var res []byte
-	_, err := client.Projects.Branches.Delete(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Projects.Branches.Delete(
 		ctx,
-		cmd.Value("branch").(string),
+		requestflag.CommandRequestValue[string](cmd, "branch"),
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		options...,
 	)
 	if err != nil {
 		return err
@@ -237,16 +288,23 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectBranchRebaseParams{}
-	if cmd.IsSet("base") {
-		params.Base = stainless.Opt(cmd.Value("base").(string))
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
 	}
 	var res []byte
-	_, err := client.Projects.Branches.Rebase(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Projects.Branches.Rebase(
 		ctx,
-		cmd.Value("branch").(string),
+		requestflag.CommandRequestValue[string](cmd, "branch"),
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		options...,
 	)
 	if err != nil {
 		return err
@@ -268,16 +326,24 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-	params := stainless.ProjectBranchResetParams{
-		TargetConfigSha: stainless.String(cmd.Value("target-config-sha").(string)),
+	params := stainless.ProjectBranchResetParams{}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
 	}
 	var res []byte
-	_, err := client.Projects.Branches.Reset(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Projects.Branches.Reset(
 		ctx,
-		cmd.Value("branch").(string),
+		requestflag.CommandRequestValue[string](cmd, "branch"),
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		options...,
 	)
 	if err != nil {
 		return err

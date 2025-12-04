@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
+	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -16,21 +18,40 @@ var projectsCreate = cli.Command{
 	Name:  "create",
 	Usage: "Create a new project.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "display-name",
 			Usage: "Human-readable project name",
+			Config: requestflag.RequestConfig{
+				BodyPath: "display_name",
+			},
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "org",
 			Usage: "Organization name",
+			Config: requestflag.RequestConfig{
+				BodyPath: "org",
+			},
 		},
-		&cli.StringFlag{
+		&requestflag.YAMLFlag{
+			Name:  "revision",
+			Usage: "File contents to commit",
+			Config: requestflag.RequestConfig{
+				BodyPath: "revision",
+			},
+		},
+		&requestflag.StringFlag{
 			Name:  "slug",
 			Usage: "Project name/slug",
+			Config: requestflag.RequestConfig{
+				BodyPath: "slug",
+			},
 		},
-		&cli.StringSliceFlag{
+		&requestflag.StringSliceFlag{
 			Name:  "target",
 			Usage: "Targets to generate for",
+			Config: requestflag.RequestConfig{
+				BodyPath: "targets",
+			},
 		},
 	},
 	Action:          handleProjectsCreate,
@@ -49,8 +70,11 @@ var projectsUpdate = cli.Command{
 	Name:  "update",
 	Usage: "Update a project's properties.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name: "display-name",
+			Config: requestflag.RequestConfig{
+				BodyPath: "display_name",
+			},
 		},
 	},
 	Action:          handleProjectsUpdate,
@@ -61,17 +85,26 @@ var projectsList = cli.Command{
 	Name:  "list",
 	Usage: "List projects in an organization, from oldest to newest.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "cursor",
 			Usage: "Pagination cursor from a previous response",
+			Config: requestflag.RequestConfig{
+				QueryPath: "cursor",
+			},
 		},
-		&cli.Float64Flag{
+		&requestflag.FloatFlag{
 			Name:  "limit",
 			Usage: "Maximum number of projects to return, defaults to 10 (maximum: 100).",
 			Value: 10,
+			Config: requestflag.RequestConfig{
+				QueryPath: "limit",
+			},
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name: "org",
+			Config: requestflag.RequestConfig{
+				QueryPath: "org",
+			},
 		},
 	},
 	Action:          handleProjectsList,
@@ -85,20 +118,22 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectNewParams{}
-	if err := unmarshalStdinWithFlags(cmd, map[string]string{
-		"display-name": "display_name",
-		"org":          "org",
-		"slug":         "slug",
-		"targets":      "targets",
-	}, &params); err != nil {
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
 		return err
 	}
 	var res []byte
-	_, err := client.Projects.New(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Projects.New(
 		ctx,
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		options...,
 	)
 	if err != nil {
 		return err
@@ -117,12 +152,22 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectGetParams{}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
+	}
 	var res []byte
-	_, err := client.Projects.Get(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Projects.Get(
 		ctx,
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		options...,
 	)
 	if err != nil {
 		return err
@@ -141,17 +186,22 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.ProjectUpdateParams{}
-	if err := unmarshalStdinWithFlags(cmd, map[string]string{
-		"display-name": "display_name",
-	}, &params); err != nil {
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
 		return err
 	}
 	var res []byte
-	_, err := client.Projects.Update(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Projects.Update(
 		ctx,
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		options...,
 	)
 	if err != nil {
 		return err
@@ -169,19 +219,23 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-	params := stainless.ProjectListParams{
-		Cursor: stainless.String(cmd.Value("cursor").(string)),
-		Org:    stainless.String(cmd.Value("org").(string)),
-	}
-	if cmd.IsSet("limit") {
-		params.Limit = stainless.Opt(cmd.Value("limit").(float64))
+	params := stainless.ProjectListParams{}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
 	}
 	var res []byte
-	_, err := client.Projects.List(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Projects.List(
 		ctx,
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		options...,
 	)
 	if err != nil {
 		return err

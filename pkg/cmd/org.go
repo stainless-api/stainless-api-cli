@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
+	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -16,7 +18,7 @@ var orgsRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Retrieve an organization by name.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name: "org",
 		},
 	},
@@ -42,12 +44,21 @@ func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
+	}
 	var res []byte
-	_, err := client.Orgs.Get(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Orgs.Get(
 		ctx,
-		cmd.Value("org").(string),
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		requestflag.CommandRequestValue[string](cmd, "org"),
+		options...,
 	)
 	if err != nil {
 		return err
@@ -65,12 +76,18 @@ func handleOrgsList(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-	var res []byte
-	_, err := client.Orgs.List(
-		ctx,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
 	)
+	if err != nil {
+		return err
+	}
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Orgs.List(ctx, options...)
 	if err != nil {
 		return err
 	}

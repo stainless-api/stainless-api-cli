@@ -6,9 +6,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
+	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
-	"github.com/stainless-api/stainless-api-go/shared"
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
@@ -17,26 +18,38 @@ var buildsDiagnosticsList = cli.Command{
 	Name:  "list",
 	Usage: "Get the list of diagnostics for a given build.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "build-id",
 			Usage: "Build ID",
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "cursor",
 			Usage: "Pagination cursor from a previous response",
+			Config: requestflag.RequestConfig{
+				QueryPath: "cursor",
+			},
 		},
-		&cli.Float64Flag{
+		&requestflag.FloatFlag{
 			Name:  "limit",
 			Usage: "Maximum number of diagnostics to return, defaults to 100 (maximum: 100)",
 			Value: 100,
+			Config: requestflag.RequestConfig{
+				QueryPath: "limit",
+			},
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "severity",
 			Usage: "Includes the given severity and above (fatal > error > warning > note).",
+			Config: requestflag.RequestConfig{
+				QueryPath: "severity",
+			},
 		},
-		&cli.StringSliceFlag{
+		&requestflag.StringSliceFlag{
 			Name:  "target",
 			Usage: "Optional list of language targets to filter diagnostics by",
+			Config: requestflag.RequestConfig{
+				QueryPath: "targets",
+			},
 		},
 	},
 	Action:          handleBuildsDiagnosticsList,
@@ -53,21 +66,24 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-	params := stainless.BuildDiagnosticListParams{
-		Cursor:   stainless.String(cmd.Value("cursor").(string)),
-		Severity: cmd.Value("severity").(stainless.BuildDiagnosticListParamsSeverity),
-		Targets:  cmd.Value("target").([]shared.Target),
-	}
-	if cmd.IsSet("limit") {
-		params.Limit = stainless.Opt(cmd.Value("limit").(float64))
+	params := stainless.BuildDiagnosticListParams{}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
 	}
 	var res []byte
-	_, err := client.Builds.Diagnostics.List(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Builds.Diagnostics.List(
 		ctx,
-		cmd.Value("build-id").(string),
+		requestflag.CommandRequestValue[string](cmd, "build-id"),
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		options...,
 	)
 	if err != nil {
 		return err

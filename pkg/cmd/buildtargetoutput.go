@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
+	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -16,21 +18,33 @@ var buildsTargetOutputsRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Retrieve a method to download an output for a given build target.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "build-id",
 			Usage: "Build ID",
+			Config: requestflag.RequestConfig{
+				QueryPath: "build_id",
+			},
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "target",
 			Usage: "SDK language target name",
+			Config: requestflag.RequestConfig{
+				QueryPath: "target",
+			},
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name: "type",
+			Config: requestflag.RequestConfig{
+				QueryPath: "type",
+			},
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "output",
 			Usage: "Output format: url (download URL) or git (temporary access token).",
 			Value: "url",
+			Config: requestflag.RequestConfig{
+				QueryPath: "output",
+			},
 		},
 	},
 	Action:          handleBuildsTargetOutputsRetrieve,
@@ -43,20 +57,23 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-	params := stainless.BuildTargetOutputGetParams{
-		BuildID: cmd.Value("build-id").(string),
-		Target:  cmd.Value("target").(stainless.BuildTargetOutputGetParamsTarget),
-		Type:    cmd.Value("type").(stainless.BuildTargetOutputGetParamsType),
-	}
-	if cmd.IsSet("output") {
-		params.Output = cmd.Value("output").(stainless.BuildTargetOutputGetParamsOutput)
+	params := stainless.BuildTargetOutputGetParams{}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
 	}
 	var res []byte
-	_, err := client.Builds.TargetOutputs.Get(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Builds.TargetOutputs.Get(
 		ctx,
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		options...,
 	)
 	if err != nil {
 		return err
