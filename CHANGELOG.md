@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.1.0-alpha.59 (2025-12-04)
+
+Full Changelog: [v0.1.0-alpha.58...v0.1.0-alpha.59](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.58...v0.1.0-alpha.59)
+
+### Features
+
+* checkout branch if we can ([a46bd17](https://github.com/stainless-api/stainless-api-cli/commit/a46bd17a96ff604e5211f416d4dad26912b065ad))
+* fix builds:target-outputs --pull ([0b4fe3f](https://github.com/stainless-api/stainless-api-cli/commit/0b4fe3f27768af5b2ce3bdcea97e971976230e24))
+* fix builds:target-outputs --pull ([3768058](https://github.com/stainless-api/stainless-api-cli/commit/3768058960e3e097ca4db290dc25663e28e4b895))
+* handle merge conflicts better ([80c423f](https://github.com/stainless-api/stainless-api-cli/commit/80c423f9b7ffd69c877a2e21f61d5928294f693a))
+* show error if download fails ([53df302](https://github.com/stainless-api/stainless-api-cli/commit/53df302d843b5ff34e39a6702ca83faf582e18e8))
+
+
+### Bug Fixes
+
+* codegen merge conflict issues ([3c557b6](https://github.com/stainless-api/stainless-api-cli/commit/3c557b6f210a4d4474545a88ce1f90f8d8aa8307))
+* handle edge cases in build view component better ([a3bdf09](https://github.com/stainless-api/stainless-api-cli/commit/a3bdf0979aff0676616e4ec5dce8e833ad4d72d7))
+* improve file paths rendering ([8470724](https://github.com/stainless-api/stainless-api-cli/commit/847072420f6d497d8e9f25396d4bd3106a463033))
+
+
+### Chores
+
+* attempt to fix merge conflicts ([3aaa391](https://github.com/stainless-api/stainless-api-cli/commit/3aaa3910313a0c2cdb2c3cb9578cb87962e68df3))
+* format ([809894d](https://github.com/stainless-api/stainless-api-cli/commit/809894d90ecdd500f2182fd0231cabf9619f820d))
+* **internal:** codegen related update ([e61afe2](https://github.com/stainless-api/stainless-api-cli/commit/e61afe2c51d989df5c69296045a0fa883c8e29ee))
+* **internal:** codegen related update ([cf7e344](https://github.com/stainless-api/stainless-api-cli/commit/cf7e34445270b8da6608559d24f5e2431e7752a0))
+* skip spec resource ([c677113](https://github.com/stainless-api/stainless-api-cli/commit/c6771132483d0f06ea7f8f887b7c9825b9fb61af))
+* update dependencies ([e4839cf](https://github.com/stainless-api/stainless-api-cli/commit/e4839cfc6330f355906652a35f3c4047e9d94093))
+
 ## 0.1.0-alpha.58 (2025-11-26)
 
 Full Changelog: [v0.1.0-alpha.57...v0.1.0-alpha.58](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.57...v0.1.0-alpha.58)
