@@ -77,6 +77,10 @@ func ViewBuildPipeline(build stainless.Build, target stainless.Target, downloads
 
 	if download, ok := downloads[target]; ok {
 		pipeline.WriteString("  " + ViewStepSymbol(download.Status, download.Conclusion) + " " + "download")
+		if download.Conclusion == "failure" && download.Error != "" {
+			errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
+			pipeline.WriteString("\n" + errorStyle.Render("  Error: "+download.Error))
+		}
 	}
 
 	return pipeline.String()

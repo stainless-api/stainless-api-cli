@@ -36,6 +36,7 @@ type DownloadStatus struct {
 	// One of "success", "failure', or empty if Status not "completed"
 	Conclusion string
 	Path       string
+	Error      string // Error message if Conclusion is "failure"
 }
 
 type TickMsg time.Time
@@ -47,6 +48,7 @@ type DownloadMsg struct {
 	Status string
 	// One of "success", "failure',
 	Conclusion string
+	Error      string
 }
 
 func NewModel(client stainless.Client, ctx context.Context, build stainless.Build, branch string, downloadPaths map[stainless.Target]string) Model {
@@ -93,8 +95,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case DownloadMsg:
 		download := m.Downloads[msg.Target]
-		download.Status = "completed"
+		download.Status = msg.Status
 		download.Conclusion = msg.Conclusion
+		download.Error = msg.Error
 		m.Downloads[msg.Target] = download
 
 	case FetchBuildMsg:
@@ -141,10 +144,18 @@ func (m Model) downloadTarget(target stainless.Target) tea.Cmd {
 		}
 		err = PullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.Branch, m.Downloads[target].Path, console.NewGroup(true))
 		if err != nil {
-			console.Error(fmt.Sprintf("Failed to download %s: %v", target, err))
-			return DownloadMsg{target, "completed", "failure"}
+			return DownloadMsg{
+				Target:     target,
+				Status:     "completed",
+				Conclusion: "failure",
+				Error:      err.Error(),
+			}
 		}
-		return DownloadMsg{target, "completed", "success"}
+		return DownloadMsg{
+			Target:     target,
+			Status:     "completed",
+			Conclusion: "success",
+		}
 	}
 }
 
