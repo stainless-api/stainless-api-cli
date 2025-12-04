@@ -68,7 +68,7 @@ func ViewBuildPipeline(build stainless.Build, target stainless.Target, downloads
 		if pipeline.Len() > 0 {
 			pipeline.WriteString("  ")
 		}
-		// align our naming of the commit step with the
+		// align our naming of the commit step with the version in the Studio
 		if step == "commit" {
 			step = "codegen"
 		}

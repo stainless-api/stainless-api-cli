@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -252,13 +253,15 @@ func (c buildCompletionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return c, cmd
 }
 
+var GOOD_COMMIT_CONCLUSIONS = []string{"error", "warning", "note", "success"}
+
 func (c buildCompletionModel) IsCompleted() bool {
 	b := stainlessutils.NewBuild(c.Build.Build)
 	for _, target := range b.Languages() {
 		buildTarget := b.BuildTarget(target)
 
-		downloadIsCompleted := true
-		if buildTarget.IsCompleted() {
+		var downloadIsCompleted = true
+		if buildTarget.IsCommitCompleted() && slices.Contains(GOOD_COMMIT_CONCLUSIONS, buildTarget.Commit.Completed.Conclusion) {
 			if download, ok := c.Build.Downloads[target]; ok {
 				if download.Status != "completed" {
 					downloadIsCompleted = false

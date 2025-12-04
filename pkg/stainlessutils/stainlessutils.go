@@ -220,31 +220,11 @@ func (bt *BuildTarget) Steps() []string {
 }
 
 func (bt *BuildTarget) IsCompleted() bool {
-	steps := []string{"commit", "lint", "build", "test"}
-	for _, step := range steps {
-		if !gjson.Get(bt.RawJSON(), step).Exists() {
-			continue
-		}
-		status, _, conclusion := bt.StepInfo(step)
-		if conclusion == "merge_conflict" {
-			return true
-		}
-		if status != "completed" {
-			return false
-		}
-	}
-	return true
+	return bt.Status == "completed"
 }
 
 func (bt *BuildTarget) IsInProgress() bool {
-	steps := []string{"commit", "lint", "build", "test", "upload"}
-	for _, step := range steps {
-		status, _, _ := bt.StepInfo(step)
-		if status == "in_progress" {
-			return true
-		}
-	}
-	return false
+	return bt.Status != "completed"
 }
 
 func (bt *BuildTarget) IsCommitCompleted() bool {
