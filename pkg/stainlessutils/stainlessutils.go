@@ -2,6 +2,7 @@ package stainlessutils
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/tidwall/gjson"
@@ -10,6 +11,12 @@ import (
 // Build wraps stainless.Build to provide convenience methods
 type Build struct {
 	stainless.Build
+}
+
+var GOOD_COMMIT_CONCLUSIONS = []string{"error", "warning", "note", "success"}
+
+func IsGoodCommitConclusion(conclusion string) bool {
+	return slices.Contains(GOOD_COMMIT_CONCLUSIONS, conclusion)
 }
 
 // NewBuild creates a new Build wrapper
@@ -182,7 +189,18 @@ func (bt *BuildTarget) StepInfo(step string) (status, url, conclusion string) {
 		status = u.Status
 		if u.Status == "completed" {
 			conclusion = u.Completed.Conclusion
-			url = fmt.Sprintf("https://github.com/%s/%s/commit/%s", u.Completed.Commit.Repo.Owner, u.Completed.Commit.Repo.Name, u.Completed.Commit.Sha)
+			// Use merge conflict PR URL if available, otherwise use commit URL
+			if u.Completed.JSON.MergeConflictPr.Valid() {
+				url = fmt.Sprintf("https://github.com/%s/%s/pull/%.0f",
+					u.Completed.MergeConflictPr.Repo.Owner,
+					u.Completed.MergeConflictPr.Repo.Name,
+					u.Completed.MergeConflictPr.Number)
+			} else if u.Completed.JSON.Commit.Valid() {
+				url = fmt.Sprintf("https://github.com/%s/%s/commit/%s",
+					u.Completed.Commit.Repo.Owner,
+					u.Completed.Commit.Repo.Name,
+					u.Completed.Commit.Sha)
+			}
 		}
 	}
 	if u, ok := stepUnion.(stainless.CheckStepUnion); ok {
@@ -230,6 +248,11 @@ func (bt *BuildTarget) IsInProgress() bool {
 func (bt *BuildTarget) IsCommitCompleted() bool {
 	status, _, _ := bt.StepInfo("commit")
 	return status == "completed"
+}
+
+func (bt *BuildTarget) IsGoodCommitConclusion() bool {
+	_, _, conclusion := bt.StepInfo("commit")
+	return IsGoodCommitConclusion(conclusion)
 }
 
 func (bt *BuildTarget) IsCommitFailed() bool {

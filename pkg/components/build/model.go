@@ -111,8 +111,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			}
 
 			// Start download when the commit step is done, and m.Downloads[target] is specified
-			status, _, conclusion := buildTarget.StepInfo("commit")
-			downloadable := status == "completed" && conclusion != "fatal"
+			downloadable := buildTarget.IsCommitCompleted() && buildTarget.IsGoodCommitConclusion()
 			if download, ok := m.Downloads[target]; ok && downloadable && download.Status == "not_started" {
 				download.Status = "in_progress"
 				cmds = append(cmds, m.downloadTarget(target))
