@@ -34,9 +34,9 @@ var buildsTargetOutputsRetrieve = cli.Command{
 			Usage: "Branch name (defaults to main if not provided)",
 			Value: "main",
 		},
-		&cli.StringFlag{
+		&cli.StringSliceFlag{
 			Name:  "target",
-			Usage: "SDK language target name",
+			Usage: "SDK language target name(s). Can be specified multiple times.",
 		},
 		&cli.StringFlag{
 			Name: "type",
@@ -67,46 +67,52 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 		buildID = latestBuild.ID
 	}
 
-	params := stainless.BuildTargetOutputGetParams{
-		BuildID: buildID,
-		Target:  stainless.BuildTargetOutputGetParamsTarget(cmd.Value("target").(string)),
-		Type:    stainless.BuildTargetOutputGetParamsType(cmd.Value("type").(string)),
-		Output: stainless.BuildTargetOutputGetParamsOutput(cmd.String("output")),
-	}
-	res, err := client.Builds.TargetOutputs.Get(
-		ctx,
-		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-	)
-	if err != nil {
-		return err
+	wc := getWorkspace(ctx)
+	downloadPaths, targets, _ := parseTargetPaths(wc, cmd.StringSlice("target"))
+
+	if len(targets) == 0 {
+		return fmt.Errorf("at least one target must be specified")
 	}
 
-	json := gjson.Parse(res.RawJSON())
-	format := cmd.Root().String("format")
-	transform := cmd.Root().String("transform")
-	if err := ShowJSON("builds:target_outputs retrieve", json, format, transform); err != nil {
-		return err
-	}
+	outputType := cmd.String("type")
+	outputFormat := cmd.String("output")
+	isPull := cmd.Bool("pull")
 
-	if cmd.Bool("pull") {
-		group := console.Info("Downloading output")
-
-		// Check workspace config for target output path
-		targetDir := ""
-		wc := getWorkspace(ctx)
-		target := stainless.Target(cmd.Value("target").(string))
-		if targetConfig, ok := wc.Targets[target]; ok && targetConfig.OutputPath != "" {
-			targetDir = targetConfig.OutputPath
+	for _, target := range targets {
+		params := stainless.BuildTargetOutputGetParams{
+			BuildID: buildID,
+			Target:  stainless.BuildTargetOutputGetParamsTarget(target),
+			Type:    stainless.BuildTargetOutputGetParamsType(outputType),
+			Output:  stainless.BuildTargetOutputGetParamsOutput(outputFormat),
+		}
+		res, err := client.Builds.TargetOutputs.Get(
+			ctx,
+			params,
+			option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to get output for target %s: %v", target, err)
 		}
 
-		return build.PullOutput(
-			res.Output,
-			res.URL,
-			res.Ref,
-			cmd.String("branch"),
-			targetDir,
-			group)
+		if !isPull {
+			json := gjson.Parse(res.RawJSON())
+			format := cmd.Root().String("format")
+			transform := cmd.Root().String("transform")
+			if err := ShowJSON("builds:target_outputs retrieve", json, format, transform); err != nil {
+				return err
+			}
+		}
+
+		if isPull {
+			group := console.Info(fmt.Sprintf("Downloading %s", target))
+
+			// Get target output path from downloadPaths (which includes workspace config)
+			targetDir := downloadPaths[target]
+
+			if err := build.PullOutput(res.Output, res.URL, res.Ref, cmd.String("branch"), targetDir, group); err != nil {
+				return fmt.Errorf("failed to pull %s: %v", target, err)
+			}
+		}
 	}
 
 	return nil
