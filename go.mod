@@ -13,8 +13,8 @@ require (
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/pretty v1.2.1
 	github.com/tidwall/sjson v1.2.5
-	github.com/urfave/cli-docs/v3 v3.0.0-alpha6
-	github.com/urfave/cli/v3 v3.3.2
+	github.com/urfave/cli-docs/v3 v3.1.0
+	github.com/urfave/cli/v3 v3.4.1
 	golang.org/x/term v0.37.0
 )
 
