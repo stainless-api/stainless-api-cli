@@ -415,7 +415,7 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, client stainless
 	}
 
 	model := buildCompletionModel{
-		Build:           cbuild.NewModel(client, ctx, *build, downloadPaths),
+		Build:           cbuild.NewModel(client, ctx, *build, "main", downloadPaths),
 	}
 
 	_, err = tea.NewProgram(model).Run()

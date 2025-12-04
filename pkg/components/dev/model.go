@@ -45,7 +45,7 @@ func NewModel(client stainless.Client, ctx context.Context, branch string, fn fu
 		Ctx:         ctx,
 		Branch:      branch,
 		Help:        help.New(),
-		Build:       build.NewModel(client, ctx, stainless.Build{}, downloadPaths),
+		Build:       build.NewModel(client, ctx, stainless.Build{}, branch, downloadPaths),
 		Diagnostics: diagnostics.NewModel(client, ctx, nil),
 	}
 }

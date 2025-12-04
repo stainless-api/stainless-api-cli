@@ -200,7 +200,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	if cmd.Bool("wait") {
 		console.Spacer()
 		model := tea.Model(buildCompletionModel{
-			Build: cbuild.NewModel(client, ctx, *build, downloadPaths),
+			Build: cbuild.NewModel(client, ctx, *build, cmd.String("branch"), downloadPaths),
 		})
 		model, err = tea.NewProgram(model).Run()
 		if err != nil {

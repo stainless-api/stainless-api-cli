@@ -1,7 +1,6 @@
 package build
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -9,13 +8,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
+	"github.com/stainless-api/stainless-api-cli/pkg/git"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 	"github.com/stainless-api/stainless-api-go"
 )
@@ -27,6 +26,7 @@ type Model struct {
 
 	Client    stainless.Client
 	Ctx       context.Context
+	Branch    string                              // Optional branch name for git checkout
 	Downloads map[stainless.Target]DownloadStatus // When a BuildTarget has a commit available, this target will download it, if it has been specified in the initialization.
 	Err       error                               // This will be populated if the model concludes with an error
 }
@@ -43,11 +43,13 @@ type FetchBuildMsg stainless.Build
 type ErrorMsg error
 type DownloadMsg struct {
 	Target stainless.Target
+	// One of "not_started", "in_progress", "completed"
+	Status string
 	// One of "success", "failure',
 	Conclusion string
 }
 
-func NewModel(client stainless.Client, ctx context.Context, build stainless.Build, downloadPaths map[stainless.Target]string) Model {
+func NewModel(client stainless.Client, ctx context.Context, build stainless.Build, branch string, downloadPaths map[stainless.Target]string) Model {
 	downloads := map[stainless.Target]DownloadStatus{}
 	for target, path := range downloadPaths {
 		downloads[target] = DownloadStatus{
@@ -60,6 +62,7 @@ func NewModel(client stainless.Client, ctx context.Context, build stainless.Buil
 		Build:     build,
 		Client:    client,
 		Ctx:       ctx,
+		Branch:    branch,
 		Downloads: downloads,
 	}
 }
@@ -108,7 +111,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			status, _, conclusion := buildTarget.StepInfo("commit")
 			downloadable := status == "completed" && conclusion != "fatal"
 			if download, ok := m.Downloads[target]; ok && downloadable && download.Status == "not_started" {
-				download.Status = "started"
+				download.Status = "in_progress"
 				cmds = append(cmds, m.downloadTarget(target))
 				m.Downloads[target] = download
 			}
@@ -136,11 +139,12 @@ func (m Model) downloadTarget(target stainless.Target) tea.Cmd {
 		if err != nil {
 			return ErrorMsg(err)
 		}
-		err = PullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.Downloads[target].Path, console.NewGroup(true))
+		err = PullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.Branch, m.Downloads[target].Path, console.NewGroup(true))
 		if err != nil {
-			return DownloadMsg{target, "failure"}
+			console.Error(fmt.Sprintf("Failed to download %s: %v", target, err))
+			return DownloadMsg{target, "completed", "failure"}
 		}
-		return DownloadMsg{target, "success"}
+		return DownloadMsg{target, "completed", "success"}
 	}
 }
 
@@ -216,8 +220,44 @@ func extractFilename(urlStr string, resp *http.Response) string {
 	return extractFilenameFromURL(urlStr)
 }
 
+// checkoutBranchIfSafe attempts to checkout a branch if it's safe to do so.
+// Returns true if the branch was checked out, false if we should checkout the ref instead.
+func checkoutBranchIfSafe(targetDir, branch, ref string, targetGroup console.Group) (bool, error) {
+	remoteBranch := "origin/" + branch
+
+	// Check if the remote branch exists and matches the ref
+	remoteSHA, err := git.RevParse(targetDir, remoteBranch)
+	if err != nil || remoteSHA != ref {
+		// Remote branch doesn't exist or doesn't match ref, checkout ref instead
+		return false, nil
+	}
+
+	// Check if local branch exists
+	localSHA, err := git.RevParse(targetDir, branch)
+	if err != nil {
+		// Local branch doesn't exist, create it tracking the remote
+		targetGroup.Property("checking out branch", branch)
+		if err := git.Checkout(targetDir, "-b", branch, remoteBranch); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+
+	// Local branch exists - only checkout if it points to the same SHA as ref
+	if localSHA == ref {
+		targetGroup.Property("checking out branch", branch)
+		if err := git.Checkout(targetDir, branch); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+
+	// Local branch exists but points to a different SHA, checkout ref instead to be safe
+	return false, nil
+}
+
 // PullOutput handles downloading or cloning a build target output
-func PullOutput(output, url, ref, targetDir string, targetGroup console.Group) error {
+func PullOutput(output, url, ref, branch, targetDir string, targetGroup console.Group) error {
 	switch output {
 	case "git":
 		// Extract repository name from git URL for directory name
@@ -251,51 +291,51 @@ func PullOutput(output, url, ref, targetDir string, targetGroup console.Group) e
 			}
 
 			// Initialize git repository
-			cmd := exec.Command("git", "-C", targetDir, "init")
-			var stderr bytes.Buffer
-			cmd.Stdout = nil
-			cmd.Stderr = &stderr
-			if err := cmd.Run(); err != nil {
-				return fmt.Errorf("git init failed: %v\nGit error: %s", err, stderr.String())
+			if err := git.Init(targetDir); err != nil {
+				return err
 			}
 		}
 
 		{
 			// Check if origin remote exists, add it if not present
-			cmd := exec.Command("git", "-C", targetDir, "remote", "get-url", "origin")
-			var stderr bytes.Buffer
-			cmd.Stdout = nil
-			cmd.Stderr = &stderr
-			if err := cmd.Run(); err != nil {
+			if _, err := git.RemoteGetURL(targetDir, "origin"); err != nil {
 				// Origin doesn't exist, add it with stripped auth
 				targetGroup.Property("adding remote origin", stripHTTPAuth(url))
-				addCmd := exec.Command("git", "-C", targetDir, "remote", "add", "origin", stripHTTPAuth(url))
-				var addStderr bytes.Buffer
-				addCmd.Stdout = nil
-				addCmd.Stderr = &addStderr
-				if err := addCmd.Run(); err != nil {
-					return fmt.Errorf("git remote add failed: %v\nGit error: %s", err, addStderr.String())
+				if err := git.RemoteAdd(targetDir, "origin", stripHTTPAuth(url)); err != nil {
+					return err
 				}
 			}
 
 			targetGroup.Property("fetching from", stripHTTPAuth(url))
-			cmd = exec.Command("git", "-C", targetDir, "fetch", url, ref)
-			cmd.Stdout = nil
-			cmd.Stderr = &stderr
-			if err := cmd.Run(); err != nil {
-				return fmt.Errorf("git fetch failed: %v\nGit error: %s", err, stderr.String())
+			// Fetch the specific ref
+			if err := git.Fetch(targetDir, url, ref); err != nil {
+				return err
+			}
+
+			// Also fetch the branch if provided, so we can check if it points to the same ref
+			if branch != "" {
+				// Branch fetch is best-effort - ignore errors
+				_ = git.Fetch(targetDir, url, branch+":refs/remotes/origin/"+branch)
 			}
 		}
 
-		// Checkout the specific ref
+		// Checkout the specific ref or branch
 		{
-			targetGroup.Property("checking out ref", ref)
-			cmd := exec.Command("git", "-C", targetDir, "checkout", ref)
-			var stderr bytes.Buffer
-			cmd.Stdout = nil // Suppress git checkout output
-			cmd.Stderr = &stderr
-			if err := cmd.Run(); err != nil {
-				return fmt.Errorf("git checkout failed: %v\nGit error: %s", err, stderr.String())
+			checkedOutBranch := false
+			if branch != "" {
+				var err error
+				checkedOutBranch, err = checkoutBranchIfSafe(targetDir, branch, ref, targetGroup)
+				if err != nil {
+					return err
+				}
+			}
+
+			if !checkedOutBranch {
+				// Checkout the ref directly (detached HEAD)
+				targetGroup.Property("checking out ref", ref)
+				if err := git.Checkout(targetDir, ref); err != nil {
+					return err
+				}
 			}
 		}
 
