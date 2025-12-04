@@ -18,6 +18,20 @@ func Resolve(baseDir, path string) string {
 	return filepath.Clean(filepath.Join(baseDir, path))
 }
 
+func Relative(path string) string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return path
+	}
+
+	rel, err := filepath.Rel(cwd, path)
+	if err != nil {
+		return path
+	}
+
+	return rel
+}
+
 // TargetConfig stores configuration for a specific SDK target
 type TargetConfig struct {
 	OutputPath string `json:"output_path"`
