@@ -74,7 +74,6 @@ var initCommand = cli.Command{
 			Value: true,
 		},
 	},
-	Before:          before,
 	Action:          handleInit,
 	HideHelpCommand: true,
 }
@@ -149,7 +148,7 @@ func ensureExistingWorkspaceIsDeleted(cmd *cli.Command) error {
 		title := fmt.Sprintf("Existing workspace detected: %s (project: %s)", existingConfig.ConfigPath, existingConfig.Project)
 		overwrite, err := console.Confirm(cmd, "", title, "Do you want to overwrite your existing workplace configuration?", true)
 		if err != nil || !overwrite {
-			return err
+			return huh.ErrUserAborted
 		}
 		if err := os.Remove(existingConfig.ConfigPath); err != nil {
 			return err
@@ -502,7 +501,7 @@ func askExistingOpenAPISpec(group console.Group) (content string, err error) {
 			return "", fmt.Errorf("failed to read OpenAPI spec from %s: %w", filePath, err)
 		}
 
-		group.Property("openapi", filePath)
+		group.Property("openapi_spec", filePath)
 
 		return string(fileBytes), nil
 
@@ -614,17 +613,17 @@ func chooseStainlessConfigLocation(group console.Group) (string, error) {
 }
 
 // downloadConfigFiles downloads the OpenAPI spec and Stainless config from the API
-func downloadConfigFiles(ctx context.Context, client stainless.Client, config WorkspaceConfig) error {
-	if config.StainlessConfig == "" {
+func downloadConfigFiles(ctx context.Context, client stainless.Client, wc WorkspaceConfig) error {
+	if wc.StainlessConfig == "" {
 		return fmt.Errorf("No destination for the stainless configuration file")
 	}
-	if config.OpenAPISpec == "" {
+	if wc.OpenAPISpec == "" {
 		return fmt.Errorf("No destination for the OpenAPI spec file")
 	}
 
 	group := console.Info("Downloading configuration files")
 	params := stainless.ProjectConfigGetParams{
-		Project: stainless.String(config.Project),
+		Project: stainless.String(wc.Project),
 		Include: stainless.String("openapi"),
 	}
 
@@ -678,7 +677,7 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, config Wo
 			}
 		}
 
-		if err := writeFileWithConfirm(config.StainlessConfig, []byte(stainlessConfig), "Stainless configuration"); err != nil {
+		if err := writeFileWithConfirm(Relative(wc.StainlessConfig), []byte(stainlessConfig), "Stainless configuration"); err != nil {
 			return err
 		}
 	}
@@ -694,7 +693,7 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, config Wo
 		}
 
 		// TODO: we should warn or confirm if the downloaded file has a different file extension than the destination filename
-		if err := writeFileWithConfirm(config.OpenAPISpec, []byte(openAPISpec), "OpenAPI spec"); err != nil {
+		if err := writeFileWithConfirm(Relative(wc.OpenAPISpec), []byte(openAPISpec), "OpenAPI spec"); err != nil {
 			return err
 		}
 	}
@@ -712,13 +711,9 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 
 	// Initialize target configs with default absolute paths
 	targetConfigs := make(map[stainless.Target]*TargetConfig, len(targets))
-	cwd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("failed to get current directory: %w", err)
-	}
 	for _, target := range targets {
 		defaultPath := filepath.Join("sdks", fmt.Sprintf("%s-%s", slug, target))
-		targetConfigs[target] = &TargetConfig{OutputPath: Resolve(cwd, defaultPath)}
+		targetConfigs[target] = &TargetConfig{OutputPath: defaultPath}
 	}
 
 	// Create form fields for each target
@@ -762,7 +757,7 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 	}
 
 	for target, targetConfig := range targetConfigs {
-		group.Property(string(target)+".output_path", targetConfig.OutputPath)
+		group.Property(string(target)+".output_path", Relative(targetConfig.OutputPath))
 	}
 
 	group.Success("Targets configured to output locally")
@@ -852,12 +847,7 @@ func getAvailableTargetInfo(ctx context.Context, client stainless.Client, projec
 				return false
 			}
 		}
-		for _, target := range buildObj.Languages() {
-			if target == item.Name {
-				return false
-			}
-		}
-		return true
+		return !slices.Contains(buildObj.Languages(), item.Name)
 	})
 }
 

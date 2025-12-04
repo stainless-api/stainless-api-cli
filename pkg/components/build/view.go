@@ -104,7 +104,7 @@ func ViewStepSymbol(status, conclusion string) string {
 			return greenStyle.Render("✓")
 		case "warning":
 			return yellowStyle.Render("⚠")
-		case "error":
+		case "failure", "error":
 			return redStyle.Render("⚠")
 		case "fatal":
 			return redStyle.Render("✗")
