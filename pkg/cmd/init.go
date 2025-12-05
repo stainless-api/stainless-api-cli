@@ -333,11 +333,14 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Cl
 		},
 	}
 
-	_, err = client.Projects.New(
-		ctx,
-		params,
-		debugMiddlewareOption,
-	)
+	err = group.Spinner("Creating project...", func() error {
+		_, err = client.Projects.New(
+			ctx,
+			params,
+			debugMiddlewareOption,
+		)
+		return err
+	})
 	if err != nil {
 		return "", nil, err
 	}

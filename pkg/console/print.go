@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/spinner"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
@@ -180,4 +182,87 @@ func (g Group) Confirm(cmd *cli.Command, flagName, title, description string, de
 
 func (g Group) Field(field huh.Field) error {
 	return huh.NewForm(huh.NewGroup(field)).WithTheme(GetFormTheme(g.indent)).Run()
+}
+
+// spinnerModel handles the spinner UI while executing an operation
+type spinnerModel struct {
+	spinner spinner.Model
+	message string
+	indent  int
+	execute func() error
+	err     error
+	done    bool
+}
+
+type operationCompleteMsg struct {
+	err error
+}
+
+func (m spinnerModel) Init() tea.Cmd {
+	return tea.Batch(m.spinner.Tick, m.runOperation)
+}
+
+func (m spinnerModel) runOperation() tea.Msg {
+	err := m.execute()
+	return operationCompleteMsg{err: err}
+}
+
+func (m spinnerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.String() == "ctrl+c" {
+			return m, tea.Quit
+		}
+	case operationCompleteMsg:
+		m.done = true
+		m.err = msg.err
+		return m, tea.Quit
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+	}
+	return m, nil
+}
+
+func (m spinnerModel) View() string {
+	if m.done {
+		return ""
+	}
+	indentStr := strings.Repeat("  ", m.indent)
+	return indentStr + m.spinner.View() + " " + m.message
+}
+
+// Spinner runs the given operation with a spinner and message
+func Spinner(message string, operation func() error) error {
+	return spinnerWithIndent(0, message, operation)
+}
+
+// Spinner runs the given operation with a spinner and message, respecting the group's indent
+func (g Group) Spinner(message string, operation func() error) error {
+	return spinnerWithIndent(g.indent, message, operation)
+}
+
+func spinnerWithIndent(indent int, message string, operation func() error) error {
+	s := spinner.New()
+	s.Spinner = spinner.MiniDot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("14"))
+
+	model := spinnerModel{
+		spinner: s,
+		message: message,
+		indent:  indent,
+		execute: operation,
+	}
+
+	finalModel, err := tea.NewProgram(model).Run()
+	if err != nil {
+		return err
+	}
+
+	if m, ok := finalModel.(spinnerModel); ok && m.err != nil {
+		return m.err
+	}
+
+	return nil
 }
