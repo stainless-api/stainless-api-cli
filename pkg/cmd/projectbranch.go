@@ -108,7 +108,7 @@ var projectsBranchesRebase = cli.Command{
 			Name:        "base",
 			Usage:       `The branch or commit SHA to rebase onto. Defaults to "main".`,
 			Value:       requestflag.Value[string]("main"),
-			DefaultText: requestflag.Value[string]("main"),
+			DefaultText: "main",
 			Config: requestflag.RequestConfig{
 				QueryPath: "base",
 			},
