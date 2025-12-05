@@ -21,7 +21,7 @@ var projectsConfigsRetrieve = cli.Command{
 		&requestflag.StringFlag{
 			Name:  "branch",
 			Usage: `Branch name, defaults to "main".`,
-			Value: "main",
+			Value: requestflag.Value[string]("main"),
 			Config: requestflag.RequestConfig{
 				QueryPath: "branch",
 			},
@@ -51,7 +51,7 @@ var projectsConfigsGuess = cli.Command{
 		&requestflag.StringFlag{
 			Name:  "branch",
 			Usage: "Branch name",
-			Value: "main",
+			Value: requestflag.Value[string]("main"),
 			Config: requestflag.RequestConfig{
 				BodyPath: "branch",
 			},

@@ -41,7 +41,7 @@ var buildsTargetOutputsRetrieve = cli.Command{
 		&requestflag.StringFlag{
 			Name:  "output",
 			Usage: "Output format: url (download URL) or git (temporary access token).",
-			Value: "url",
+			Value: requestflag.Value[stainless.BuildTargetOutputGetParamsOutput]("url"),
 			Config: requestflag.RequestConfig{
 				QueryPath: "output",
 			},

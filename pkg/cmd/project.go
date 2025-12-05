@@ -95,7 +95,7 @@ var projectsList = cli.Command{
 		&requestflag.FloatFlag{
 			Name:  "limit",
 			Usage: "Maximum number of projects to return, defaults to 10 (maximum: 100).",
-			Value: 10,
+			Value: requestflag.Value[float64](10),
 			Config: requestflag.RequestConfig{
 				QueryPath: "limit",
 			},

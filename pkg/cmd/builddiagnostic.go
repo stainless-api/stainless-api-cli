@@ -32,7 +32,7 @@ var buildsDiagnosticsList = cli.Command{
 		&requestflag.FloatFlag{
 			Name:  "limit",
 			Usage: "Maximum number of diagnostics to return, defaults to 100 (maximum: 100)",
-			Value: 100,
+			Value: requestflag.Value[float64](100),
 			Config: requestflag.RequestConfig{
 				QueryPath: "limit",
 			},

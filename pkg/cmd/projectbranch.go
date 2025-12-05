@@ -70,7 +70,7 @@ var projectsBranchesList = cli.Command{
 		&requestflag.FloatFlag{
 			Name:  "limit",
 			Usage: "Maximum number of items to return, defaults to 10 (maximum: 100).",
-			Value: 10,
+			Value: requestflag.Value[float64](10),
 			Config: requestflag.RequestConfig{
 				QueryPath: "limit",
 			},
@@ -102,7 +102,7 @@ var projectsBranchesRebase = cli.Command{
 		&requestflag.StringFlag{
 			Name:  "base",
 			Usage: `The branch or commit SHA to rebase onto. Defaults to "main".`,
-			Value: "main",
+			Value: requestflag.Value[string]("main"),
 			Config: requestflag.RequestConfig{
 				QueryPath: "base",
 			},
