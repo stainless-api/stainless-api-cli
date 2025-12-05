@@ -19,7 +19,6 @@ import (
 	"github.com/stainless-api/stainless-api-cli/pkg/components/dev"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-go"
-	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/stainless-api/stainless-api-go/shared"
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
@@ -247,7 +246,7 @@ func runDevBuild(ctx context.Context, client stainless.Client, wc WorkspaceConfi
 			build, err := client.Builds.New(
 				ctx,
 				buildReq,
-				option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
+				debugMiddlewareOption,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create build: %v", err)
@@ -351,7 +350,7 @@ func getDiagnostics(ctx context.Context, cmd *cli.Command, client stainless.Clie
 		"api/generate/spec",
 		specParams,
 		&result,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
+		debugMiddlewareOption,
 	)
 	if err != nil {
 		return nil, err

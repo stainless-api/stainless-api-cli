@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
+	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-go"
@@ -21,30 +23,44 @@ var buildsTargetOutputsRetrieve = cli.Command{
 		&cli.BoolFlag{
 			Name: "pull",
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "build-id",
 			Usage: "Build ID",
+			Config: requestflag.RequestConfig{
+				QueryPath: "build_id",
+			},
 		},
 		&cli.StringFlag{
 			Name:  "project",
 			Usage: "Project name (required when build-id is not provided)",
 		},
-		&cli.StringFlag{
-			Name:  "branch",
-			Usage: "Branch name (defaults to main if not provided)",
-			Value: "main",
+		&requestflag.StringFlag{
+			Name:        "branch",
+			Usage:       "Branch name (defaults to main if not provided)",
+			Value:       requestflag.Value[string]("main"),
+			DefaultText: "main",
 		},
-		&cli.StringSliceFlag{
+		&requestflag.StringSliceFlag{
 			Name:  "target",
 			Usage: "SDK language target name(s). Can be specified multiple times.",
+			Config: requestflag.RequestConfig{
+				QueryPath: "target",
+			},
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name: "type",
+			Config: requestflag.RequestConfig{
+				QueryPath: "type",
+			},
 		},
-		&cli.StringFlag{
-			Name:  "output",
-			Usage: "Output format: url (download URL) or git (temporary access token).",
-			Value: "url",
+		&requestflag.StringFlag{
+			Name:        "output",
+			Usage:       "Output format: url (download URL) or git (temporary access token).",
+			Value:       requestflag.Value[string]("url"),
+			HideDefault: true,
+			Config: requestflag.RequestConfig{
+				QueryPath: "output",
+			},
 		},
 	},
 	Before: before,
@@ -57,8 +73,28 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
+	params := stainless.BuildTargetOutputGetParams{}
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
+	}
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Builds.TargetOutputs.Get(
+		ctx,
+		params,
+		options...,
+	)
+	if err != nil {
+		return err
+	}
 
-	buildID := cmd.String("build-id")
+	buildID := requestflag.CommandRequestValue[string](cmd, "build-id")
 	if buildID == "" {
 		latestBuild, err := getLatestBuild(ctx, client, cmd.String("project"), cmd.String("branch"))
 		if err != nil {
@@ -88,7 +124,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 		res, err := client.Builds.TargetOutputs.Get(
 			ctx,
 			params,
-			option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
+			debugMiddlewareOption,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to get output for target %s: %v", target, err)
@@ -104,7 +140,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 		}
 
 		if isPull {
-			group := console.Info(fmt.Sprintf("Downloading %s", target))
+			group := console.Info("Downloading %s", target)
 
 			// Get target output path from downloadPaths (which includes workspace config)
 			targetDir := downloadPaths[target]

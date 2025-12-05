@@ -131,6 +131,7 @@ stl builds create --branch <branch>`,
 				Commands: []*cli.Command{
 					&buildsCreate,
 					&buildsRetrieve,
+					&buildsList,
 					&buildsCompare,
 				},
 			},
