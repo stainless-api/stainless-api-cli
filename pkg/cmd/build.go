@@ -10,12 +10,14 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/goccy/go-yaml"
+	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
+	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	cbuild "github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
-	"github.com/stainless-api/stainless-api-go/shared"
 	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
@@ -85,21 +87,40 @@ var buildsCreate = cli.Command{
 			Name:  "pull",
 			Usage: "Pull the build outputs after completion (only works with --wait)",
 		},
-		&cli.BoolFlag{
+		&requestflag.YAMLFlag{
+			Name:  "revision",
+			Usage: "Specifies what to build: a branch name, commit SHA, merge command\n(\"base..head\"), or file contents.",
+			Config: requestflag.RequestConfig{
+				BodyPath: "revision",
+			},
+		},
+		&requestflag.BoolFlag{
 			Name:  "allow-empty",
 			Usage: "Whether to allow empty commits (no changes). Defaults to false.",
+			Config: requestflag.RequestConfig{
+				BodyPath: "allow_empty",
+			},
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "branch",
 			Usage: "The project branch to use for the build. If not specified, the\nbranch is inferred from the `revision`, and will 400 when that\nis not possible.",
+			Config: requestflag.RequestConfig{
+				BodyPath: "branch",
+			},
 		},
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "commit-message",
 			Usage: "Optional commit message to use when creating a new commit.",
+			Config: requestflag.RequestConfig{
+				BodyPath: "commit_message",
+			},
 		},
-		&cli.StringSliceFlag{
+		&requestflag.StringSliceFlag{
 			Name:  "target",
 			Usage: "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
+			Config: requestflag.RequestConfig{
+				BodyPath: "targets",
+			},
 		},
 	},
 	Action:          handleBuildsCreate,
@@ -111,7 +132,7 @@ var buildsRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Retrieve a build by its ID.",
 	Flags: []cli.Flag{
-		&cli.StringFlag{
+		&requestflag.StringFlag{
 			Name:  "build-id",
 			Usage: "Build ID",
 		},
@@ -121,13 +142,69 @@ var buildsRetrieve = cli.Command{
 	HideHelpCommand: true,
 }
 
+var buildsList = cli.Command{
+	Name:  "list",
+	Usage: "List user-triggered builds for a given project.",
+	Flags: []cli.Flag{
+		&requestflag.StringFlag{
+			Name:  "branch",
+			Usage: "Branch name",
+			Config: requestflag.RequestConfig{
+				QueryPath: "branch",
+			},
+		},
+		&requestflag.StringFlag{
+			Name:  "cursor",
+			Usage: "Pagination cursor from a previous response.",
+			Config: requestflag.RequestConfig{
+				QueryPath: "cursor",
+			},
+		},
+		&requestflag.FloatFlag{
+			Name:        "limit",
+			Usage:       "Maximum number of builds to return, defaults to 10 (maximum: 100).",
+			Value:       requestflag.Value[float64](10),
+			DefaultText: "10",
+			Config: requestflag.RequestConfig{
+				QueryPath: "limit",
+			},
+		},
+		&requestflag.YAMLFlag{
+			Name:  "revision",
+			Usage: "A config commit SHA used for the build",
+			Config: requestflag.RequestConfig{
+				QueryPath: "revision",
+			},
+		},
+	},
+	Action:          handleBuildsList,
+	HideHelpCommand: true,
+}
+
 var buildsCompare = cli.Command{
 	Name:  "compare",
 	Usage: "Create two builds whose outputs can be directly compared with each other.",
 	Flags: []cli.Flag{
-		&cli.StringSliceFlag{
+		&requestflag.YAMLFlag{
+			Name:  "base",
+			Usage: "Parameters for the base build",
+			Config: requestflag.RequestConfig{
+				BodyPath: "base",
+			},
+		},
+		&requestflag.YAMLFlag{
+			Name:  "head",
+			Usage: "Parameters for the head build",
+			Config: requestflag.RequestConfig{
+				BodyPath: "head",
+			},
+		},
+		&requestflag.StringSliceFlag{
 			Name:  "target",
 			Usage: "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
+			Config: requestflag.RequestConfig{
+				BodyPath: "targets",
+			},
 		},
 	},
 	Action:          handleBuildsCompare,
@@ -136,6 +213,7 @@ var buildsCompare = cli.Command{
 }
 
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
+	var err error
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 
 	unusedArgs := cmd.Args().Slice()
@@ -146,33 +224,45 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	wc := getWorkspace(ctx)
 
 	buildGroup := console.Info("Creating build...")
-	params := stainless.BuildNewParams{}
-	if err := unmarshalStdinWithFlags(cmd, map[string]string{
-		"allow-empty":    "allow_empty",
-		"branch":         "branch",
-		"commit-message": "commit_message",
-		"targets":        "targets",
-	}, &params); err != nil {
-		return err
+
+	var revision map[string]map[string]map[string][]byte
+	if cmd.IsSet("revision") {
+		var ok bool
+		revision, ok = requestflag.CommandRequestValue[any](cmd, "revision").(map[string]map[string]map[string][]byte)
+		if !ok {
+			revision = make(map[string]map[string]map[string][]byte)
+		}
+	} else {
+		revision = make(map[string]map[string]map[string][]byte)
+	}
+	var exists bool
+	var fileInputMap map[string]map[string][]byte
+	if fileInputMap, exists = revision["file_input_map"]; !exists {
+		fileInputMap = make(map[string]map[string][]byte)
+		revision["file_input_map"] = fileInputMap
 	}
 
 	if name, oas, err := convertFileFlag(cmd, "openapi-spec"); err != nil {
 		return err
 	} else if oas != nil {
-		if params.Revision.OfFileInputMap == nil {
-			params.Revision.OfFileInputMap = make(map[string]shared.FileInputUnionParam)
+		fileInputMap["openapi"+path.Ext(name)] = map[string][]byte{
+			"content": oas,
 		}
-		params.Revision.OfFileInputMap["openapi"+path.Ext(name)] = shared.FileInputParamOfFileInputContent(string(oas))
 	}
 
 	if name, config, err := convertFileFlag(cmd, "stainless-config"); err != nil {
 		return err
 	} else if config != nil {
-		if params.Revision.OfFileInputMap == nil {
-			params.Revision.OfFileInputMap = make(map[string]shared.FileInputUnionParam)
+		revision["file_input_map"]["stainless"+path.Ext(name)] = map[string][]byte{
+			"content": config,
 		}
-		params.Revision.OfFileInputMap["stainless"+path.Ext(name)] = shared.FileInputParamOfFileInputContent(string(config))
 	}
+
+	var revisionYAML []byte
+	if revisionYAML, err = yaml.Marshal(revision); err != nil {
+		return err
+	}
+	cmd.Set("revision", string(revisionYAML))
 
 	downloadPaths, targets, specifiedPath := parseTargetPaths(wc, cmd.StringSlice("target"))
 
@@ -181,12 +271,25 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		downloadPaths = make(map[stainless.Target]string)
 	}
 
-	params.Targets = targets
+	for _, t := range targets {
+		cmd.Set("target", string(t))
+	}
+
+	params := stainless.BuildNewParams{}
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
+	}
 
 	build, err := client.Builds.New(
 		ctx,
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
+		options...,
 	)
 	if err != nil {
 		return err
@@ -201,7 +304,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		})
 		model, err = tea.NewProgram(model).Run()
 		if err != nil {
-			console.Warn(err.Error())
+			console.Warn("%s", err.Error())
 		}
 		b := model.(buildCompletionModel).Build
 		build = &b.Build
@@ -288,12 +391,21 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
+	}
 	var res []byte
-	_, err := client.Builds.Get(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Builds.Get(
 		ctx,
-		cmd.Value("build-id").(string),
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		requestflag.CommandRequestValue[string](cmd, "build-id"),
+		options...,
 	)
 	if err != nil {
 		return err
@@ -305,6 +417,40 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON("builds retrieve", json, format, transform)
 }
 
+func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
+	unusedArgs := cmd.Args().Slice()
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
+	params := stainless.BuildListParams{}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
+		return err
+	}
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Builds.List(
+		ctx,
+		params,
+		options...,
+	)
+	if err != nil {
+		return err
+	}
+
+	json := gjson.Parse(string(res))
+	format := cmd.Root().String("format")
+	transform := cmd.Root().String("transform")
+	return ShowJSON("builds list", json, format, transform)
+}
+
 func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
@@ -312,17 +458,22 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 	params := stainless.BuildCompareParams{}
-	if err := unmarshalStdinWithFlags(cmd, map[string]string{
-		"targets": "targets",
-	}, &params); err != nil {
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+	)
+	if err != nil {
 		return err
 	}
 	var res []byte
-	_, err := client.Builds.Compare(
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Builds.Compare(
 		ctx,
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
-		option.WithResponseBodyInto(&res),
+		options...,
 	)
 	if err != nil {
 		return err

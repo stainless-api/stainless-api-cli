@@ -45,10 +45,10 @@ stl [resource] [command] [flags]
 
 ```sh
 stl builds create \
+  --revision main \
 <<JSON
 {
-  "project": "stainless",
-  "revision": "main"
+  "project": "stainless"
 }
 JSON
 ```

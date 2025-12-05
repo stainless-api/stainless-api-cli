@@ -23,7 +23,6 @@ import (
 	"github.com/charmbracelet/x/term"
 	"github.com/pkg/browser"
 	"github.com/stainless-api/stainless-api-go"
-	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/urfave/cli/v3"
 )
 
@@ -337,7 +336,7 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Cl
 	_, err = client.Projects.New(
 		ctx,
 		params,
-		option.WithMiddleware(debugMiddleware(cmd.Bool("debug"))),
+		debugMiddlewareOption,
 	)
 	if err != nil {
 		return "", nil, err
@@ -419,7 +418,7 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, client stainless
 
 	_, err = tea.NewProgram(model).Run()
 	if err != nil {
-		console.Warn(err.Error())
+		console.Warn("%s", err.Error())
 	}
 
 	console.Spacer()
