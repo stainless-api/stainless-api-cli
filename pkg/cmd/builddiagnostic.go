@@ -5,6 +5,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
@@ -77,20 +78,39 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-	var res []byte
-	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Builds.Diagnostics.List(
-		ctx,
-		requestflag.CommandRequestValue[string](cmd, "build-id"),
-		params,
-		options...,
-	)
-	if err != nil {
-		return err
-	}
 
-	json := gjson.Parse(string(res))
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("builds:diagnostics list", json, format, transform)
+	if format == "raw" {
+		var res []byte
+		options = append(options, option.WithResponseBodyInto(&res))
+		_, err = client.Builds.Diagnostics.List(
+			ctx,
+			requestflag.CommandRequestValue[string](cmd, "build-id"),
+			params,
+			options...,
+		)
+		if err != nil {
+			return err
+		}
+		obj := gjson.ParseBytes(res)
+		return ShowJSON(os.Stdout, "builds:diagnostics list", obj, format, transform)
+	} else {
+		iter := client.Builds.Diagnostics.ListAutoPaging(
+			ctx,
+			requestflag.CommandRequestValue[string](cmd, "build-id"),
+			params,
+			options...,
+		)
+		return streamOutput("builds:diagnostics list", func(w *os.File) error {
+			for iter.Next() {
+				item := iter.Current()
+				obj := gjson.Parse(item.RawJSON())
+				if err := ShowJSON(w, "builds:diagnostics list", obj, format, transform); err != nil {
+					return err
+				}
+			}
+			return iter.Err()
+		})
+	}
 }

@@ -5,6 +5,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
@@ -53,26 +54,24 @@ func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Orgs.Get(
-		ctx,
-		requestflag.CommandRequestValue[string](cmd, "org"),
-		options...,
-	)
+	_, err = client.Orgs.Get(ctx, requestflag.CommandRequestValue[string](cmd, "org"), options...)
 	if err != nil {
 		return err
 	}
 
-	json := gjson.Parse(string(res))
+	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("orgs retrieve", json, format, transform)
+	return ShowJSON(os.Stdout, "orgs retrieve", obj, format, transform)
 }
 
 func handleOrgsList(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
+
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
@@ -85,6 +84,7 @@ func handleOrgsList(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
 	_, err = client.Orgs.List(ctx, options...)
@@ -92,8 +92,8 @@ func handleOrgsList(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	json := gjson.Parse(string(res))
+	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("orgs list", json, format, transform)
+	return ShowJSON(os.Stdout, "orgs list", obj, format, transform)
 }

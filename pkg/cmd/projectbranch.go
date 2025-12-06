@@ -5,6 +5,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
@@ -134,6 +135,7 @@ var projectsBranchesReset = cli.Command{
 func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
+
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
@@ -148,21 +150,18 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Projects.Branches.New(
-		ctx,
-		params,
-		options...,
-	)
+	_, err = client.Projects.Branches.New(ctx, params, options...)
 	if err != nil {
 		return err
 	}
 
-	json := gjson.Parse(string(res))
+	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("projects:branches create", json, format, transform)
+	return ShowJSON(os.Stdout, "projects:branches create", obj, format, transform)
 }
 
 func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
@@ -186,6 +185,7 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 	if err != nil {
 		return err
 	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
 	_, err = client.Projects.Branches.Get(
@@ -198,15 +198,16 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 		return err
 	}
 
-	json := gjson.Parse(string(res))
+	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("projects:branches retrieve", json, format, transform)
+	return ShowJSON(os.Stdout, "projects:branches retrieve", obj, format, transform)
 }
 
 func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
+
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
@@ -221,21 +222,31 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-	var res []byte
-	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Projects.Branches.List(
-		ctx,
-		params,
-		options...,
-	)
-	if err != nil {
-		return err
-	}
 
-	json := gjson.Parse(string(res))
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("projects:branches list", json, format, transform)
+	if format == "raw" {
+		var res []byte
+		options = append(options, option.WithResponseBodyInto(&res))
+		_, err = client.Projects.Branches.List(ctx, params, options...)
+		if err != nil {
+			return err
+		}
+		obj := gjson.ParseBytes(res)
+		return ShowJSON(os.Stdout, "projects:branches list", obj, format, transform)
+	} else {
+		iter := client.Projects.Branches.ListAutoPaging(ctx, params, options...)
+		return streamOutput("projects:branches list", func(w *os.File) error {
+			for iter.Next() {
+				item := iter.Current()
+				obj := gjson.Parse(item.RawJSON())
+				if err := ShowJSON(w, "projects:branches list", obj, format, transform); err != nil {
+					return err
+				}
+			}
+			return iter.Err()
+		})
+	}
 }
 
 func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
@@ -259,6 +270,7 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
 	_, err = client.Projects.Branches.Delete(
@@ -271,10 +283,10 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	json := gjson.Parse(string(res))
+	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("projects:branches delete", json, format, transform)
+	return ShowJSON(os.Stdout, "projects:branches delete", obj, format, transform)
 }
 
 func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
@@ -298,6 +310,7 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
 	_, err = client.Projects.Branches.Rebase(
@@ -310,10 +323,10 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	json := gjson.Parse(string(res))
+	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("projects:branches rebase", json, format, transform)
+	return ShowJSON(os.Stdout, "projects:branches rebase", obj, format, transform)
 }
 
 func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
@@ -337,6 +350,7 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
 	_, err = client.Projects.Branches.Reset(
@@ -349,8 +363,8 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	json := gjson.Parse(string(res))
+	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("projects:branches reset", json, format, transform)
+	return ShowJSON(os.Stdout, "projects:branches reset", obj, format, transform)
 }

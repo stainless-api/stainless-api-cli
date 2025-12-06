@@ -5,6 +5,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
@@ -100,6 +101,7 @@ var buildsList = cli.Command{
 		&requestflag.YAMLFlag{
 			Name:  "revision",
 			Usage: "A config commit SHA used for the build",
+			Value: requestflag.Value[stainless.BuildListParamsRevisionUnion](map[string]any{}),
 			Config: requestflag.RequestConfig{
 				QueryPath: "revision",
 			},
@@ -142,6 +144,7 @@ var buildsCompare = cli.Command{
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
+
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
@@ -156,21 +159,18 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Builds.New(
-		ctx,
-		params,
-		options...,
-	)
+	_, err = client.Builds.New(ctx, params, options...)
 	if err != nil {
 		return err
 	}
 
-	json := gjson.Parse(string(res))
+	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("builds create", json, format, transform)
+	return ShowJSON(os.Stdout, "builds create", obj, format, transform)
 }
 
 func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
@@ -192,26 +192,24 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Builds.Get(
-		ctx,
-		requestflag.CommandRequestValue[string](cmd, "build-id"),
-		options...,
-	)
+	_, err = client.Builds.Get(ctx, requestflag.CommandRequestValue[string](cmd, "build-id"), options...)
 	if err != nil {
 		return err
 	}
 
-	json := gjson.Parse(string(res))
+	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("builds retrieve", json, format, transform)
+	return ShowJSON(os.Stdout, "builds retrieve", obj, format, transform)
 }
 
 func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
+
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
@@ -226,26 +224,37 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
-	var res []byte
-	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Builds.List(
-		ctx,
-		params,
-		options...,
-	)
-	if err != nil {
-		return err
-	}
 
-	json := gjson.Parse(string(res))
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("builds list", json, format, transform)
+	if format == "raw" {
+		var res []byte
+		options = append(options, option.WithResponseBodyInto(&res))
+		_, err = client.Builds.List(ctx, params, options...)
+		if err != nil {
+			return err
+		}
+		obj := gjson.ParseBytes(res)
+		return ShowJSON(os.Stdout, "builds list", obj, format, transform)
+	} else {
+		iter := client.Builds.ListAutoPaging(ctx, params, options...)
+		return streamOutput("builds list", func(w *os.File) error {
+			for iter.Next() {
+				item := iter.Current()
+				obj := gjson.Parse(item.RawJSON())
+				if err := ShowJSON(w, "builds list", obj, format, transform); err != nil {
+					return err
+				}
+			}
+			return iter.Err()
+		})
+	}
 }
 
 func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
+
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
@@ -260,19 +269,16 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Builds.Compare(
-		ctx,
-		params,
-		options...,
-	)
+	_, err = client.Builds.Compare(ctx, params, options...)
 	if err != nil {
 		return err
 	}
 
-	json := gjson.Parse(string(res))
+	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("builds compare", json, format, transform)
+	return ShowJSON(os.Stdout, "builds compare", obj, format, transform)
 }
