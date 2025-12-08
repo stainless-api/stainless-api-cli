@@ -47,6 +47,13 @@ var buildsCreate = cli.Command{
 				BodyPath: "commit_message",
 			},
 		},
+		&requestflag.YAMLFlag{
+			Name:  "target-commit-messages",
+			Usage: "Optional commit messages to use for each SDK when making a new commit.\nSDKs not represented in this object will fallback to the optional\n`commit_message` parameter, or will fallback further to the default\ncommit message.",
+			Config: requestflag.RequestConfig{
+				BodyPath: "target_commit_messages",
+			},
+		},
 		&requestflag.StringSliceFlag{
 			Name:  "target",
 			Usage: "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
