@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.0-alpha.60 (2025-12-08)
+
+Full Changelog: [v0.1.0-alpha.59...v0.1.0-alpha.60](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.59...v0.1.0-alpha.60)
+
+### Features
+
+* add spinner for project creation ([361bfec](https://github.com/stainless-api/stainless-api-cli/commit/361bfec53b2cdc963e7599626ffdae65f505f8fb))
+* fix edge cases for sending request data and add YAML support ([99caa6a](https://github.com/stainless-api/stainless-api-cli/commit/99caa6af3ae82d5622de085066c370cee3e73c71))
+
+
+### Bug Fixes
+
+* fix for default flag values ([114f9c1](https://github.com/stainless-api/stainless-api-cli/commit/114f9c120eac20cc5a24e2bc48a0049c268d20a9))
+
+
+### Chores
+
+* **internal:** codegen related update ([858b183](https://github.com/stainless-api/stainless-api-cli/commit/858b183ae8b9cd215876db334b4a6992d7403d47))
+
 ## 0.1.0-alpha.59 (2025-12-04)
 
 Full Changelog: [v0.1.0-alpha.58...v0.1.0-alpha.59](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.58...v0.1.0-alpha.59)
