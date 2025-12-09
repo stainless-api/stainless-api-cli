@@ -46,9 +46,9 @@ var buildsDiagnosticsList = cli.Command{
 				QueryPath: "severity",
 			},
 		},
-		&requestflag.StringSliceFlag{
-			Name:  "target",
-			Usage: "Optional list of language targets to filter diagnostics by",
+		&requestflag.StringFlag{
+			Name:  "targets",
+			Usage: "Optional comma-delimited list of language targets to filter diagnostics by",
 			Config: requestflag.RequestConfig{
 				QueryPath: "targets",
 			},
