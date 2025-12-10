@@ -1,9 +1,11 @@
 package debugmiddleware
 
 import (
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"strings"
+	"sync"
 )
 
 // For the time being these type definitions are duplicated here so that we can
@@ -15,14 +17,27 @@ type (
 
 const redactedPlaceholder = "<REDACTED>"
 
-// DebugMiddleware returns a middleware that logs HTTP requests and responses.
-//
-// logWriter is log.Default() under most circumstances, but made low level so we
-// can more easily inject a buffer to check in tests.
-func DebugMiddleware(logger interface{ Printf(string, ...any) }) Middleware {
+// Headers known to contain sensitive information like an API key.
+var sensitiveHeaders = []string{}
+
+// RequestLogger is a middleware that logs HTTP requests and responses.
+type RequestLogger struct {
+	logger           interface{ Printf(string, ...any) } // field for testability; usually log.Default()
+	sensitiveHeaders []string                            // field for testability; usually sensitiveHeaders
+}
+
+// NewRequestLogger returns a new RequestLogger instance with default options.
+func NewRequestLogger() *RequestLogger {
+	return &RequestLogger{
+		logger:           log.Default(),
+		sensitiveHeaders: sensitiveHeaders,
+	}
+}
+
+func (m *RequestLogger) Middleware() Middleware {
 	return func(req *http.Request, mn MiddlewareNext) (*http.Response, error) {
-		if reqBytes, err := httputil.DumpRequest(redactRequest(req), true); err == nil {
-			logger.Printf("Request Content:\n%s\n", reqBytes)
+		if reqBytes, err := httputil.DumpRequest(m.redactRequest(req), true); err == nil {
+			m.logger.Printf("Request Content:\n%s\n", reqBytes)
 		}
 
 		resp, err := mn(req)
@@ -31,7 +46,7 @@ func DebugMiddleware(logger interface{ Printf(string, ...any) }) Middleware {
 		}
 
 		if respBytes, err := httputil.DumpResponse(resp, true); err == nil {
-			logger.Printf("Response Content:\n%s\n", respBytes)
+			m.logger.Printf("Response Content:\n%s\n", respBytes)
 		}
 
 		return resp, err
@@ -42,17 +57,40 @@ func DebugMiddleware(logger interface{ Printf(string, ...any) }) Middleware {
 // purposes. If redaction is necessary, the request is cloned before mutating
 // the original and that clone is returned. As a small optimization, the
 // original is request is returned unchanged if no redaction is necessary.
-func redactRequest(req *http.Request) *http.Request {
-	if auth := req.Header.Get("Authorization"); auth != "" {
+func (m *RequestLogger) redactRequest(req *http.Request) *http.Request {
+	cloneReq := sync.OnceFunc(func() {
 		req = req.Clone(req.Context())
+	})
 
-		// In case we're using something like a bearer token (e.g. `Bearer
-		// <my_token>`), keep the `Bearer` part for more debugging
-		// information.
-		if authKind, _, ok := strings.Cut(auth, " "); ok {
-			req.Header.Set("Authorization", authKind+" "+redactedPlaceholder)
-		} else {
-			req.Header.Set("Authorization", redactedPlaceholder)
+	// Notably, the clauses below are written so they can redact multiple
+	// headers of the same name if necessary.
+	if values := req.Header.Values("Authorization"); len(values) > 0 {
+		cloneReq()
+		req.Header.Del("Authorization")
+
+		for _, value := range values {
+			// In case we're using something like a bearer token (e.g. `Bearer
+			// <my_token>`), keep the `Bearer` part for more debugging
+			// information.
+			if authKind, _, ok := strings.Cut(value, " "); ok {
+				req.Header.Add("Authorization", authKind+" "+redactedPlaceholder)
+			} else {
+				req.Header.Add("Authorization", redactedPlaceholder)
+			}
+		}
+	}
+
+	for _, header := range m.sensitiveHeaders {
+		values := req.Header.Values(header)
+		if len(values) == 0 {
+			continue
+		}
+
+		cloneReq()
+		req.Header.Del(header)
+
+		for range values {
+			req.Header.Add(header, redactedPlaceholder)
 		}
 	}
 
