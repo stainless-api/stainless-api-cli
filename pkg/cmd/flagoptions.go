@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
 	"mime/multipart"
 	"os"
 
@@ -32,7 +31,7 @@ func flagOptions(
 ) ([]option.RequestOption, error) {
 	var options []option.RequestOption
 	if cmd.Bool("debug") {
-		options = append(options, option.WithMiddleware(debugmiddleware.DebugMiddleware(log.Default())))
+		options = append(options, option.WithMiddleware(debugmiddleware.NewRequestLogger().Middleware()))
 	}
 
 	queries := make(map[string]any)
