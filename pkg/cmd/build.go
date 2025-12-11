@@ -87,47 +87,35 @@ var buildsCreate = cli.Command{
 			Name:  "pull",
 			Usage: "Pull the build outputs after completion (only works with --wait)",
 		},
-		&requestflag.YAMLFlag{
-			Name:  "revision",
-			Usage: "Specifies what to build: a branch name, commit SHA, merge command\n(\"base..head\"), or file contents.",
-			Config: requestflag.RequestConfig{
-				BodyPath: "revision",
-			},
+		&requestflag.Flag[any]{
+			Name:     "revision",
+			Usage:    "Specifies what to build: a branch name, commit SHA, merge command\n(\"base..head\"), or file contents.",
+			BodyPath: "revision",
 		},
-		&requestflag.BoolFlag{
-			Name:  "allow-empty",
-			Usage: "Whether to allow empty commits (no changes). Defaults to false.",
-			Config: requestflag.RequestConfig{
-				BodyPath: "allow_empty",
-			},
+		&requestflag.Flag[bool]{
+			Name:     "allow-empty",
+			Usage:    "Whether to allow empty commits (no changes). Defaults to false.",
+			BodyPath: "allow_empty",
 		},
-		&requestflag.StringFlag{
-			Name:  "branch",
-			Usage: "The project branch to use for the build. If not specified, the\nbranch is inferred from the `revision`, and will 400 when that\nis not possible.",
-			Config: requestflag.RequestConfig{
-				BodyPath: "branch",
-			},
+		&requestflag.Flag[string]{
+			Name:     "branch",
+			Usage:    "The project branch to use for the build. If not specified, the\nbranch is inferred from the `revision`, and will 400 when that\nis not possible.",
+			BodyPath: "branch",
 		},
-		&requestflag.StringFlag{
-			Name:  "commit-message",
-			Usage: "Optional commit message to use when creating a new commit.",
-			Config: requestflag.RequestConfig{
-				BodyPath: "commit_message",
-			},
+		&requestflag.Flag[string]{
+			Name:     "commit-message",
+			Usage:    "Optional commit message to use when creating a new commit.",
+			BodyPath: "commit_message",
 		},
-		&requestflag.YAMLFlag{
-			Name:  "target-commit-messages",
-			Usage: "Optional commit messages to use for each SDK when making a new commit.\nSDKs not represented in this object will fallback to the optional\n`commit_message` parameter, or will fallback further to the default\ncommit message.",
-			Config: requestflag.RequestConfig{
-				BodyPath: "target_commit_messages",
-			},
+		&requestflag.Flag[any]{
+			Name:     "target-commit-messages",
+			Usage:    "Optional commit messages to use for each SDK when making a new commit.\nSDKs not represented in this object will fallback to the optional\n`commit_message` parameter, or will fallback further to the default\ncommit message.",
+			BodyPath: "target_commit_messages",
 		},
-		&requestflag.StringSliceFlag{
-			Name:  "target",
-			Usage: "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
-			Config: requestflag.RequestConfig{
-				BodyPath: "targets",
-			},
+		&requestflag.Flag[[]string]{
+			Name:     "target",
+			Usage:    "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
+			BodyPath: "targets",
 		},
 	},
 	Action:          handleBuildsCreate,
@@ -139,7 +127,7 @@ var buildsRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Retrieve a build by its ID.",
 	Flags: []cli.Flag{
-		&requestflag.StringFlag{
+		&requestflag.Flag[string]{
 			Name:  "build-id",
 			Usage: "Build ID",
 		},
@@ -153,36 +141,28 @@ var buildsList = cli.Command{
 	Name:  "list",
 	Usage: "List user-triggered builds for a given project.",
 	Flags: []cli.Flag{
-		&requestflag.StringFlag{
-			Name:  "branch",
-			Usage: "Branch name",
-			Config: requestflag.RequestConfig{
-				QueryPath: "branch",
-			},
+		&requestflag.Flag[string]{
+			Name:      "branch",
+			Usage:     "Branch name",
+			QueryPath: "branch",
 		},
-		&requestflag.StringFlag{
-			Name:  "cursor",
-			Usage: "Pagination cursor from a previous response.",
-			Config: requestflag.RequestConfig{
-				QueryPath: "cursor",
-			},
+		&requestflag.Flag[string]{
+			Name:      "cursor",
+			Usage:     "Pagination cursor from a previous response.",
+			QueryPath: "cursor",
 		},
-		&requestflag.FloatFlag{
+		&requestflag.Flag[float64]{
 			Name:        "limit",
 			Usage:       "Maximum number of builds to return, defaults to 10 (maximum: 100).",
-			Value:       requestflag.Value[float64](10),
+			Default:       10,
 			DefaultText: "10",
-			Config: requestflag.RequestConfig{
-				QueryPath: "limit",
-			},
+			QueryPath: "limit",
 		},
-		&requestflag.YAMLFlag{
-			Name:  "revision",
-			Usage: "A config commit SHA used for the build",
-			Value: requestflag.Value[any](map[string]any{}),
-			Config: requestflag.RequestConfig{
-				QueryPath: "revision",
-			},
+		&requestflag.Flag[any]{
+			Name:      "revision",
+			Usage:     "A config commit SHA used for the build",
+			Default:   requestflag.Value[any](map[string]any{}),
+			QueryPath: "revision",
 		},
 	},
 	Action:          handleBuildsList,
@@ -193,26 +173,20 @@ var buildsCompare = cli.Command{
 	Name:  "compare",
 	Usage: "Create two builds whose outputs can be directly compared with each other.",
 	Flags: []cli.Flag{
-		&requestflag.YAMLFlag{
-			Name:  "base",
-			Usage: "Parameters for the base build",
-			Config: requestflag.RequestConfig{
-				BodyPath: "base",
-			},
+		&requestflag.Flag[any]{
+			Name:     "base",
+			Usage:    "Parameters for the base build",
+			BodyPath: "base",
 		},
-		&requestflag.YAMLFlag{
-			Name:  "head",
-			Usage: "Parameters for the head build",
-			Config: requestflag.RequestConfig{
-				BodyPath: "head",
-			},
+		&requestflag.Flag[any]{
+			Name:     "head",
+			Usage:    "Parameters for the head build",
+			BodyPath: "head",
 		},
-		&requestflag.StringSliceFlag{
-			Name:  "target",
-			Usage: "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
-			Config: requestflag.RequestConfig{
-				BodyPath: "targets",
-			},
+		&requestflag.Flag[[]string]{
+			Name:     "target",
+			Usage:    "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
+			BodyPath: "targets",
 		},
 	},
 	Action:          handleBuildsCompare,
@@ -412,7 +386,7 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Builds.Get(ctx, requestflag.CommandRequestValue[string](cmd, "build-id"), options...)
+	_, err = client.Builds.Get(ctx, cmd.Value("build-id").(string), options...)
 	if err != nil {
 		return err
 	}

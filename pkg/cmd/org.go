@@ -19,7 +19,7 @@ var orgsRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Retrieve an organization by name.",
 	Flags: []cli.Flag{
-		&requestflag.StringFlag{
+		&requestflag.Flag[string]{
 			Name: "org",
 		},
 	},
@@ -59,7 +59,7 @@ func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Orgs.Get(ctx, requestflag.CommandRequestValue[string](cmd, "org"), options...)
+	_, err = client.Orgs.Get(ctx, cmd.Value("org").(string), options...)
 	if err != nil {
 		return err
 	}
