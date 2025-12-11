@@ -19,20 +19,16 @@ var projectsConfigsRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Retrieve the configuration files for a given project.",
 	Flags: []cli.Flag{
-		&requestflag.StringFlag{
+		&requestflag.Flag[string]{
 			Name:        "branch",
 			Usage:       `Branch name, defaults to "main".`,
-			Value:       requestflag.Value[string]("main"),
+			Default:       "main",
 			DefaultText: "main",
-			Config: requestflag.RequestConfig{
-				QueryPath: "branch",
-			},
+			QueryPath: "branch",
 		},
-		&requestflag.StringFlag{
-			Name: "include",
-			Config: requestflag.RequestConfig{
-				QueryPath: "include",
-			},
+		&requestflag.Flag[string]{
+			Name:      "include",
+			QueryPath: "include",
 		},
 	},
 	Before:          before,
@@ -44,21 +40,17 @@ var projectsConfigsGuess = cli.Command{
 	Name:  "guess",
 	Usage: "Generate suggestions for changes to config files based on an OpenAPI spec.",
 	Flags: []cli.Flag{
-		&requestflag.StringFlag{
-			Name:  "spec",
-			Usage: "OpenAPI spec",
-			Config: requestflag.RequestConfig{
-				BodyPath: "spec",
-			},
+		&requestflag.Flag[string]{
+			Name:     "spec",
+			Usage:    "OpenAPI spec",
+			BodyPath: "spec",
 		},
-		&requestflag.StringFlag{
+		&requestflag.Flag[string]{
 			Name:        "branch",
 			Usage:       "Branch name",
-			Value:       requestflag.Value[string]("main"),
+			Default:       "main",
 			DefaultText: "main",
-			Config: requestflag.RequestConfig{
-				BodyPath: "branch",
-			},
+			BodyPath: "branch",
 		},
 	},
 	Before:          before,

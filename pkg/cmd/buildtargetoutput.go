@@ -24,12 +24,10 @@ var buildsTargetOutputsRetrieve = cli.Command{
 		&cli.BoolFlag{
 			Name: "pull",
 		},
-		&requestflag.StringFlag{
-			Name:  "build-id",
-			Usage: "Build ID",
-			Config: requestflag.RequestConfig{
-				QueryPath: "build_id",
-			},
+		&requestflag.Flag[string]{
+			Name:      "build-id",
+			Usage:     "Build ID",
+			QueryPath: "build_id",
 		},
 		&cli.StringFlag{
 			Name:  "project",
@@ -48,20 +46,16 @@ var buildsTargetOutputsRetrieve = cli.Command{
 				QueryPath: "target",
 			},
 		},
-		&requestflag.StringFlag{
-			Name: "type",
-			Config: requestflag.RequestConfig{
-				QueryPath: "type",
-			},
+		&requestflag.Flag[string]{
+			Name:      "type",
+			QueryPath: "type",
 		},
-		&requestflag.StringFlag{
+		&requestflag.Flag[string]{
 			Name:        "output",
 			Usage:       "Output format: url (download URL) or git (temporary access token).",
-			Value:       requestflag.Value[string]("url"),
+			Default:       requestflag.Value[string]("url"),
 			HideDefault: true,
-			Config: requestflag.RequestConfig{
-				QueryPath: "output",
-			},
+			QueryPath: "output",
 		},
 	},
 	Before: before,

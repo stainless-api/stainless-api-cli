@@ -26,6 +26,8 @@ import (
 	"golang.org/x/term"
 )
 
+var OutputFormats = []string{"auto", "explore", "json", "jsonl", "pretty", "raw", "yaml"}
+
 func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 	opts := []option.RequestOption{
 		option.WithHeader("User-Agent", fmt.Sprintf("Stainless/CLI %s", Version)),

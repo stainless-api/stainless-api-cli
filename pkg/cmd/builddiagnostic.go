@@ -19,39 +19,31 @@ var buildsDiagnosticsList = cli.Command{
 	Name:  "list",
 	Usage: "Get the list of diagnostics for a given build.",
 	Flags: []cli.Flag{
-		&requestflag.StringFlag{
+		&requestflag.Flag[string]{
 			Name:  "build-id",
 			Usage: "Build ID",
 		},
-		&requestflag.StringFlag{
-			Name:  "cursor",
-			Usage: "Pagination cursor from a previous response",
-			Config: requestflag.RequestConfig{
-				QueryPath: "cursor",
-			},
+		&requestflag.Flag[string]{
+			Name:      "cursor",
+			Usage:     "Pagination cursor from a previous response",
+			QueryPath: "cursor",
 		},
-		&requestflag.FloatFlag{
+		&requestflag.Flag[float64]{
 			Name:        "limit",
 			Usage:       "Maximum number of diagnostics to return, defaults to 100 (maximum: 100)",
-			Value:       requestflag.Value[float64](100),
+			Default:       100,
 			DefaultText: "100",
-			Config: requestflag.RequestConfig{
-				QueryPath: "limit",
-			},
+			QueryPath: "limit",
 		},
-		&requestflag.StringFlag{
-			Name:  "severity",
-			Usage: "Includes the given severity and above (fatal > error > warning > note).",
-			Config: requestflag.RequestConfig{
-				QueryPath: "severity",
-			},
+		&requestflag.Flag[string]{
+			Name:      "severity",
+			Usage:     "Includes the given severity and above (fatal > error > warning > note).",
+			QueryPath: "severity",
 		},
-		&requestflag.StringFlag{
-			Name:  "targets",
-			Usage: "Optional comma-delimited list of language targets to filter diagnostics by",
-			Config: requestflag.RequestConfig{
-				QueryPath: "targets",
-			},
+		&requestflag.Flag[string]{
+			Name:      "targets",
+			Usage:     "Optional comma-delimited list of language targets to filter diagnostics by",
+			QueryPath: "targets",
 		},
 	},
 	Before:          before,
@@ -88,7 +80,7 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 		options = append(options, option.WithResponseBodyInto(&res))
 		_, err = client.Builds.Diagnostics.List(
 			ctx,
-			requestflag.CommandRequestValue[string](cmd, "build-id"),
+			cmd.Value("build-id").(string),
 			params,
 			options...,
 		)
@@ -100,7 +92,7 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 	} else {
 		iter := client.Builds.Diagnostics.ListAutoPaging(
 			ctx,
-			requestflag.CommandRequestValue[string](cmd, "build-id"),
+			cmd.Value("build-id").(string),
 			params,
 			options...,
 		)
