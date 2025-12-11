@@ -19,40 +19,30 @@ var projectsCreate = cli.Command{
 	Name:  "create",
 	Usage: "Create a new project.",
 	Flags: []cli.Flag{
-		&requestflag.StringFlag{
-			Name:  "display-name",
-			Usage: "Human-readable project name",
-			Config: requestflag.RequestConfig{
-				BodyPath: "display_name",
-			},
+		&requestflag.Flag[string]{
+			Name:     "display-name",
+			Usage:    "Human-readable project name",
+			BodyPath: "display_name",
 		},
-		&requestflag.StringFlag{
-			Name:  "org",
-			Usage: "Organization name",
-			Config: requestflag.RequestConfig{
-				BodyPath: "org",
-			},
+		&requestflag.Flag[string]{
+			Name:     "org",
+			Usage:    "Organization name",
+			BodyPath: "org",
 		},
-		&requestflag.YAMLFlag{
-			Name:  "revision",
-			Usage: "File contents to commit",
-			Config: requestflag.RequestConfig{
-				BodyPath: "revision",
-			},
+		&requestflag.Flag[any]{
+			Name:     "revision",
+			Usage:    "File contents to commit",
+			BodyPath: "revision",
 		},
-		&requestflag.StringFlag{
-			Name:  "slug",
-			Usage: "Project name/slug",
-			Config: requestflag.RequestConfig{
-				BodyPath: "slug",
-			},
+		&requestflag.Flag[string]{
+			Name:     "slug",
+			Usage:    "Project name/slug",
+			BodyPath: "slug",
 		},
-		&requestflag.StringSliceFlag{
-			Name:  "target",
-			Usage: "Targets to generate for",
-			Config: requestflag.RequestConfig{
-				BodyPath: "targets",
-			},
+		&requestflag.Flag[[]string]{
+			Name:     "target",
+			Usage:    "Targets to generate for",
+			BodyPath: "targets",
 		},
 	},
 	Action:          handleProjectsCreate,
@@ -71,11 +61,9 @@ var projectsUpdate = cli.Command{
 	Name:  "update",
 	Usage: "Update a project's properties.",
 	Flags: []cli.Flag{
-		&requestflag.StringFlag{
-			Name: "display-name",
-			Config: requestflag.RequestConfig{
-				BodyPath: "display_name",
-			},
+		&requestflag.Flag[string]{
+			Name:     "display-name",
+			BodyPath: "display_name",
 		},
 	},
 	Action:          handleProjectsUpdate,
@@ -86,26 +74,20 @@ var projectsList = cli.Command{
 	Name:  "list",
 	Usage: "List projects in an organization, from oldest to newest.",
 	Flags: []cli.Flag{
-		&requestflag.StringFlag{
-			Name:  "cursor",
-			Usage: "Pagination cursor from a previous response",
-			Config: requestflag.RequestConfig{
-				QueryPath: "cursor",
-			},
+		&requestflag.Flag[string]{
+			Name:      "cursor",
+			Usage:     "Pagination cursor from a previous response",
+			QueryPath: "cursor",
 		},
-		&requestflag.FloatFlag{
-			Name:  "limit",
-			Usage: "Maximum number of projects to return, defaults to 10 (maximum: 100).",
-			Value: requestflag.Value[float64](10),
-			Config: requestflag.RequestConfig{
-				QueryPath: "limit",
-			},
+		&requestflag.Flag[float64]{
+			Name:      "limit",
+			Usage:     "Maximum number of projects to return, defaults to 10 (maximum: 100).",
+			Default:   10,
+			QueryPath: "limit",
 		},
-		&requestflag.StringFlag{
-			Name: "org",
-			Config: requestflag.RequestConfig{
-				QueryPath: "org",
-			},
+		&requestflag.Flag[string]{
+			Name:      "org",
+			QueryPath: "org",
 		},
 	},
 	Action:          handleProjectsList,

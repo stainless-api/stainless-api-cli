@@ -19,33 +19,25 @@ var buildsTargetOutputsRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Retrieve a method to download an output for a given build target.",
 	Flags: []cli.Flag{
-		&requestflag.StringFlag{
-			Name:  "build-id",
-			Usage: "Build ID",
-			Config: requestflag.RequestConfig{
-				QueryPath: "build_id",
-			},
+		&requestflag.Flag[string]{
+			Name:      "build-id",
+			Usage:     "Build ID",
+			QueryPath: "build_id",
 		},
-		&requestflag.StringFlag{
-			Name:  "target",
-			Usage: "SDK language target name",
-			Config: requestflag.RequestConfig{
-				QueryPath: "target",
-			},
+		&requestflag.Flag[string]{
+			Name:      "target",
+			Usage:     "SDK language target name",
+			QueryPath: "target",
 		},
-		&requestflag.StringFlag{
-			Name: "type",
-			Config: requestflag.RequestConfig{
-				QueryPath: "type",
-			},
+		&requestflag.Flag[string]{
+			Name:      "type",
+			QueryPath: "type",
 		},
-		&requestflag.StringFlag{
-			Name:  "output",
-			Usage: "Output format: url (download URL) or git (temporary access token).",
-			Value: requestflag.Value[stainless.BuildTargetOutputGetParamsOutput]("url"),
-			Config: requestflag.RequestConfig{
-				QueryPath: "output",
-			},
+		&requestflag.Flag[string]{
+			Name:      "output",
+			Usage:     "Output format: url (download URL) or git (temporary access token).",
+			Default:   "url",
+			QueryPath: "output",
 		},
 	},
 	Action:          handleBuildsTargetOutputsRetrieve,
