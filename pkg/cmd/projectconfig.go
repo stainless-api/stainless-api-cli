@@ -5,6 +5,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
@@ -68,6 +69,7 @@ var projectsConfigsGuess = cli.Command{
 func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
+
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
@@ -82,26 +84,24 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 	if err != nil {
 		return err
 	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Projects.Configs.Get(
-		ctx,
-		params,
-		options...,
-	)
+	_, err = client.Projects.Configs.Get(ctx, params, options...)
 	if err != nil {
 		return err
 	}
 
-	json := gjson.Parse(string(res))
+	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("projects:configs retrieve", json, format, transform)
+	return ShowJSON(os.Stdout, "projects:configs retrieve", obj, format, transform)
 }
 
 func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
+
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
@@ -116,19 +116,16 @@ func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Projects.Configs.Guess(
-		ctx,
-		params,
-		options...,
-	)
+	_, err = client.Projects.Configs.Guess(ctx, params, options...)
 	if err != nil {
 		return err
 	}
 
-	json := gjson.Parse(string(res))
+	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON("projects:configs guess", json, format, transform)
+	return ShowJSON(os.Stdout, "projects:configs guess", obj, format, transform)
 }

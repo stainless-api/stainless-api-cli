@@ -5,6 +5,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
@@ -70,6 +71,7 @@ var buildsTargetOutputsRetrieve = cli.Command{
 func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
+
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
@@ -83,13 +85,10 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 	if err != nil {
 		return err
 	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Builds.TargetOutputs.Get(
-		ctx,
-		params,
-		options...,
-	)
+	_, err = client.Builds.TargetOutputs.Get(ctx, params, options...)
 	if err != nil {
 		return err
 	}
@@ -134,7 +133,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 			json := gjson.Parse(res.RawJSON())
 			format := cmd.Root().String("format")
 			transform := cmd.Root().String("transform")
-			if err := ShowJSON("builds:target_outputs retrieve", json, format, transform); err != nil {
+			if err := ShowJSON(os.Stdout, "builds:target_outputs retrieve", json, format, transform); err != nil {
 				return err
 			}
 		}
