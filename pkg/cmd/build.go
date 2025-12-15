@@ -154,14 +154,14 @@ var buildsList = cli.Command{
 		&requestflag.Flag[float64]{
 			Name:        "limit",
 			Usage:       "Maximum number of builds to return, defaults to 10 (maximum: 100).",
-			Default:       10,
+			Default:     10,
 			DefaultText: "10",
-			QueryPath: "limit",
+			QueryPath:   "limit",
 		},
 		&requestflag.Flag[any]{
 			Name:      "revision",
 			Usage:     "A config commit SHA used for the build",
-			Default:   requestflag.Value[any](map[string]any{}),
+			Default:   map[string]any{},
 			QueryPath: "revision",
 		},
 	},
@@ -211,7 +211,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	var revision map[string]map[string]map[string][]byte
 	if cmd.IsSet("revision") {
 		var ok bool
-		revision, ok = requestflag.CommandRequestValue[any](cmd, "revision").(map[string]map[string]map[string][]byte)
+		revision, ok = cmd.Value("revision").(map[string]map[string]map[string][]byte)
 		if !ok {
 			revision = make(map[string]map[string]map[string][]byte)
 		}
