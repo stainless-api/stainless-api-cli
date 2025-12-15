@@ -109,25 +109,28 @@ func flagOptions(
 		}
 	}
 
-	switch bodyType {
-	case MultipartFormEncoded:
-		buf := new(bytes.Buffer)
-		writer := multipart.NewWriter(buf)
-		if err := apiform.MarshalWithSettings(body, writer, apiform.FormatComma); err != nil {
-			return nil, err
+	// Only send request body if there's actual data
+	if len(body) > 0 {
+		switch bodyType {
+		case MultipartFormEncoded:
+			buf := new(bytes.Buffer)
+			writer := multipart.NewWriter(buf)
+			if err := apiform.MarshalWithSettings(body, writer, apiform.FormatComma); err != nil {
+				return nil, err
+			}
+			if err := writer.Close(); err != nil {
+				return nil, err
+			}
+			options = append(options, option.WithRequestBody(writer.FormDataContentType(), buf))
+		case ApplicationJSON:
+			bodyBytes, err := json.Marshal(body)
+			if err != nil {
+				return nil, err
+			}
+			options = append(options, option.WithRequestBody("application/json", bodyBytes))
+		default:
+			panic("Invalid body content type!")
 		}
-		if err := writer.Close(); err != nil {
-			return nil, err
-		}
-		options = append(options, option.WithRequestBody(writer.FormDataContentType(), buf))
-	case ApplicationJSON:
-		bodyBytes, err := json.Marshal(body)
-		if err != nil {
-			return nil, err
-		}
-		options = append(options, option.WithRequestBody("application/json", bodyBytes))
-	default:
-		panic("Invalid body content type!")
 	}
 
 	return options, nil
