@@ -21,7 +21,8 @@ import (
 type BodyContentType int
 
 const (
-	MultipartFormEncoded BodyContentType = iota
+	EmptyBody BodyContentType = iota
+	MultipartFormEncoded
 	ApplicationJSON
 )
 
@@ -102,6 +103,8 @@ func flagOptions(
 	}
 
 	switch bodyType {
+	case EmptyBody:
+		break
 	case MultipartFormEncoded:
 		buf := new(bytes.Buffer)
 		writer := multipart.NewWriter(buf)
