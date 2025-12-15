@@ -16,6 +16,7 @@ import (
 	cbuild "github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
+	"github.com/stainless-api/stainless-api-go/option"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -333,11 +334,15 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Cl
 		},
 	}
 
+	options := []option.RequestOption{}
+	if cmd.Bool("debug") {
+		options = append(options, debugMiddlewareOption)
+	}
 	err = group.Spinner("Creating project...", func() error {
 		_, err = client.Projects.New(
 			ctx,
 			params,
-			debugMiddlewareOption,
+			options...,
 		)
 		return err
 	})

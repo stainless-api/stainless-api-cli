@@ -111,10 +111,14 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 			Type:    stainless.BuildTargetOutputGetParamsType(outputType),
 			Output:  stainless.BuildTargetOutputGetParamsOutput(outputFormat),
 		}
+		options := []option.RequestOption{}
+		if cmd.Bool("debug") {
+			options = append(options, debugMiddlewareOption)
+		}
 		res, err := client.Builds.TargetOutputs.Get(
 			ctx,
 			params,
-			debugMiddlewareOption,
+			options...,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to get output for target %s: %v", target, err)
