@@ -219,6 +219,9 @@ func (f *Flag[T]) GetUsage() string {
 }
 
 func (f *Flag[T]) GetValue() string {
+	if f.value == nil {
+		return ""
+	}
 	return f.value.String()
 }
 
