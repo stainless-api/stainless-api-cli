@@ -33,18 +33,15 @@ var buildsTargetOutputsRetrieve = cli.Command{
 			Name:  "project",
 			Usage: "Project name (required when build-id is not provided)",
 		},
-		&requestflag.StringFlag{
-			Name:        "branch",
-			Usage:       "Branch name (defaults to main if not provided)",
-			Value:       requestflag.Value[string]("main"),
-			DefaultText: "main",
+		&requestflag.Flag[string]{
+			Name:    "branch",
+			Usage:   "Branch name (defaults to main if not provided)",
+			Default: "main",
 		},
-		&requestflag.StringSliceFlag{
-			Name:  "target",
-			Usage: "SDK language target name(s). Can be specified multiple times.",
-			Config: requestflag.RequestConfig{
-				QueryPath: "target",
-			},
+		&requestflag.Flag[string]{
+			Name:      "target",
+			Usage:     "SDK language target name(s). Can be specified multiple times.",
+			QueryPath: "target",
 		},
 		&requestflag.Flag[string]{
 			Name:      "type",
@@ -53,9 +50,9 @@ var buildsTargetOutputsRetrieve = cli.Command{
 		&requestflag.Flag[string]{
 			Name:        "output",
 			Usage:       "Output format: url (download URL) or git (temporary access token).",
-			Default:       requestflag.Value[string]("url"),
+			DefaultText: "url",
 			HideDefault: true,
-			QueryPath: "output",
+			QueryPath:   "output",
 		},
 	},
 	Before: before,
@@ -87,7 +84,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 		return err
 	}
 
-	buildID := requestflag.CommandRequestValue[string](cmd, "build-id")
+	buildID := cmd.Value("build-id").(string)
 	if buildID == "" {
 		latestBuild, err := getLatestBuild(ctx, client, cmd.String("project"), cmd.String("branch"))
 		if err != nil {

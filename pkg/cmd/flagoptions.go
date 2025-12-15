@@ -101,36 +101,31 @@ func flagOptions(
 		}
 	}
 
-	// Only send request body if there's actual data
-	if len(body) > 0 {
-		
-
 	switch bodyType {
-		case MultipartFormEncoded:
-			buf := new(bytes.Buffer)
-			writer := multipart.NewWriter(buf)
+	case MultipartFormEncoded:
+		buf := new(bytes.Buffer)
+		writer := multipart.NewWriter(buf)
 
-			// For multipart/form-encoded, we need a map structure
-			bodyMap, ok := bodyData.(map[string]any)
-			if !ok {
-				return nil, fmt.Errorf("Cannot send a non-map value to a form-encoded endpoint: %v\n", bodyData)
-			}
-			if err := apiform.MarshalWithSettings(bodyMap, writer, apiform.FormatComma); err != nil {
-				return nil, err
-			}
-			if err := writer.Close(); err != nil {
-				return nil, err
-			}
-			options = append(options, option.WithRequestBody(writer.FormDataContentType(), buf))
-		case ApplicationJSON:
-			bodyBytes, err := json.Marshal(bodyData)
-			if err != nil {
-				return nil, err
-			}
-			options = append(options, option.WithRequestBody("application/json", bodyBytes))
-		default:
-			panic("Invalid body content type!")
+		// For multipart/form-encoded, we need a map structure
+		bodyMap, ok := bodyData.(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("Cannot send a non-map value to a form-encoded endpoint: %v\n", bodyData)
 		}
+		if err := apiform.MarshalWithSettings(bodyMap, writer, apiform.FormatComma); err != nil {
+			return nil, err
+		}
+		if err := writer.Close(); err != nil {
+			return nil, err
+		}
+		options = append(options, option.WithRequestBody(writer.FormDataContentType(), buf))
+	case ApplicationJSON:
+		bodyBytes, err := json.Marshal(bodyData)
+		if err != nil {
+			return nil, err
+		}
+		options = append(options, option.WithRequestBody("application/json", bodyBytes))
+	default:
+		panic("Invalid body content type!")
 	}
 
 	return options, nil
