@@ -31,6 +31,10 @@ func flagOptions(
 	nestedFormat apiquery.NestedQueryFormat,
 	arrayFormat apiquery.ArrayQueryFormat,
 	bodyType BodyContentType,
+
+	// This parameter is true if stdin is already in use to pass a binary parameter by using the special value
+	// "-". In this case, we won't attempt to read it as a JSON/YAML blob for options setting.
+	stdinInUse bool,
 ) ([]option.RequestOption, error) {
 	var options []option.RequestOption
 	if cmd.Bool("debug") {
@@ -40,7 +44,7 @@ func flagOptions(
 	flagContents := requestflag.ExtractRequestContents(cmd)
 
 	var bodyData any
-	if isInputPiped() {
+	if isInputPiped() && !stdinInUse {
 		var err error
 		pipeData, err := io.ReadAll(os.Stdin)
 		if err != nil {

@@ -133,6 +133,7 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
+
 	params := stainless.ProjectBranchNewParams{}
 
 	options, err := flagOptions(
@@ -140,6 +141,7 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 		apiquery.NestedQueryFormatBrackets,
 		apiquery.ArrayQueryFormatComma,
 		ApplicationJSON,
+		false,
 	)
 	if err != nil {
 		return err
@@ -168,6 +170,7 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
+
 	params := stainless.ProjectBranchGetParams{}
 
 	options, err := flagOptions(
@@ -175,6 +178,7 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 		apiquery.NestedQueryFormatBrackets,
 		apiquery.ArrayQueryFormatComma,
 		EmptyBody,
+		false,
 	)
 	if err != nil {
 		return err
@@ -205,6 +209,7 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
+
 	params := stainless.ProjectBranchListParams{}
 
 	options, err := flagOptions(
@@ -212,6 +217,7 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 		apiquery.NestedQueryFormatBrackets,
 		apiquery.ArrayQueryFormatComma,
 		EmptyBody,
+		false,
 	)
 	if err != nil {
 		return err
@@ -253,6 +259,7 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
+
 	params := stainless.ProjectBranchDeleteParams{}
 
 	options, err := flagOptions(
@@ -260,6 +267,7 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 		apiquery.NestedQueryFormatBrackets,
 		apiquery.ArrayQueryFormatComma,
 		EmptyBody,
+		false,
 	)
 	if err != nil {
 		return err
@@ -293,6 +301,7 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
+
 	params := stainless.ProjectBranchRebaseParams{}
 
 	options, err := flagOptions(
@@ -300,6 +309,7 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 		apiquery.NestedQueryFormatBrackets,
 		apiquery.ArrayQueryFormatComma,
 		EmptyBody,
+		false,
 	)
 	if err != nil {
 		return err
@@ -333,6 +343,7 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
+
 	params := stainless.ProjectBranchResetParams{}
 
 	options, err := flagOptions(
@@ -340,6 +351,7 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 		apiquery.NestedQueryFormatBrackets,
 		apiquery.ArrayQueryFormatComma,
 		EmptyBody,
+		false,
 	)
 	if err != nil {
 		return err
