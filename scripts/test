@@ -54,3 +54,6 @@ fi
 
 echo "==> Running tests"
 go test ./... "$@"
+
+echo "==> Checking tests on Windows"
+GOARCH=amd64 GOOS=windows go test -c ./... "$@"
