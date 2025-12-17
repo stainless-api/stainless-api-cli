@@ -12,7 +12,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/stainless-api/stainless-api-cli/pkg/jsonview"
+	"github.com/stainless-api/stainless-api-cli/internal/jsonview"
 	"github.com/stainless-api/stainless-api-go/option"
 
 	"github.com/itchyny/json2yaml"
