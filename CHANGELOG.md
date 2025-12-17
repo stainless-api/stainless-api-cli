@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.0-alpha.64 (2025-12-17)
+
+Full Changelog: [v0.1.0-alpha.63...v0.1.0-alpha.64](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.63...v0.1.0-alpha.64)
+
+### Bug Fixes
+
+* **cli:** remove `*.exe` files from customer SDK changes ([7809497](https://github.com/stainless-api/stainless-api-cli/commit/780949761c6b49604cb8f18678468f57a38b149c))
+* generate flags for parameters specified by client ([51b1031](https://github.com/stainless-api/stainless-api-cli/commit/51b1031279571583416a497fc62f6f3b58e3a0a9))
+
+
+### Chores
+
+* **cli:** add `*.exe` files back to `.gitignore` ([7882fe1](https://github.com/stainless-api/stainless-api-cli/commit/7882fe18ed7ed8d48d885ce836b437af98863abf))
+* **cli:** move `jsonview` subpackage to `internal` ([e3b1c70](https://github.com/stainless-api/stainless-api-cli/commit/e3b1c70a58df206773c0548ed6bc674a835421a0))
+* **cli:** temporarily remove `*.exe` from `.gitignore` ([34a0d87](https://github.com/stainless-api/stainless-api-cli/commit/34a0d8706e7498bf08877eab47ccb40d89baf267))
+* **internal:** codegen related update ([44b6581](https://github.com/stainless-api/stainless-api-cli/commit/44b6581e5979daf7d1d0a66203134eec1602a9de))
+* **internal:** codegen related update ([52c6dc8](https://github.com/stainless-api/stainless-api-cli/commit/52c6dc8d08add4a1b6493790f365f96b86a4ef89))
+
 ## 0.1.0-alpha.63 (2025-12-17)
 
 Full Changelog: [v0.1.0-alpha.62...v0.1.0-alpha.63](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.62...v0.1.0-alpha.63)
