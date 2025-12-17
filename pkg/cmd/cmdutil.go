@@ -63,7 +63,7 @@ func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 		workspaceConfig := WorkspaceConfig{}
 		found, err := workspaceConfig.Find()
 		if err == nil && found && workspaceConfig.Project != "" {
-			opts = append(opts, option.WithProject(workspaceConfig.Project))
+			cmd.Set("project", workspaceConfig.Project)
 		}
 	}
 
