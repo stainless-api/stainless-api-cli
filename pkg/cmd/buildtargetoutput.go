@@ -66,12 +66,14 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
+
 	params := stainless.BuildTargetOutputGetParams{}
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
 		apiquery.ArrayQueryFormatComma,
 		EmptyBody,
+		false,
 	)
 	if err != nil {
 		return err
