@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.1.0-alpha.62 (2025-12-17)
+
+Full Changelog: [v0.1.0-alpha.61...v0.1.0-alpha.62](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.61...v0.1.0-alpha.62)
+
+### Features
+
+* **ai:** build APIs take SDK level commit messages & new gate for AI commit messages ([76d63c3](https://github.com/stainless-api/stainless-api-cli/commit/76d63c3df26e68aca4cbb670eb8f4b6b409b8111))
+* **cli:** automatic streaming for paginated endpoints ([119765f](https://github.com/stainless-api/stainless-api-cli/commit/119765fda59e1af4b94f7604bb34f538c03fb786))
+* **cli:** binary request bodies ([b713c9c](https://github.com/stainless-api/stainless-api-cli/commit/b713c9c704550e332fb094fa6c0ad118830a51ef))
+* new and simplified CLI flag parsing code and YAML support ([093a401](https://github.com/stainless-api/stainless-api-cli/commit/093a401b9f78950bd73563e9a50fa8fe5ae3bec2))
+* new and simplified CLI flag parsing code and YAML support ([bd6e906](https://github.com/stainless-api/stainless-api-cli/commit/bd6e906746a97a8bd0f88e09e22b466f4bdee644))
+* redact `Authorization` header when using debug option ([557a499](https://github.com/stainless-api/stainless-api-cli/commit/557a499e428cc15dcb195472fbe3f4c5940deb92))
+* redact secrets from other authentication headers when using debug option ([3f38b38](https://github.com/stainless-api/stainless-api-cli/commit/3f38b382557d0dbdcf096f15c7020daf3029a72d))
+
+
+### Bug Fixes
+
+* **api:** switch 'targets' query param to comma-delimited string in diagnostics endpoint ([8cd21bd](https://github.com/stainless-api/stainless-api-cli/commit/8cd21bd604b9a22265c4ab9853ac9dd39818e486))
+* **cli:** fix compilation on Windows ([796e618](https://github.com/stainless-api/stainless-api-cli/commit/796e61843a096fa2b9a893340621919fa789e758))
+* fix for empty request bodies ([f417be7](https://github.com/stainless-api/stainless-api-cli/commit/f417be7223cc8df2d93842b4a0f42dc6ae79ad0c))
+* fixed manpage generation ([ebf32ec](https://github.com/stainless-api/stainless-api-cli/commit/ebf32ecfc7f90529870e25833fd773e2b310130d))
+* **mcp:** correct code tool API endpoint ([227e3c4](https://github.com/stainless-api/stainless-api-cli/commit/227e3c4cd369c6cec342e92cf03c50de0c7e74d5))
+* paginated endpoints now behave better with pagers by default ([86d67d2](https://github.com/stainless-api/stainless-api-cli/commit/86d67d2a5a48872b6375a236d50f6a92ed7c6654))
+
+
+### Chores
+
+* **internal:** codegen related update ([a2daf2f](https://github.com/stainless-api/stainless-api-cli/commit/a2daf2f74f4f07c04eb7be94b12a158727bf265a))
+* **internal:** codegen related update ([dd0f6e2](https://github.com/stainless-api/stainless-api-cli/commit/dd0f6e20855e397d99053d5b8755c8589cf1c042))
+* **internal:** codegen related update ([983d24c](https://github.com/stainless-api/stainless-api-cli/commit/983d24c0fed111746bbff285bb930bd53751ed29))
+* **internal:** codegen related update ([479bceb](https://github.com/stainless-api/stainless-api-cli/commit/479bceb648d93bea9a0132a0c99b84780ef78f8b))
+* **internal:** codegen related update ([ff44c29](https://github.com/stainless-api/stainless-api-cli/commit/ff44c298f7e066820360bc2fca539957c4c66c94))
+* **internal:** version bump ([040e124](https://github.com/stainless-api/stainless-api-cli/commit/040e1243ea5ba1264ea35cb5039af40bb51c0e4f))
+* use `stretchr/testify` assertion helpers in tests ([c399dc9](https://github.com/stainless-api/stainless-api-cli/commit/c399dc9ec460998a23c6701ae4c40924d3fed08e))
+
 ## 0.1.0-alpha.61 (2025-12-15)
 
 Full Changelog: [v0.1.0-alpha.60...v0.1.0-alpha.61](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.60...v0.1.0-alpha.61)
