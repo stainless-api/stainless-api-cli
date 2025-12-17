@@ -45,12 +45,8 @@ stl [resource] [command] [flags]
 
 ```sh
 stl builds create \
-  --revision main \
-<<JSON
-{
-  "project": "stainless"
-}
-JSON
+  --project stainless \
+  --revision main
 ```
 
 For details about specific commands, use the `--help` flag.
