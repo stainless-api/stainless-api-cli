@@ -88,6 +88,11 @@ var buildsCreate = cli.Command{
 			Name:  "pull",
 			Usage: "Pull the build outputs after completion (only works with --wait)",
 		},
+		&requestflag.Flag[string]{
+			Name:     "project",
+			Usage:    "Project name",
+			BodyPath: "project",
+		},
 		&requestflag.Flag[any]{
 			Name:     "revision",
 			Usage:    "Specifies what to build: a branch name, commit SHA, merge command\n(\"base..head\"), or file contents.",
@@ -143,6 +148,11 @@ var buildsList = cli.Command{
 	Usage: "List user-triggered builds for a given project.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
+			Name:      "project",
+			Usage:     "Project name",
+			QueryPath: "project",
+		},
+		&requestflag.Flag[string]{
 			Name:      "branch",
 			Usage:     "Branch name",
 			QueryPath: "branch",
@@ -183,6 +193,11 @@ var buildsCompare = cli.Command{
 			Name:     "head",
 			Usage:    "Parameters for the head build",
 			BodyPath: "head",
+		},
+		&requestflag.Flag[string]{
+			Name:     "project",
+			Usage:    "Project name",
+			BodyPath: "project",
 		},
 		&requestflag.Flag[[]string]{
 			Name:     "target",
