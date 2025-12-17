@@ -50,9 +50,13 @@ var projectsCreate = cli.Command{
 }
 
 var projectsRetrieve = cli.Command{
-	Name:            "retrieve",
-	Usage:           "Retrieve a project by name.",
-	Flags:           []cli.Flag{},
+	Name:  "retrieve",
+	Usage: "Retrieve a project by name.",
+	Flags: []cli.Flag{
+		&requestflag.Flag[string]{
+			Name: "project",
+		},
+	},
 	Action:          handleProjectsRetrieve,
 	HideHelpCommand: true,
 }
@@ -61,6 +65,9 @@ var projectsUpdate = cli.Command{
 	Name:  "update",
 	Usage: "Update a project's properties.",
 	Flags: []cli.Flag{
+		&requestflag.Flag[string]{
+			Name: "project",
+		},
 		&requestflag.Flag[string]{
 			Name:     "display-name",
 			BodyPath: "display_name",
@@ -136,7 +143,9 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectGetParams{}
+	params := stainless.ProjectGetParams{
+		Project: stainless.Opt(cmd.Value("project").(string)),
+	}
 
 	options, err := flagOptions(
 		cmd,
@@ -170,7 +179,9 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectUpdateParams{}
+	params := stainless.ProjectUpdateParams{
+		Project: stainless.Opt(cmd.Value("project").(string)),
+	}
 
 	options, err := flagOptions(
 		cmd,

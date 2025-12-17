@@ -20,6 +20,9 @@ var projectsBranchesCreate = cli.Command{
 	Usage: "Create a new branch for a project.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
+			Name: "project",
+		},
+		&requestflag.Flag[string]{
 			Name:     "branch",
 			Usage:    "Branch name",
 			BodyPath: "branch",
@@ -44,6 +47,9 @@ var projectsBranchesRetrieve = cli.Command{
 	Usage: "Retrieve a project branch by name.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
+			Name: "project",
+		},
+		&requestflag.Flag[string]{
 			Name: "branch",
 		},
 	},
@@ -55,6 +61,9 @@ var projectsBranchesList = cli.Command{
 	Name:  "list",
 	Usage: "Retrieve a project branch by name.",
 	Flags: []cli.Flag{
+		&requestflag.Flag[string]{
+			Name: "project",
+		},
 		&requestflag.Flag[string]{
 			Name:      "cursor",
 			Usage:     "Pagination cursor from a previous response",
@@ -76,6 +85,9 @@ var projectsBranchesDelete = cli.Command{
 	Usage: "Delete a project branch by name.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
+			Name: "project",
+		},
+		&requestflag.Flag[string]{
 			Name: "branch",
 		},
 	},
@@ -87,6 +99,9 @@ var projectsBranchesRebase = cli.Command{
 	Name:  "rebase",
 	Usage: "Rebase a project branch.",
 	Flags: []cli.Flag{
+		&requestflag.Flag[string]{
+			Name: "project",
+		},
 		&requestflag.Flag[string]{
 			Name: "branch",
 		},
@@ -105,6 +120,9 @@ var projectsBranchesReset = cli.Command{
 	Name:  "reset",
 	Usage: "Reset a project branch.",
 	Flags: []cli.Flag{
+		&requestflag.Flag[string]{
+			Name: "project",
+		},
 		&requestflag.Flag[string]{
 			Name: "branch",
 		},
@@ -126,7 +144,9 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchNewParams{}
+	params := stainless.ProjectBranchNewParams{
+		Project: stainless.Opt(cmd.Value("project").(string)),
+	}
 
 	options, err := flagOptions(
 		cmd,
@@ -163,7 +183,9 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchGetParams{}
+	params := stainless.ProjectBranchGetParams{
+		Project: stainless.Opt(cmd.Value("project").(string)),
+	}
 
 	options, err := flagOptions(
 		cmd,
@@ -202,7 +224,9 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchListParams{}
+	params := stainless.ProjectBranchListParams{
+		Project: stainless.Opt(cmd.Value("project").(string)),
+	}
 
 	options, err := flagOptions(
 		cmd,
@@ -252,7 +276,9 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchDeleteParams{}
+	params := stainless.ProjectBranchDeleteParams{
+		Project: stainless.Opt(cmd.Value("project").(string)),
+	}
 
 	options, err := flagOptions(
 		cmd,
@@ -294,7 +320,9 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchRebaseParams{}
+	params := stainless.ProjectBranchRebaseParams{
+		Project: stainless.Opt(cmd.Value("project").(string)),
+	}
 
 	options, err := flagOptions(
 		cmd,
@@ -336,7 +364,9 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchResetParams{}
+	params := stainless.ProjectBranchResetParams{
+		Project: stainless.Opt(cmd.Value("project").(string)),
+	}
 
 	options, err := flagOptions(
 		cmd,

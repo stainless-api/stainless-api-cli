@@ -20,6 +20,9 @@ var projectsConfigsRetrieve = cli.Command{
 	Usage: "Retrieve the configuration files for a given project.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
+			Name: "project",
+		},
+		&requestflag.Flag[string]{
 			Name:      "branch",
 			Usage:     `Branch name, defaults to "main".`,
 			Default:   "main",
@@ -38,6 +41,9 @@ var projectsConfigsGuess = cli.Command{
 	Name:  "guess",
 	Usage: "Generate suggestions for changes to config files based on an OpenAPI spec.",
 	Flags: []cli.Flag{
+		&requestflag.Flag[string]{
+			Name: "project",
+		},
 		&requestflag.Flag[string]{
 			Name:     "spec",
 			Usage:    "OpenAPI spec",
@@ -62,7 +68,9 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectConfigGetParams{}
+	params := stainless.ProjectConfigGetParams{
+		Project: stainless.Opt(cmd.Value("project").(string)),
+	}
 
 	options, err := flagOptions(
 		cmd,
@@ -96,7 +104,9 @@ func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectConfigGuessParams{}
+	params := stainless.ProjectConfigGuessParams{
+		Project: stainless.Opt(cmd.Value("project").(string)),
+	}
 
 	options, err := flagOptions(
 		cmd,
