@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-alpha.63 (2025-12-17)
+
+Full Changelog: [v0.1.0-alpha.62...v0.1.0-alpha.63](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.62...v0.1.0-alpha.63)
+
+### Features
+
+* add better suggests when commands don't match ([87295d9](https://github.com/stainless-api/stainless-api-cli/commit/87295d934bb279e38798ad1fb677f88014fd09ff))
+
+
+### Bug Fixes
+
+* fix merge conflict issues ([5f6cc75](https://github.com/stainless-api/stainless-api-cli/commit/5f6cc757e5ce1227952d2c20a5755d407a75ba35))
+* ignore .exe files ([234b806](https://github.com/stainless-api/stainless-api-cli/commit/234b806d58b3223cfd8b25c89ac08529da27a3ee))
+
 ## 0.1.0-alpha.62 (2025-12-17)
 
 Full Changelog: [v0.1.0-alpha.61...v0.1.0-alpha.62](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.61...v0.1.0-alpha.62)
