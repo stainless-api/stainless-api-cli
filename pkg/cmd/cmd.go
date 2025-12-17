@@ -23,6 +23,7 @@ func init() {
 	Command = &cli.Command{
 		Name:    "stl",
 		Usage:   "CLI for the stainless API",
+		Suggest: true,
 		Version: Version,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
