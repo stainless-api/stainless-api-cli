@@ -30,6 +30,7 @@ stl auth login
 stl init
 stl dev
 stl builds create --branch <branch>`,
+		Suggest: true,
 		Version: Version,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
