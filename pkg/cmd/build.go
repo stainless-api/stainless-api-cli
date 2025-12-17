@@ -4,13 +4,13 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/goccy/go-yaml"
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	cbuild "github.com/stainless-api/stainless-api-cli/pkg/components/build"
@@ -19,6 +19,7 @@ import (
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 	"github.com/urfave/cli/v3"
 )
 
@@ -194,6 +195,25 @@ var buildsCompare = cli.Command{
 	HideHelpCommand: true,
 }
 
+func modifyYAML(cmd *cli.Command, key string, path string, value any) (err error) {
+	b := []byte("{}")
+
+	if cmd.IsSet(key) {
+		v := cmd.Value(key)
+		b, err = json.Marshal(v)
+		if err != nil {
+			return err
+		}
+	}
+
+	b, err = sjson.SetBytes(b, path, value)
+	if err != nil {
+		return err
+	}
+
+	return cmd.Set("revision", string(b))
+}
+
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	var err error
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
@@ -208,44 +228,21 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 	buildGroup := console.Info("Creating build...")
 
-	var revision map[string]map[string]map[string][]byte
-	if cmd.IsSet("revision") {
-		var ok bool
-		revision, ok = cmd.Value("revision").(map[string]map[string]map[string][]byte)
-		if !ok {
-			revision = make(map[string]map[string]map[string][]byte)
-		}
-	} else {
-		revision = make(map[string]map[string]map[string][]byte)
-	}
-	var exists bool
-	var fileInputMap map[string]map[string][]byte
-	if fileInputMap, exists = revision["file_input_map"]; !exists {
-		fileInputMap = make(map[string]map[string][]byte)
-		revision["file_input_map"] = fileInputMap
-	}
-
 	if name, oas, err := convertFileFlag(cmd, "openapi-spec"); err != nil {
 		return err
 	} else if oas != nil {
-		fileInputMap["openapi"+path.Ext(name)] = map[string][]byte{
+		modifyYAML(cmd, "revision", gjson.Escape("openapi"+path.Ext(name)), map[string][]byte{
 			"content": oas,
-		}
+		})
 	}
 
 	if name, config, err := convertFileFlag(cmd, "stainless-config"); err != nil {
 		return err
 	} else if config != nil {
-		revision["file_input_map"]["stainless"+path.Ext(name)] = map[string][]byte{
+		modifyYAML(cmd, "revision", gjson.Escape("stainless"+path.Ext(name)), map[string][]byte{
 			"content": config,
-		}
+		})
 	}
-
-	var revisionYAML []byte
-	if revisionYAML, err = yaml.Marshal(revision); err != nil {
-		return err
-	}
-	cmd.Set("revision", string(revisionYAML))
 
 	downloadPaths, targets, specifiedPath := parseTargetPaths(wc, cmd.StringSlice("target"))
 

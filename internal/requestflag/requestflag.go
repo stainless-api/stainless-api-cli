@@ -476,6 +476,10 @@ func (c *cliValue[T]) Set(value string) error {
 		return err
 	}
 
+	if parsedValue == nil {
+		return nil
+	}
+
 	c.value = parsedValue.(T)
 	return nil
 }
