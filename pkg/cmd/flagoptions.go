@@ -24,6 +24,7 @@ const (
 	EmptyBody BodyContentType = iota
 	MultipartFormEncoded
 	ApplicationJSON
+	ApplicationOctetStream
 )
 
 func flagOptions(
@@ -125,12 +126,23 @@ func flagOptions(
 			return nil, err
 		}
 		options = append(options, option.WithRequestBody(writer.FormDataContentType(), buf))
+
 	case ApplicationJSON:
 		bodyBytes, err := json.Marshal(bodyData)
 		if err != nil {
 			return nil, err
 		}
 		options = append(options, option.WithRequestBody("application/json", bodyBytes))
+
+	case ApplicationOctetStream:
+		if bodyBytes, ok := bodyData.([]byte); ok {
+			options = append(options, option.WithRequestBody("application/octet-stream", bodyBytes))
+		} else if bodyStr, ok := bodyData.(string); ok {
+			options = append(options, option.WithRequestBody("application/octet-stream", []byte(bodyStr)))
+		} else {
+			return nil, fmt.Errorf("Unsupported body for application/octet-stream: %v", bodyData)
+		}
+
 	default:
 		panic("Invalid body content type!")
 	}

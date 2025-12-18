@@ -560,7 +560,7 @@ func (d *DateValue) Parse(s string) error {
 func (d *DateTimeValue) Parse(s string) error {
 	formats := []string{
 		time.RFC3339,
-		"2006-01-02T15:04:05Z07:00",
+		time.RFC3339Nano,
 		"2006-01-02T15:04:05",
 		"2006-01-02 15:04:05",
 		time.RFC1123,
@@ -580,6 +580,7 @@ func (d *DateTimeValue) Parse(s string) error {
 func (t *TimeValue) Parse(s string) error {
 	formats := []string{
 		"15:04:05",
+		"15:04:05.999999999Z07:00",
 		"3:04:05PM",
 		"3:04 PM",
 		"15:04",

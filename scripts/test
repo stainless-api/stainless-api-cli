@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
@@ -22,7 +22,7 @@ kill_server_on_port() {
 }
 
 function is_overriding_api_base_url() {
-  [ -n "$TEST_API_BASE_URL" ]
+  [ -n "${TEST_API_BASE_URL:-}" ]
 }
 
 if ! is_overriding_api_base_url && ! prism_is_running ; then
