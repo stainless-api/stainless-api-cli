@@ -34,6 +34,7 @@ func TestFileOrStdin(t *testing.T) {
 
 		stubStdin, err := os.Open(tempFile)
 		require.NoError(t, err)
+		t.Cleanup(func() { require.NoError(t, stubStdin.Close()) })
 
 		readCloser, stdinInUse, err := FileOrStdin(stubStdin, "-")
 		require.NoError(t, err)
@@ -51,6 +52,7 @@ func TestFileOrStdin(t *testing.T) {
 
 		stubStdin, err := os.Open(tempFile)
 		require.NoError(t, err)
+		t.Cleanup(func() { require.NoError(t, stubStdin.Close()) })
 
 		readCloser, stdinInUse, err := FileOrStdin(stubStdin, "/dev/fd/0")
 		require.NoError(t, err)
@@ -68,6 +70,7 @@ func TestFileOrStdin(t *testing.T) {
 
 		stubStdin, err := os.Open(tempFile)
 		require.NoError(t, err)
+		t.Cleanup(func() { require.NoError(t, stubStdin.Close()) })
 
 		readCloser, stdinInUse, err := FileOrStdin(stubStdin, "/dev/stdin")
 		require.NoError(t, err)
