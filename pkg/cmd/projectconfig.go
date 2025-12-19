@@ -69,7 +69,7 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 	}
 
 	params := stainless.ProjectConfigGetParams{
-		Project: stainless.Opt(cmd.Value("project").(string)),
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
@@ -105,7 +105,7 @@ func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	params := stainless.ProjectConfigGuessParams{
-		Project: stainless.Opt(cmd.Value("project").(string)),
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(

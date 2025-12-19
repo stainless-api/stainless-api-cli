@@ -29,7 +29,7 @@ var projectsCreate = cli.Command{
 			Usage:    "Organization name",
 			BodyPath: "org",
 		},
-		&requestflag.Flag[any]{
+		&requestflag.Flag[map[string]map[string]string]{
 			Name:     "revision",
 			Usage:    "File contents to commit",
 			BodyPath: "revision",
@@ -144,7 +144,7 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	params := stainless.ProjectGetParams{
-		Project: stainless.Opt(cmd.Value("project").(string)),
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
@@ -180,7 +180,7 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	params := stainless.ProjectUpdateParams{
-		Project: stainless.Opt(cmd.Value("project").(string)),
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
