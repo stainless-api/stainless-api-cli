@@ -48,7 +48,7 @@ func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 		case "staging":
 			opts = append(opts, option.WithEnvironmentStaging())
 		default:
-			log.Fatalf("Unknown environment: %s. Valid environments are: production, staging", environment)
+			log.Fatalf("Unknown environment: %s. Valid environments are %s", environment, "production, staging")
 		}
 	}
 
