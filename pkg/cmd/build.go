@@ -113,7 +113,7 @@ var buildsCreate = cli.Command{
 			Usage:    "Optional commit message to use when creating a new commit.",
 			BodyPath: "commit_message",
 		},
-		&requestflag.Flag[any]{
+		&requestflag.Flag[map[string]string]{
 			Name:     "target-commit-messages",
 			Usage:    "Optional commit messages to use for each SDK when making a new commit.\nSDKs not represented in this object will fallback to the optional\n`commit_message` parameter, or will fallback further to the default\ncommit message.",
 			BodyPath: "target_commit_messages",
@@ -184,12 +184,12 @@ var buildsCompare = cli.Command{
 	Name:  "compare",
 	Usage: "Create two builds whose outputs can be directly compared with each other.",
 	Flags: []cli.Flag{
-		&requestflag.Flag[any]{
+		&requestflag.Flag[map[string]any]{
 			Name:     "base",
 			Usage:    "Parameters for the base build",
 			BodyPath: "base",
 		},
-		&requestflag.Flag[any]{
+		&requestflag.Flag[map[string]any]{
 			Name:     "head",
 			Usage:    "Parameters for the head build",
 			BodyPath: "head",

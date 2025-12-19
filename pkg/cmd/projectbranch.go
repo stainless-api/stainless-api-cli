@@ -153,7 +153,7 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	params := stainless.ProjectBranchNewParams{
-		Project: stainless.Opt(cmd.Value("project").(string)),
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
@@ -192,7 +192,7 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 	}
 
 	params := stainless.ProjectBranchGetParams{
-		Project: stainless.Opt(cmd.Value("project").(string)),
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
@@ -233,7 +233,7 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	params := stainless.ProjectBranchListParams{
-		Project: stainless.Opt(cmd.Value("project").(string)),
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
@@ -285,7 +285,7 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	params := stainless.ProjectBranchDeleteParams{
-		Project: stainless.Opt(cmd.Value("project").(string)),
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
@@ -329,7 +329,7 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	params := stainless.ProjectBranchRebaseParams{
-		Project: stainless.Opt(cmd.Value("project").(string)),
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
@@ -373,7 +373,7 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	params := stainless.ProjectBranchResetParams{
-		Project: stainless.Opt(cmd.Value("project").(string)),
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
