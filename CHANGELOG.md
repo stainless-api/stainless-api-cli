@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.0-alpha.65 (2025-12-22)
+
+Full Changelog: [v0.1.0-alpha.64...v0.1.0-alpha.65](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.64...v0.1.0-alpha.65)
+
+### Features
+
+* added mock server tests ([f62abc2](https://github.com/stainless-api/stainless-api-cli/commit/f62abc2e06e2a0f85e57a22a956e3d9272fd65b2))
+
+
+### Bug Fixes
+
+* base64 encoding regression ([967d82c](https://github.com/stainless-api/stainless-api-cli/commit/967d82c469ec3f7aca4946c2f3bd4a32f848f7df))
+* fix generated flag types and value wrapping ([b8293dc](https://github.com/stainless-api/stainless-api-cli/commit/b8293dcb107347ac57b692d540951b3c09350914))
+
+
+### Chores
+
+* **cli:** run pre-codegen tests on Windows ([7dd0ffb](https://github.com/stainless-api/stainless-api-cli/commit/7dd0ffba4c671678883eedb41b29dd1816b970da))
+* **internal:** codegen related update ([c439ed6](https://github.com/stainless-api/stainless-api-cli/commit/c439ed63774cae542fa6eac8d01095a272061be9))
+* **internal:** codegen related update ([f9e9d7d](https://github.com/stainless-api/stainless-api-cli/commit/f9e9d7dbcca54b2df0cde1c84e4bc65f525ef786))
+
 ## 0.1.0-alpha.64 (2025-12-17)
 
 Full Changelog: [v0.1.0-alpha.63...v0.1.0-alpha.64](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.63...v0.1.0-alpha.64)
