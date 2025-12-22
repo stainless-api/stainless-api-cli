@@ -246,16 +246,16 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	if name, oas, err := convertFileFlag(cmd, "openapi-spec"); err != nil {
 		return err
 	} else if oas != nil {
-		modifyYAML(cmd, "revision", gjson.Escape("openapi"+path.Ext(name)), map[string][]byte{
-			"content": oas,
+		modifyYAML(cmd, "revision", gjson.Escape("openapi"+path.Ext(name)), map[string]string{
+			"content": string(oas),
 		})
 	}
 
 	if name, config, err := convertFileFlag(cmd, "stainless-config"); err != nil {
 		return err
 	} else if config != nil {
-		modifyYAML(cmd, "revision", gjson.Escape("stainless"+path.Ext(name)), map[string][]byte{
-			"content": config,
+		modifyYAML(cmd, "revision", gjson.Escape("stainless"+path.Ext(name)), map[string]string{
+			"content": string(config),
 		})
 	}
 
