@@ -18,7 +18,7 @@ func TestBuildsCreate(t *testing.T) {
 		"--allow-empty",
 		"--branch", "branch",
 		"--commit-message", "commit_message",
-		"--target-commit-messages", "{cli: cli, csharp: csharp, go: go, java: java, kotlin: kotlin, node: node, openapi: openapi, php: php, python: python, ruby: ruby, terraform: terraform, typescript: typescript}",
+		"--target-commit-messages", "{cli: cli, csharp: csharp, go: go, java: java, kotlin: kotlin, node: node, openapi: openapi, php: php, python: python, ruby: ruby, sql: sql, terraform: terraform, typescript: typescript}",
 		"--target", "node",
 	)
 }
