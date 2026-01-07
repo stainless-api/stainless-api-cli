@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.66 (2026-01-07)
+
+Full Changelog: [v0.1.0-alpha.65...v0.1.0-alpha.66](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.65...v0.1.0-alpha.66)
+
+### Features
+
+* **sql:** initial commit ([c3db520](https://github.com/stainless-api/stainless-api-cli/commit/c3db5205769229bfd17937878a0a63074d73c4cc))
+
 ## 0.1.0-alpha.65 (2025-12-22)
 
 Full Changelog: [v0.1.0-alpha.64...v0.1.0-alpha.65](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.64...v0.1.0-alpha.65)
