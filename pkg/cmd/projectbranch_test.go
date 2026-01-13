@@ -16,7 +16,7 @@ func TestProjectsBranchesCreate(t *testing.T) {
 		"--project", "project",
 		"--branch", "branch",
 		"--branch-from", "branch_from",
-		"--force",
+		"--force=true",
 	)
 }
 

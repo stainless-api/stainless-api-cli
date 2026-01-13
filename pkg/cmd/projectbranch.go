@@ -20,16 +20,19 @@ var projectsBranchesCreate = cli.Command{
 	Usage: "Create a new branch for a project.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name: "project",
+			Name:     "project",
+			Required: true,
 		},
 		&requestflag.Flag[string]{
 			Name:     "branch",
 			Usage:    "Branch name",
+			Required: true,
 			BodyPath: "branch",
 		},
 		&requestflag.Flag[string]{
 			Name:     "branch-from",
 			Usage:    "Branch or commit SHA to branch from",
+			Required: true,
 			BodyPath: "branch_from",
 		},
 		&requestflag.Flag[bool]{
@@ -48,10 +51,12 @@ var projectsBranchesRetrieve = cli.Command{
 	Usage: "Retrieve a project branch by name.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name: "project",
+			Name:     "project",
+			Required: true,
 		},
 		&requestflag.Flag[string]{
-			Name: "branch",
+			Name:     "branch",
+			Required: true,
 		},
 	},
 	Before:          before,
@@ -64,7 +69,8 @@ var projectsBranchesList = cli.Command{
 	Usage: "Retrieve a project branch by name.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name: "project",
+			Name:     "project",
+			Required: true,
 		},
 		&requestflag.Flag[string]{
 			Name:      "cursor",
@@ -89,10 +95,12 @@ var projectsBranchesDelete = cli.Command{
 	Usage: "Delete a project branch by name.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name: "project",
+			Name:     "project",
+			Required: true,
 		},
 		&requestflag.Flag[string]{
-			Name: "branch",
+			Name:     "branch",
+			Required: true,
 		},
 	},
 	Before:          before,
@@ -105,10 +113,12 @@ var projectsBranchesRebase = cli.Command{
 	Usage: "Rebase a project branch.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name: "project",
+			Name:     "project",
+			Required: true,
 		},
 		&requestflag.Flag[string]{
-			Name: "branch",
+			Name:     "branch",
+			Required: true,
 		},
 		&requestflag.Flag[string]{
 			Name:        "base",
@@ -128,10 +138,12 @@ var projectsBranchesReset = cli.Command{
 	Usage: "Reset a project branch.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name: "project",
+			Name:     "project",
+			Required: true,
 		},
 		&requestflag.Flag[string]{
-			Name: "branch",
+			Name:     "branch",
+			Required: true,
 		},
 		&requestflag.Flag[string]{
 			Name:      "target-config-sha",
@@ -260,16 +272,7 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 		return ShowJSON(os.Stdout, "projects:branches list", obj, format, transform)
 	} else {
 		iter := client.Projects.Branches.ListAutoPaging(ctx, params, options...)
-		return streamOutput("projects:branches list", func(w *os.File) error {
-			for iter.Next() {
-				item := iter.Current()
-				obj := gjson.Parse(item.RawJSON())
-				if err := ShowJSON(w, "projects:branches list", obj, format, transform); err != nil {
-					return err
-				}
-			}
-			return iter.Err()
-		})
+		return ShowJSONIterator(os.Stdout, "projects:branches list", iter, format, transform)
 	}
 }
 

@@ -27,6 +27,7 @@ var buildsTargetOutputsRetrieve = cli.Command{
 		&requestflag.Flag[string]{
 			Name:      "build-id",
 			Usage:     "Build ID",
+			Required:  true,
 			QueryPath: "build_id",
 		},
 		&cli.StringFlag{
@@ -41,10 +42,12 @@ var buildsTargetOutputsRetrieve = cli.Command{
 		&requestflag.Flag[string]{
 			Name:      "target",
 			Usage:     "SDK language target name(s). Can be specified multiple times.",
+			Required:  true,
 			QueryPath: "target",
 		},
 		&requestflag.Flag[string]{
 			Name:      "type",
+			Required:  true,
 			QueryPath: "type",
 		},
 		&requestflag.Flag[string]{

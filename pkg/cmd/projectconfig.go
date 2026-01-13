@@ -20,7 +20,8 @@ var projectsConfigsRetrieve = cli.Command{
 	Usage: "Retrieve the configuration files for a given project.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name: "project",
+			Name:     "project",
+			Required: true,
 		},
 		&requestflag.Flag[string]{
 			Name:        "branch",
@@ -44,11 +45,13 @@ var projectsConfigsGuess = cli.Command{
 	Usage: "Generate suggestions for changes to config files based on an OpenAPI spec.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name: "project",
+			Name:     "project",
+			Required: true,
 		},
 		&requestflag.Flag[string]{
 			Name:     "spec",
 			Usage:    "OpenAPI spec",
+			Required: true,
 			BodyPath: "spec",
 		},
 		&requestflag.Flag[string]{
