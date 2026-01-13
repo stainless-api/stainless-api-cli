@@ -125,6 +125,17 @@ var buildsCreate = requestflag.WithInnerFlags(cli.Command{
 			Usage:    "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
 			BodyPath: "targets",
 		},
+		&requestflag.Flag[string]{
+			Name:     "project",
+			Usage:    "Project name",
+			Required: true,
+			BodyPath: "project",
+		},
+		&requestflag.Flag[[]string]{
+			Name:     "target",
+			Usage:    "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
+			BodyPath: "targets",
+		},
 	},
 	Action:          handleBuildsCreate,
 	Before:          before,
