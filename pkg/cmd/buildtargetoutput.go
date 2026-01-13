@@ -18,8 +18,9 @@ import (
 )
 
 var buildsTargetOutputsRetrieve = cli.Command{
-	Name:  "retrieve",
-	Usage: "Retrieve a method to download an output for a given build target.",
+	Name:    "retrieve",
+	Usage:   "Retrieve a method to download an output for a given build target.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name: "pull",

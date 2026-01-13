@@ -16,8 +16,9 @@ import (
 )
 
 var projectsCreate = cli.Command{
-	Name:  "create",
-	Usage: "Create a new project.",
+	Name:    "create",
+	Usage:   "Create a new project.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "display-name",
@@ -56,8 +57,9 @@ var projectsCreate = cli.Command{
 }
 
 var projectsRetrieve = cli.Command{
-	Name:  "retrieve",
-	Usage: "Retrieve a project by name.",
+	Name:    "retrieve",
+	Usage:   "Retrieve a project by name.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "project",
@@ -70,8 +72,9 @@ var projectsRetrieve = cli.Command{
 }
 
 var projectsUpdate = cli.Command{
-	Name:  "update",
-	Usage: "Update a project's properties.",
+	Name:    "update",
+	Usage:   "Update a project's properties.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "project",
@@ -88,8 +91,9 @@ var projectsUpdate = cli.Command{
 }
 
 var projectsList = cli.Command{
-	Name:  "list",
-	Usage: "List projects in an organization, from oldest to newest.",
+	Name:    "list",
+	Usage:   "List projects in an organization, from oldest to newest.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:      "cursor",

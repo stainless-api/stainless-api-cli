@@ -16,8 +16,9 @@ import (
 )
 
 var projectsConfigsRetrieve = cli.Command{
-	Name:  "retrieve",
-	Usage: "Retrieve the configuration files for a given project.",
+	Name:    "retrieve",
+	Usage:   "Retrieve the configuration files for a given project.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "project",
@@ -41,8 +42,9 @@ var projectsConfigsRetrieve = cli.Command{
 }
 
 var projectsConfigsGuess = cli.Command{
-	Name:  "guess",
-	Usage: "Generate suggestions for changes to config files based on an OpenAPI spec.",
+	Name:    "guess",
+	Usage:   "Generate suggestions for changes to config files based on an OpenAPI spec.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "project",
