@@ -16,8 +16,9 @@ import (
 )
 
 var buildsDiagnosticsList = cli.Command{
-	Name:  "list",
-	Usage: "Get the list of diagnostics for a given build.",
+	Name:    "list",
+	Usage:   "Get the list of diagnostics for a given build.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "build-id",

@@ -98,6 +98,7 @@ stl builds create --branch <branch>`,
 			{
 				Name:     "projects",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&projectsCreate,
 					&projectsRetrieve,
@@ -108,6 +109,7 @@ stl builds create --branch <branch>`,
 			{
 				Name:     "projects:branches",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&projectsBranchesCreate,
 					&projectsBranchesRetrieve,
@@ -120,6 +122,7 @@ stl builds create --branch <branch>`,
 			{
 				Name:     "projects:configs",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&projectsConfigsRetrieve,
 					&projectsConfigsGuess,
@@ -128,6 +131,7 @@ stl builds create --branch <branch>`,
 			{
 				Name:     "builds",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&buildsCreate,
 					&buildsRetrieve,
@@ -138,6 +142,7 @@ stl builds create --branch <branch>`,
 			{
 				Name:     "builds:diagnostics",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&buildsDiagnosticsList,
 				},
@@ -145,6 +150,7 @@ stl builds create --branch <branch>`,
 			{
 				Name:     "builds:target-outputs",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&buildsTargetOutputsRetrieve,
 				},
@@ -152,6 +158,7 @@ stl builds create --branch <branch>`,
 			{
 				Name:     "orgs",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&orgsRetrieve,
 					&orgsList,
