@@ -16,8 +16,9 @@ import (
 )
 
 var projectsBranchesCreate = cli.Command{
-	Name:  "create",
-	Usage: "Create a new branch for a project.",
+	Name:    "create",
+	Usage:   "Create a new branch for a project.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "project",
@@ -46,8 +47,9 @@ var projectsBranchesCreate = cli.Command{
 }
 
 var projectsBranchesRetrieve = cli.Command{
-	Name:  "retrieve",
-	Usage: "Retrieve a project branch by name.",
+	Name:    "retrieve",
+	Usage:   "Retrieve a project branch by name.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "project",
@@ -63,8 +65,9 @@ var projectsBranchesRetrieve = cli.Command{
 }
 
 var projectsBranchesList = cli.Command{
-	Name:  "list",
-	Usage: "Retrieve a project branch by name.",
+	Name:    "list",
+	Usage:   "Retrieve a project branch by name.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "project",
@@ -87,8 +90,9 @@ var projectsBranchesList = cli.Command{
 }
 
 var projectsBranchesDelete = cli.Command{
-	Name:  "delete",
-	Usage: "Delete a project branch by name.",
+	Name:    "delete",
+	Usage:   "Delete a project branch by name.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "project",
@@ -104,8 +108,9 @@ var projectsBranchesDelete = cli.Command{
 }
 
 var projectsBranchesRebase = cli.Command{
-	Name:  "rebase",
-	Usage: "Rebase a project branch.",
+	Name:    "rebase",
+	Usage:   "Rebase a project branch.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "project",
@@ -127,8 +132,9 @@ var projectsBranchesRebase = cli.Command{
 }
 
 var projectsBranchesReset = cli.Command{
-	Name:  "reset",
-	Usage: "Reset a project branch.",
+	Name:    "reset",
+	Usage:   "Reset a project branch.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "project",

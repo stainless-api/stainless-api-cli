@@ -16,8 +16,9 @@ import (
 )
 
 var orgsRetrieve = cli.Command{
-	Name:  "retrieve",
-	Usage: "Retrieve an organization by name.",
+	Name:    "retrieve",
+	Usage:   "Retrieve an organization by name.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "org",
@@ -31,6 +32,7 @@ var orgsRetrieve = cli.Command{
 var orgsList = cli.Command{
 	Name:            "list",
 	Usage:           "List organizations accessible to the current authentication method.",
+	Suggest:         true,
 	Flags:           []cli.Flag{},
 	Action:          handleOrgsList,
 	HideHelpCommand: true,

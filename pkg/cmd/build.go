@@ -16,8 +16,9 @@ import (
 )
 
 var buildsCreate = requestflag.WithInnerFlags(cli.Command{
-	Name:  "create",
-	Usage: "Create a build, on top of a project branch, against a given input revision.",
+	Name:    "create",
+	Usage:   "Create a build, on top of a project branch, against a given input revision.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "project",
@@ -117,8 +118,9 @@ var buildsCreate = requestflag.WithInnerFlags(cli.Command{
 })
 
 var buildsRetrieve = cli.Command{
-	Name:  "retrieve",
-	Usage: "Retrieve a build by its ID.",
+	Name:    "retrieve",
+	Usage:   "Retrieve a build by its ID.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "build-id",
@@ -131,8 +133,9 @@ var buildsRetrieve = cli.Command{
 }
 
 var buildsList = cli.Command{
-	Name:  "list",
-	Usage: "List user-triggered builds for a given project.",
+	Name:    "list",
+	Usage:   "List user-triggered builds for a given project.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:      "project",
@@ -168,8 +171,9 @@ var buildsList = cli.Command{
 }
 
 var buildsCompare = requestflag.WithInnerFlags(cli.Command{
-	Name:  "compare",
-	Usage: "Create two builds whose outputs can be directly compared with each other.",
+	Name:    "compare",
+	Usage:   "Create two builds whose outputs can be directly compared with each other.",
+	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[map[string]any]{
 			Name:     "base",

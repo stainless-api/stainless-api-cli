@@ -74,6 +74,7 @@ func init() {
 			{
 				Name:     "projects",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&projectsCreate,
 					&projectsRetrieve,
@@ -84,6 +85,7 @@ func init() {
 			{
 				Name:     "projects:branches",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&projectsBranchesCreate,
 					&projectsBranchesRetrieve,
@@ -96,6 +98,7 @@ func init() {
 			{
 				Name:     "projects:configs",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&projectsConfigsRetrieve,
 					&projectsConfigsGuess,
@@ -104,6 +107,7 @@ func init() {
 			{
 				Name:     "builds",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&buildsCreate,
 					&buildsRetrieve,
@@ -114,6 +118,7 @@ func init() {
 			{
 				Name:     "builds:diagnostics",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&buildsDiagnosticsList,
 				},
@@ -121,6 +126,7 @@ func init() {
 			{
 				Name:     "builds:target-outputs",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&buildsTargetOutputsRetrieve,
 				},
@@ -128,6 +134,7 @@ func init() {
 			{
 				Name:     "orgs",
 				Category: "API RESOURCE",
+				Suggest:  true,
 				Commands: []*cli.Command{
 					&orgsRetrieve,
 					&orgsList,
