@@ -274,11 +274,11 @@ func ShowJSON(out *os.File, title string, res gjson.Result, format string, trans
 
 // For an iterator over different value types, display its values to the user in
 // different formats.
-func ShowJSONIterator[T any](out *os.File, title string, iter jsonview.Iterator[T], format string, transform string) error {
+func ShowJSONIterator[T any](stdout *os.File, title string, iter jsonview.Iterator[T], format string, transform string) error {
 	if format == "explore" {
 		return jsonview.ExploreJSONStream(title, iter)
 	}
-	return streamOutput(title, func(w *os.File) error {
+	return streamOutput(title, func(pager *os.File) error {
 		for iter.Next() {
 			item := iter.Current()
 			jsonData, err := json.Marshal(item)
@@ -286,7 +286,7 @@ func ShowJSONIterator[T any](out *os.File, title string, iter jsonview.Iterator[
 				return err
 			}
 			obj := gjson.ParseBytes(jsonData)
-			if err := ShowJSON(out, title, obj, format, transform); err != nil {
+			if err := ShowJSON(pager, title, obj, format, transform); err != nil {
 				return err
 			}
 		}
