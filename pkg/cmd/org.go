@@ -20,7 +20,8 @@ var orgsRetrieve = cli.Command{
 	Usage: "Retrieve an organization by name.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name: "org",
+			Name:     "org",
+			Required: true,
 		},
 	},
 	Before:          before,
