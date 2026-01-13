@@ -20,8 +20,9 @@ var buildsDiagnosticsList = cli.Command{
 	Usage: "Get the list of diagnostics for a given build.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:  "build-id",
-			Usage: "Build ID",
+			Name:     "build-id",
+			Usage:    "Build ID",
+			Required: true,
 		},
 		&requestflag.Flag[string]{
 			Name:      "cursor",
@@ -96,15 +97,6 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 			params,
 			options...,
 		)
-		return streamOutput("builds:diagnostics list", func(w *os.File) error {
-			for iter.Next() {
-				item := iter.Current()
-				obj := gjson.Parse(item.RawJSON())
-				if err := ShowJSON(w, "builds:diagnostics list", obj, format, transform); err != nil {
-					return err
-				}
-			}
-			return iter.Err()
-		})
+		return ShowJSONIterator(os.Stdout, "builds:diagnostics list", iter, format, transform)
 	}
 }

@@ -22,26 +22,31 @@ var projectsCreate = cli.Command{
 		&requestflag.Flag[string]{
 			Name:     "display-name",
 			Usage:    "Human-readable project name",
+			Required: true,
 			BodyPath: "display_name",
 		},
 		&requestflag.Flag[string]{
 			Name:     "org",
 			Usage:    "Organization name",
+			Required: true,
 			BodyPath: "org",
 		},
-		&requestflag.Flag[map[string]map[string]string]{
+		&requestflag.Flag[map[string]any]{
 			Name:     "revision",
 			Usage:    "File contents to commit",
+			Required: true,
 			BodyPath: "revision",
 		},
 		&requestflag.Flag[string]{
 			Name:     "slug",
 			Usage:    "Project name/slug",
+			Required: true,
 			BodyPath: "slug",
 		},
 		&requestflag.Flag[[]string]{
 			Name:     "target",
 			Usage:    "Targets to generate for",
+			Required: true,
 			BodyPath: "targets",
 		},
 	},
@@ -54,7 +59,8 @@ var projectsRetrieve = cli.Command{
 	Usage: "Retrieve a project by name.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name: "project",
+			Name:     "project",
+			Required: true,
 		},
 	},
 	Action:          handleProjectsRetrieve,
@@ -66,7 +72,8 @@ var projectsUpdate = cli.Command{
 	Usage: "Update a project's properties.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name: "project",
+			Name:     "project",
+			Required: true,
 		},
 		&requestflag.Flag[string]{
 			Name:     "display-name",
@@ -241,15 +248,6 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 		return ShowJSON(os.Stdout, "projects list", obj, format, transform)
 	} else {
 		iter := client.Projects.ListAutoPaging(ctx, params, options...)
-		return streamOutput("projects list", func(w *os.File) error {
-			for iter.Next() {
-				item := iter.Current()
-				obj := gjson.Parse(item.RawJSON())
-				if err := ShowJSON(w, "projects list", obj, format, transform); err != nil {
-					return err
-				}
-			}
-			return iter.Err()
-		})
+		return ShowJSONIterator(os.Stdout, "projects list", iter, format, transform)
 	}
 }

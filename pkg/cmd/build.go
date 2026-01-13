@@ -15,18 +15,20 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-var buildsCreate = cli.Command{
+var buildsCreate = requestflag.WithInnerFlags(cli.Command{
 	Name:  "create",
 	Usage: "Create a build, on top of a project branch, against a given input revision.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name:     "project",
 			Usage:    "Project name",
+			Required: true,
 			BodyPath: "project",
 		},
 		&requestflag.Flag[any]{
 			Name:     "revision",
 			Usage:    "Specifies what to build: a branch name, commit SHA, merge command\n(\"base..head\"), or file contents.",
+			Required: true,
 			BodyPath: "revision",
 		},
 		&requestflag.Flag[bool]{
@@ -44,7 +46,7 @@ var buildsCreate = cli.Command{
 			Usage:    "Optional commit message to use when creating a new commit.",
 			BodyPath: "commit_message",
 		},
-		&requestflag.Flag[map[string]string]{
+		&requestflag.Flag[map[string]any]{
 			Name:     "target-commit-messages",
 			Usage:    "Optional commit messages to use for each SDK when making a new commit.\nSDKs not represented in this object will fallback to the optional\n`commit_message` parameter, or will fallback further to the default\ncommit message.",
 			BodyPath: "target_commit_messages",
@@ -57,15 +59,71 @@ var buildsCreate = cli.Command{
 	},
 	Action:          handleBuildsCreate,
 	HideHelpCommand: true,
-}
+}, map[string][]requestflag.HasOuterFlag{
+	"target-commit-messages": {
+		&requestflag.InnerFlag[string]{
+			Name:       "target-commit-messages.cli",
+			InnerField: "cli",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "target-commit-messages.csharp",
+			InnerField: "csharp",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "target-commit-messages.go",
+			InnerField: "go",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "target-commit-messages.java",
+			InnerField: "java",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "target-commit-messages.kotlin",
+			InnerField: "kotlin",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "target-commit-messages.node",
+			InnerField: "node",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "target-commit-messages.openapi",
+			InnerField: "openapi",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "target-commit-messages.php",
+			InnerField: "php",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "target-commit-messages.python",
+			InnerField: "python",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "target-commit-messages.ruby",
+			InnerField: "ruby",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "target-commit-messages.sql",
+			InnerField: "sql",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "target-commit-messages.terraform",
+			InnerField: "terraform",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "target-commit-messages.typescript",
+			InnerField: "typescript",
+		},
+	},
+})
 
 var buildsRetrieve = cli.Command{
 	Name:  "retrieve",
 	Usage: "Retrieve a build by its ID.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:  "build-id",
-			Usage: "Build ID",
+			Name:     "build-id",
+			Usage:    "Build ID",
+			Required: true,
 		},
 	},
 	Action:          handleBuildsRetrieve,
@@ -79,6 +137,7 @@ var buildsList = cli.Command{
 		&requestflag.Flag[string]{
 			Name:      "project",
 			Usage:     "Project name",
+			Required:  true,
 			QueryPath: "project",
 		},
 		&requestflag.Flag[string]{
@@ -108,23 +167,26 @@ var buildsList = cli.Command{
 	HideHelpCommand: true,
 }
 
-var buildsCompare = cli.Command{
+var buildsCompare = requestflag.WithInnerFlags(cli.Command{
 	Name:  "compare",
 	Usage: "Create two builds whose outputs can be directly compared with each other.",
 	Flags: []cli.Flag{
 		&requestflag.Flag[map[string]any]{
 			Name:     "base",
 			Usage:    "Parameters for the base build",
+			Required: true,
 			BodyPath: "base",
 		},
 		&requestflag.Flag[map[string]any]{
 			Name:     "head",
 			Usage:    "Parameters for the head build",
+			Required: true,
 			BodyPath: "head",
 		},
 		&requestflag.Flag[string]{
 			Name:     "project",
 			Usage:    "Project name",
+			Required: true,
 			BodyPath: "project",
 		},
 		&requestflag.Flag[[]string]{
@@ -135,7 +197,42 @@ var buildsCompare = cli.Command{
 	},
 	Action:          handleBuildsCompare,
 	HideHelpCommand: true,
-}
+}, map[string][]requestflag.HasOuterFlag{
+	"base": {
+		&requestflag.InnerFlag[string]{
+			Name:       "base.branch",
+			Usage:      "Branch to use. When using a branch name as revision, this must match or be\nomitted.",
+			InnerField: "branch",
+		},
+		&requestflag.InnerFlag[any]{
+			Name:       "base.revision",
+			Usage:      "Specifies what to build: a branch name, a commit SHA, or file contents.",
+			InnerField: "revision",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "base.commit-message",
+			Usage:      "Optional commit message to use when creating a new commit.",
+			InnerField: "commit_message",
+		},
+	},
+	"head": {
+		&requestflag.InnerFlag[string]{
+			Name:       "head.branch",
+			Usage:      "Branch to use. When using a branch name as revision, this must match or be\nomitted.",
+			InnerField: "branch",
+		},
+		&requestflag.InnerFlag[any]{
+			Name:       "head.revision",
+			Usage:      "Specifies what to build: a branch name, a commit SHA, or file contents.",
+			InnerField: "revision",
+		},
+		&requestflag.InnerFlag[string]{
+			Name:       "head.commit-message",
+			Usage:      "Optional commit message to use when creating a new commit.",
+			InnerField: "commit_message",
+		},
+	},
+})
 
 func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
@@ -240,16 +337,7 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 		return ShowJSON(os.Stdout, "builds list", obj, format, transform)
 	} else {
 		iter := client.Builds.ListAutoPaging(ctx, params, options...)
-		return streamOutput("builds list", func(w *os.File) error {
-			for iter.Next() {
-				item := iter.Current()
-				obj := gjson.Parse(item.RawJSON())
-				if err := ShowJSON(w, "builds list", obj, format, transform); err != nil {
-					return err
-				}
-			}
-			return iter.Err()
-		})
+		return ShowJSONIterator(os.Stdout, "builds list", iter, format, transform)
 	}
 }
 
