@@ -302,7 +302,7 @@ func ShowJSONIterator[T any](stdout *os.File, title string, iter jsonview.Iterat
 
 	terminalWidth, terminalHeight, err := term.GetSize(os.Stdout.Fd())
 	if err != nil {
-		return err
+		terminalHeight = 100
 	}
 
 	// Decide whether or not to use a pager based on whether it's a short output or a long output
