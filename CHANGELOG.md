@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.1.0-alpha.67 (2026-01-14)
+
+Full Changelog: [v0.1.0-alpha.66...v0.1.0-alpha.67](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.66...v0.1.0-alpha.67)
+
+### Features
+
+* enable suggestion for mistyped commands and flags ([f0bda1c](https://github.com/stainless-api/stainless-api-cli/commit/f0bda1cebc04d7500e29813578ea96043f5a4fb2))
+
+
+### Bug Fixes
+
+* **client:** do not use pager for short paginated responses ([a67b736](https://github.com/stainless-api/stainless-api-cli/commit/a67b7368fa23656bd7ee2e73db3ee0bda80ba879))
+* fix for paginated output not writing to pager correctly ([5664786](https://github.com/stainless-api/stainless-api-cli/commit/566478664ded15ca42585c8306511685047cc2a3))
+
+
+### Chores
+
+* **internal:** codegen related update ([636fbab](https://github.com/stainless-api/stainless-api-cli/commit/636fbab86afc2cf9a9c7bd3f333356c5bf436dd1))
+* **internal:** codegen related update ([67f24aa](https://github.com/stainless-api/stainless-api-cli/commit/67f24aa8e449efcf9092b101e892bc961d8345d2))
+* **internal:** codegen related update ([9502a81](https://github.com/stainless-api/stainless-api-cli/commit/9502a81ab539b3eda392cbe3bba2ba53e3462ab1))
+* **internal:** codegen related update ([3942483](https://github.com/stainless-api/stainless-api-cli/commit/39424833bdd13c10b1d7c885a97c930ab7daba43))
+* **internal:** codegen related update ([a2e2d81](https://github.com/stainless-api/stainless-api-cli/commit/a2e2d811b26af235e6e82e086507d2db590fc8a6))
+* **internal:** codegen related update ([bdc6a08](https://github.com/stainless-api/stainless-api-cli/commit/bdc6a0838f0294fc76346ba0ef71416b4cc4d55c))
+* **internal:** codegen related update ([600e77b](https://github.com/stainless-api/stainless-api-cli/commit/600e77b2864a93476109d08139fc648740232369))
+* update Go SDK version ([8de090d](https://github.com/stainless-api/stainless-api-cli/commit/8de090d46ce5dd634087b7ebc92fcbb9aad7f918))
+
 ## 0.1.0-alpha.66 (2026-01-07)
 
 Full Changelog: [v0.1.0-alpha.65...v0.1.0-alpha.66](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.65...v0.1.0-alpha.66)
