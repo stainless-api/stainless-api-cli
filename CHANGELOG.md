@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.0-alpha.68 (2026-01-14)
+
+Full Changelog: [v0.1.0-alpha.67...v0.1.0-alpha.68](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.67...v0.1.0-alpha.68)
+
+### Bug Fixes
+
+* avoid consuming request bodies when printing redacted outputs ([861b9b3](https://github.com/stainless-api/stainless-api-cli/commit/861b9b3dadc369ab7ae4c215318ad2102c7be7a4))
+* fix terminal height issues causing test failures ([59111de](https://github.com/stainless-api/stainless-api-cli/commit/59111de6cea673462d57d6b82529c1a10b32f449))
+* flag defaults ([10e4643](https://github.com/stainless-api/stainless-api-cli/commit/10e46430abd8cb79fb0d5cd8c5f3ec4220c064f6))
+* overly broad redaction of Authorization ([6a6dc2e](https://github.com/stainless-api/stainless-api-cli/commit/6a6dc2e53e5957ea017374fc267116310ba8678e))
+* prevent flag duplication ([5c9267b](https://github.com/stainless-api/stainless-api-cli/commit/5c9267b768c6453d4cd02e6be23f8e19752b1376))
+* stl builds create ([ad0be67](https://github.com/stainless-api/stainless-api-cli/commit/ad0be6704dac6819f50a1d7a3102d618aaf77615))
+* stl builds:target-outputs retrieve ([e244860](https://github.com/stainless-api/stainless-api-cli/commit/e244860e9ff0635822642ea84181c6c6c6f831ec))
+
+
+### Chores
+
+* **deps:** bump golang.org/x/net from 0.33.0 to 0.38.0 ([d38435b](https://github.com/stainless-api/stainless-api-cli/commit/d38435b1c8fcdd52aee5fe606be6c68fa3bcd0eb))
+* **internal:** codegen related update ([a31d0d5](https://github.com/stainless-api/stainless-api-cli/commit/a31d0d54ac413e105d3ed869aae8c4b072365d6a))
+* update internal comment ([6a6dc2e](https://github.com/stainless-api/stainless-api-cli/commit/6a6dc2e53e5957ea017374fc267116310ba8678e))
+* updated README.md with more flag information ([8d8b746](https://github.com/stainless-api/stainless-api-cli/commit/8d8b74622020869858f94fe9eae37b972805bf84))
+
 ## 0.1.0-alpha.67 (2026-01-14)
 
 Full Changelog: [v0.1.0-alpha.66...v0.1.0-alpha.67](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.66...v0.1.0-alpha.67)
