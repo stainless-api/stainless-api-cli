@@ -39,6 +39,7 @@ var projectsBranchesCreate = cli.Command{
 		&requestflag.Flag[bool]{
 			Name:     "force",
 			Usage:    "Whether to throw an error if the branch already exists. Defaults to false.",
+			Default:  false,
 			BodyPath: "force",
 		},
 	},
