@@ -92,7 +92,6 @@ var buildsCreate = requestflag.WithInnerFlags(cli.Command{
 		&requestflag.Flag[any]{
 			Name:     "revision",
 			Usage:    "Specifies what to build: a branch name, commit SHA, merge command\n(\"base..head\"), or file contents.",
-			Required: true,
 			BodyPath: "revision",
 		},
 		&requestflag.Flag[bool]{
@@ -118,18 +117,6 @@ var buildsCreate = requestflag.WithInnerFlags(cli.Command{
 		&requestflag.Flag[string]{
 			Name:     "project",
 			Usage:    "Project name",
-			Required: true,
-			BodyPath: "project",
-		},
-		&requestflag.Flag[[]string]{
-			Name:     "target",
-			Usage:    "Optional list of SDK targets to build. If not specified, all configured\ntargets will be built.",
-			BodyPath: "targets",
-		},
-		&requestflag.Flag[string]{
-			Name:     "project",
-			Usage:    "Project name",
-			Required: true,
 			BodyPath: "project",
 		},
 		&requestflag.Flag[[]string]{
