@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
@@ -28,7 +27,6 @@ var buildsTargetOutputsRetrieve = cli.Command{
 		&requestflag.Flag[string]{
 			Name:      "build-id",
 			Usage:     "Build ID",
-			Required:  true,
 			QueryPath: "build_id",
 		},
 		&cli.StringFlag{
@@ -40,7 +38,7 @@ var buildsTargetOutputsRetrieve = cli.Command{
 			Usage:   "Branch name (defaults to main if not provided)",
 			Default: "main",
 		},
-		&requestflag.Flag[string]{
+		&requestflag.Flag[[]string]{
 			Name:      "target",
 			Usage:     "SDK language target name(s). Can be specified multiple times.",
 			Required:  true,
@@ -71,32 +69,12 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.BuildTargetOutputGetParams{}
-	options, err := flagOptions(
-		cmd,
-		apiquery.NestedQueryFormatBrackets,
-		apiquery.ArrayQueryFormatComma,
-		EmptyBody,
-		false,
-	)
-	if err != nil {
-		return err
-	}
-
-	var res []byte
-	options = append(options, option.WithResponseBodyInto(&res))
-	_, err = client.Builds.TargetOutputs.Get(ctx, params, options...)
-	if err != nil {
-		return err
-	}
-
-	buildID := cmd.Value("build-id").(string)
-	if buildID == "" {
+	if cmd.String("build-id") == "" {
 		latestBuild, err := getLatestBuild(ctx, client, cmd.String("project"), cmd.String("branch"))
 		if err != nil {
 			return fmt.Errorf("failed to get latest build: %v", err)
 		}
-		buildID = latestBuild.ID
+		cmd.Set("build-id", latestBuild.ID)
 	}
 
 	wc := getWorkspace(ctx)
@@ -112,7 +90,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 
 	for _, target := range targets {
 		params := stainless.BuildTargetOutputGetParams{
-			BuildID: buildID,
+			BuildID: cmd.String("build-id"),
 			Target:  stainless.BuildTargetOutputGetParamsTarget(target),
 			Type:    stainless.BuildTargetOutputGetParamsType(outputType),
 			Output:  stainless.BuildTargetOutputGetParamsOutput(outputFormat),
@@ -127,7 +105,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 			options...,
 		)
 		if err != nil {
-			return fmt.Errorf("failed to get output for target %s: %v", target, err)
+			return err
 		}
 
 		if !isPull {
