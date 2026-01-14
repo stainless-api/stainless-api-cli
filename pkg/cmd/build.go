@@ -97,6 +97,7 @@ var buildsCreate = requestflag.WithInnerFlags(cli.Command{
 		&requestflag.Flag[bool]{
 			Name:     "allow-empty",
 			Usage:    "Whether to allow empty commits (no changes). Defaults to false.",
+			Default:  false,
 			BodyPath: "allow_empty",
 		},
 		&requestflag.Flag[string]{
