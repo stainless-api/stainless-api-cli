@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.69 (2026-01-17)
+
+Full Changelog: [v0.1.0-alpha.68...v0.1.0-alpha.69](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.68...v0.1.0-alpha.69)
+
+### Chores
+
+* **internal:** update `actions/checkout` version ([7636b1e](https://github.com/stainless-api/stainless-api-cli/commit/7636b1e3af2dea64143fdb300b90e94d9938ef74))
+
 ## 0.1.0-alpha.68 (2026-01-14)
 
 Full Changelog: [v0.1.0-alpha.67...v0.1.0-alpha.68](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.67...v0.1.0-alpha.68)
