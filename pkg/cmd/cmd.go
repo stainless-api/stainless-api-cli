@@ -104,6 +104,7 @@ stl builds create --branch <branch>`,
 					&projectsRetrieve,
 					&projectsUpdate,
 					&projectsList,
+					&projectsGenerateCommitMessage,
 				},
 			},
 			{
