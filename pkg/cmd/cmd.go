@@ -80,6 +80,7 @@ func init() {
 					&projectsRetrieve,
 					&projectsUpdate,
 					&projectsList,
+					&projectsGenerateCommitMessage,
 				},
 			},
 			{

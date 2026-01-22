@@ -50,3 +50,15 @@ func TestProjectsList(t *testing.T) {
 		"--org", "org",
 	)
 }
+
+func TestProjectsGenerateCommitMessage(t *testing.T) {
+	t.Skip("Prism tests are disabled")
+	mocktest.TestRunMockTestWithFlags(
+		t,
+		"projects", "generate-commit-message",
+		"--project", "project",
+		"--target", "python",
+		"--base-ref", "base_ref",
+		"--head-ref", "head_ref",
+	)
+}
