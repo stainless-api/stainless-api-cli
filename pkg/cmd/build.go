@@ -110,6 +110,11 @@ var buildsCreate = requestflag.WithInnerFlags(cli.Command{
 			Usage:    "Optional commit message to use when creating a new commit.",
 			BodyPath: "commit_message",
 		},
+		&requestflag.Flag[bool]{
+			Name:     "enable-ai-commit-message",
+			Usage:    "Whether to generate AI-powered commit messages for the build.\nCannot be combined with `commit_message` or `target_commit_messages`.",
+			BodyPath: "enable_ai_commit_message",
+		},
 		&requestflag.Flag[map[string]any]{
 			Name:     "target-commit-messages",
 			Usage:    "Optional commit messages to use for each SDK when making a new commit.\nSDKs not represented in this object will fallback to the optional\n`commit_message` parameter, or will fallback further to the default\ncommit message.",

@@ -19,6 +19,7 @@ func TestBuildsCreate(t *testing.T) {
 		"--allow-empty=true",
 		"--branch", "branch",
 		"--commit-message", "commit_message",
+		"--enable-ai-commit-message=true",
 		"--target-commit-messages", "{cli: cli, csharp: csharp, go: go, java: java, kotlin: kotlin, node: node, openapi: openapi, php: php, python: python, ruby: ruby, sql: sql, terraform: terraform, typescript: typescript}",
 		"--target", "node",
 	)
@@ -35,6 +36,7 @@ func TestBuildsCreate(t *testing.T) {
 		"--allow-empty=true",
 		"--branch", "branch",
 		"--commit-message", "commit_message",
+		"--enable-ai-commit-message=true",
 		"--target-commit-messages.cli", "cli",
 		"--target-commit-messages.csharp", "csharp",
 		"--target-commit-messages.go", "go",

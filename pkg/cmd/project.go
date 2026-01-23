@@ -117,6 +117,38 @@ var projectsList = cli.Command{
 	HideHelpCommand: true,
 }
 
+var projectsGenerateCommitMessage = cli.Command{
+	Name:    "generate-commit-message",
+	Usage:   "Generates an AI commit message by comparing two git refs in the SDK repository.",
+	Suggest: true,
+	Flags: []cli.Flag{
+		&requestflag.Flag[string]{
+			Name:     "project",
+			Required: true,
+		},
+		&requestflag.Flag[string]{
+			Name:      "target",
+			Usage:     "Language target",
+			Required:  true,
+			QueryPath: "target",
+		},
+		&requestflag.Flag[string]{
+			Name:     "base-ref",
+			Usage:    "Base ref for comparison",
+			Required: true,
+			BodyPath: "base_ref",
+		},
+		&requestflag.Flag[string]{
+			Name:     "head-ref",
+			Usage:    "Head ref for comparison",
+			Required: true,
+			BodyPath: "head_ref",
+		},
+	},
+	Action:          handleProjectsGenerateCommitMessage,
+	HideHelpCommand: true,
+}
+
 func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 	unusedArgs := cmd.Args().Slice()
@@ -259,4 +291,40 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 		iter := client.Projects.ListAutoPaging(ctx, params, options...)
 		return ShowJSONIterator(os.Stdout, "projects list", iter, format, transform)
 	}
+}
+
+func handleProjectsGenerateCommitMessage(ctx context.Context, cmd *cli.Command) error {
+	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
+	unusedArgs := cmd.Args().Slice()
+
+	if len(unusedArgs) > 0 {
+		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
+	}
+
+	params := stainless.ProjectGenerateCommitMessageParams{
+		Project: stainless.String(cmd.Value("project").(string)),
+	}
+
+	options, err := flagOptions(
+		cmd,
+		apiquery.NestedQueryFormatBrackets,
+		apiquery.ArrayQueryFormatComma,
+		ApplicationJSON,
+		false,
+	)
+	if err != nil {
+		return err
+	}
+
+	var res []byte
+	options = append(options, option.WithResponseBodyInto(&res))
+	_, err = client.Projects.GenerateCommitMessage(ctx, params, options...)
+	if err != nil {
+		return err
+	}
+
+	obj := gjson.ParseBytes(res)
+	format := cmd.Root().String("format")
+	transform := cmd.Root().String("transform")
+	return ShowJSON(os.Stdout, "projects generate-commit-message", obj, format, transform)
 }

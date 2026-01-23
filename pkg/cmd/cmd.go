@@ -104,6 +104,7 @@ stl builds create --branch <branch>`,
 					&projectsRetrieve,
 					&projectsUpdate,
 					&projectsList,
+					&projectsGenerateCommitMessage,
 				},
 			},
 			{
@@ -220,13 +221,13 @@ func before(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 		names = append(names, flag.Names()...)
 	}
 
-	if slices.Contains(names, "project") && wc.Project != "" {
+	if slices.Contains(names, "project") && wc.Project != "" && !cmd.IsSet("project") {
 		cmd.Set("project", wc.Project)
 	}
-	if slices.Contains(names, "openapi-spec") && wc.OpenAPISpec != "" {
+	if slices.Contains(names, "openapi-spec") && wc.OpenAPISpec != "" && !cmd.IsSet("openapi-spec") && !cmd.IsSet("revision") {
 		cmd.Set("openapi-spec", wc.OpenAPISpec)
 	}
-	if slices.Contains(names, "stainless-config") && wc.StainlessConfig != "" {
+	if slices.Contains(names, "stainless-config") && wc.StainlessConfig != "" && !cmd.IsSet("stainless-config") && !cmd.IsSet("revision") {
 		cmd.Set("stainless-config", wc.StainlessConfig)
 	}
 
