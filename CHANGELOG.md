@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.0-alpha.69 (2026-01-23)
+
+Full Changelog: [v0.1.0-alpha.68...v0.1.0-alpha.69](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.68...v0.1.0-alpha.69)
+
+### Features
+
+* **api:** ai commit message features are available as public feature ([b8e3cbb](https://github.com/stainless-api/stainless-api-cli/commit/b8e3cbb5b5392955488f3d2821deb937d050e60a))
+* **api:** manual updates ([8f23799](https://github.com/stainless-api/stainless-api-cli/commit/8f23799bac4d79fc4221ed698fe3415766a6d9f4))
+
+
+### Bug Fixes
+
+* don't overwrite flag if revision is explicitly set ([fac264a](https://github.com/stainless-api/stainless-api-cli/commit/fac264a2ab469f61912c8934632e59f7749bebbd))
+
+
+### Chores
+
+* **internal:** update `actions/checkout` version ([7636b1e](https://github.com/stainless-api/stainless-api-cli/commit/7636b1e3af2dea64143fdb300b90e94d9938ef74))
+
 ## 0.1.0-alpha.68 (2026-01-14)
 
 Full Changelog: [v0.1.0-alpha.67...v0.1.0-alpha.68](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.67...v0.1.0-alpha.68)
