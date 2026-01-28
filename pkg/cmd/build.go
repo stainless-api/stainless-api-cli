@@ -215,7 +215,6 @@ var buildsList = cli.Command{
 		&requestflag.Flag[string]{
 			Name:      "project",
 			Usage:     "Project name",
-			Required:  true,
 			QueryPath: "project",
 		},
 		&requestflag.Flag[string]{
@@ -266,7 +265,6 @@ var buildsCompare = requestflag.WithInnerFlags(cli.Command{
 		&requestflag.Flag[string]{
 			Name:     "project",
 			Usage:    "Project name",
-			Required: true,
 			BodyPath: "project",
 		},
 		&requestflag.Flag[[]string]{
