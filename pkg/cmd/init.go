@@ -42,12 +42,12 @@ var initCommand = cli.Command{
 			Usage: "Organization name",
 		},
 		&cli.StringFlag{
-			Name:  "display-name",
-			Usage: "Project display name",
+			Name:  "project",
+			Usage: "Project slug",
 		},
 		&cli.StringFlag{
-			Name:  "slug",
-			Usage: "Project slug",
+			Name:  "display-name",
+			Usage: "Project display name",
 		},
 		&cli.StringFlag{
 			Name:  "targets",
