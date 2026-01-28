@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.0-alpha.70 (2026-01-28)
+
+Full Changelog: [v0.1.0-alpha.69...v0.1.0-alpha.70](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.69...v0.1.0-alpha.70)
+
+### Features
+
+* set project to be not required ([83baf59](https://github.com/stainless-api/stainless-api-cli/commit/83baf59ea5f31e616a804e162635074c1c48d8bf))
+
+
+### Bug Fixes
+
+* **init:** add project flag ([d727066](https://github.com/stainless-api/stainless-api-cli/commit/d727066630bdfd558c435e68d6616e7deb9cbc28))
+
+
+### Chores
+
+* bump pkg versions ([5a77ff1](https://github.com/stainless-api/stainless-api-cli/commit/5a77ff18cac1ddaedfe1b81166b1db384787ea8e))
+
 ## 0.1.0-alpha.69 (2026-01-23)
 
 Full Changelog: [v0.1.0-alpha.68...v0.1.0-alpha.69](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.68...v0.1.0-alpha.69)
