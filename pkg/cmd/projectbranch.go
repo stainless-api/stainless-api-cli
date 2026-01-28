@@ -21,8 +21,7 @@ var projectsBranchesCreate = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "project",
-			Required: true,
+			Name: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:     "branch",
@@ -54,8 +53,7 @@ var projectsBranchesRetrieve = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "project",
-			Required: true,
+			Name: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:     "branch",
@@ -73,8 +71,7 @@ var projectsBranchesList = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "project",
-			Required: true,
+			Name: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:      "cursor",
@@ -84,9 +81,9 @@ var projectsBranchesList = cli.Command{
 		&requestflag.Flag[float64]{
 			Name:        "limit",
 			Usage:       "Maximum number of items to return, defaults to 10 (maximum: 100).",
-			Default:       10,
+			Default:     10,
 			DefaultText: "10",
-			QueryPath: "limit",
+			QueryPath:   "limit",
 		},
 	},
 	Before:          before,
@@ -100,8 +97,7 @@ var projectsBranchesDelete = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "project",
-			Required: true,
+			Name: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:     "branch",
@@ -119,8 +115,7 @@ var projectsBranchesRebase = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "project",
-			Required: true,
+			Name: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:     "branch",
@@ -129,9 +124,9 @@ var projectsBranchesRebase = cli.Command{
 		&requestflag.Flag[string]{
 			Name:        "base",
 			Usage:       `The branch or commit SHA to rebase onto. Defaults to "main".`,
-			Default:       "main",
+			Default:     "main",
 			DefaultText: "main",
-			QueryPath: "base",
+			QueryPath:   "base",
 		},
 	},
 	Before:          before,
@@ -145,8 +140,7 @@ var projectsBranchesReset = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "project",
-			Required: true,
+			Name: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:     "branch",

@@ -62,8 +62,7 @@ var projectsRetrieve = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "project",
-			Required: true,
+			Name: "project",
 		},
 	},
 	Before:          before,
@@ -77,8 +76,7 @@ var projectsUpdate = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "project",
-			Required: true,
+			Name: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:     "display-name",
@@ -103,9 +101,9 @@ var projectsList = cli.Command{
 		&requestflag.Flag[float64]{
 			Name:        "limit",
 			Usage:       "Maximum number of projects to return, defaults to 10 (maximum: 100).",
-			Default:       10,
+			Default:     10,
 			DefaultText: "10",
-			QueryPath: "limit",
+			QueryPath:   "limit",
 		},
 		&requestflag.Flag[string]{
 			Name:      "org",
@@ -123,8 +121,7 @@ var projectsGenerateCommitMessage = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "project",
-			Required: true,
+			Name: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:      "target",
