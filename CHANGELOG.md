@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.0-alpha.71 (2026-01-29)
+
+Full Changelog: [v0.1.0-alpha.70...v0.1.0-alpha.71](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.70...v0.1.0-alpha.71)
+
+### ⚠ BREAKING CHANGES
+
+* add support for passing files as parameters
+
+### Features
+
+* add github version check ([3596cbb](https://github.com/stainless-api/stainless-api-cli/commit/3596cbba986e3019e9fc1f9b555728a5c737fe27))
+* add support for passing files as parameters ([5a44115](https://github.com/stainless-api/stainless-api-cli/commit/5a44115f285231ae36c872a9ad510b48b8d4f55c))
+* **cli:** improve shell completions for namespaced commands and flags ([d11eba5](https://github.com/stainless-api/stainless-api-cli/commit/d11eba51ee4b07e1360cefde3e329c24d47067d0))
+
+
+### Bug Fixes
+
+* cleanup and make passing project flag make more sense ([91a6b99](https://github.com/stainless-api/stainless-api-cli/commit/91a6b9977b85c115ca97eee02e655401809c19e3))
+* fix for nullable arguments ([7bbd057](https://github.com/stainless-api/stainless-api-cli/commit/7bbd05715c474f582ce2d076831d01a6fb32e2e4))
+* fix mock tests with inner fields that have underscores ([0fb140a](https://github.com/stainless-api/stainless-api-cli/commit/0fb140aa40f3e52e01a9a8b8142876e9fcee8647))
+* use RawJSON for iterated values instead of re-marshalling ([fcc55a6](https://github.com/stainless-api/stainless-api-cli/commit/fcc55a618a14bf956aa0af852d66e463e0073fbf))
+
 ## 0.1.0-alpha.70 (2026-01-28)
 
 Full Changelog: [v0.1.0-alpha.69...v0.1.0-alpha.70](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.69...v0.1.0-alpha.70)
