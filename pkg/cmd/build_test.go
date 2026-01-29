@@ -96,10 +96,10 @@ func TestBuildsCompare(t *testing.T) {
 		"builds", "compare",
 		"--base.branch", "branch",
 		"--base.revision", "string",
-		"--base.commit_message", "commit_message",
+		"--base.commit-message", "commit_message",
 		"--head.branch", "branch",
 		"--head.revision", "string",
-		"--head.commit_message", "commit_message",
+		"--head.commit-message", "commit_message",
 		"--project", "project",
 		"--target", "node",
 	)
