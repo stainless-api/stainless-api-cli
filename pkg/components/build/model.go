@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -17,6 +18,15 @@ import (
 	"github.com/stainless-api/stainless-api-cli/pkg/git"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 	"github.com/stainless-api/stainless-api-go"
+)
+
+// downloadSemaphore limits concurrent git operations to avoid rate limiting,
+// token expiration, and git protocol errors when fetching multiple repos.
+var downloadSemaphore = make(chan struct{}, 2)
+
+const (
+	maxDownloadRetries = 3
+	initialRetryDelay  = time.Second
 )
 
 var ErrUserCancelled = errors.New("user cancelled")
@@ -128,34 +138,113 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 func (m Model) downloadTarget(target stainless.Target) tea.Cmd {
 	return func() tea.Msg {
-		params := stainless.BuildTargetOutputGetParams{
-			BuildID: m.Build.ID,
-			Target:  stainless.BuildTargetOutputGetParamsTarget(target),
-			Type:    "source",
-			Output:  "git",
-		}
-		outputRes, err := m.Client.Builds.TargetOutputs.Get(
-			context.TODO(),
-			params,
-		)
-		if err != nil {
-			return ErrorMsg(err)
-		}
-		err = PullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.Branch, m.Downloads[target].Path, console.NewGroup(true))
-		if err != nil {
+		// Acquire semaphore to limit concurrent git operations.
+		// This prevents race conditions with GitHub rate limiting,
+		// auth token expiration, and git protocol errors.
+		downloadSemaphore <- struct{}{}
+		defer func() { <-downloadSemaphore }()
+
+		var lastErr error
+		retryDelay := initialRetryDelay
+
+		for attempt := 0; attempt < maxDownloadRetries; attempt++ {
+			if attempt > 0 {
+				// Wait before retry with exponential backoff
+				select {
+				case <-m.Ctx.Done():
+					return ErrorMsg(m.Ctx.Err())
+				case <-time.After(retryDelay):
+				}
+				retryDelay *= 2
+			}
+
+			// Request fresh auth URL for each attempt (tokens can expire)
+			params := stainless.BuildTargetOutputGetParams{
+				BuildID: m.Build.ID,
+				Target:  stainless.BuildTargetOutputGetParamsTarget(target),
+				Type:    "source",
+				Output:  "git",
+			}
+			outputRes, err := m.Client.Builds.TargetOutputs.Get(m.Ctx, params)
+			if err != nil {
+				lastErr = err
+				continue
+			}
+
+			err = PullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.Branch, m.Downloads[target].Path, console.NewGroup(true))
+			if err != nil {
+				lastErr = err
+				// Check if error is retryable (network/git protocol errors)
+				if isRetryableGitError(err) {
+					continue
+				}
+				// Non-retryable error, fail immediately
+				return DownloadMsg{
+					Target:     target,
+					Status:     "completed",
+					Conclusion: "failure",
+					Error:      err.Error(),
+				}
+			}
+
+			// Success
 			return DownloadMsg{
 				Target:     target,
 				Status:     "completed",
-				Conclusion: "failure",
-				Error:      err.Error(),
+				Conclusion: "success",
 			}
 		}
+
+		// All retries exhausted
 		return DownloadMsg{
 			Target:     target,
 			Status:     "completed",
-			Conclusion: "success",
+			Conclusion: "failure",
+			Error:      fmt.Sprintf("failed after %d attempts: %v", maxDownloadRetries, lastErr),
 		}
 	}
+}
+
+// isRetryableGitError checks if a git error is transient and worth retrying.
+// "Repository not found" is included because it often indicates an expired/invalid
+// auth token rather than a truly missing repo - retrying with a fresh auth URL often succeeds.
+func isRetryableGitError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	retryablePatterns := []string{
+		"RPC failed",
+		"curl",
+		"HTTP 404",
+		"HTTP 429",
+		"HTTP 500",
+		"HTTP 502",
+		"HTTP 503",
+		"expected flush",
+		"Connection reset",
+		"Connection refused",
+		"timeout",
+		"Temporary failure",
+		"Repository not found",  // Often means expired auth token, not actually missing
+		"not found",             // Generic "not found" errors
+	}
+	for _, pattern := range retryablePatterns {
+		if strings.Contains(errStr, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
+// downloadSemaphoreMu protects resize operations on the semaphore (for testing)
+var downloadSemaphoreMu sync.Mutex
+
+// SetMaxConcurrentDownloads allows adjusting the concurrency limit (mainly for testing)
+func SetMaxConcurrentDownloads(n int) {
+	downloadSemaphoreMu.Lock()
+	defer downloadSemaphoreMu.Unlock()
+	downloadSemaphore = make(chan struct{}, n)
 }
 
 func (m Model) fetchBuildStatus() tea.Cmd {
