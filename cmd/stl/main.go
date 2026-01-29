@@ -10,11 +10,14 @@ import (
 	"os"
 
 	"github.com/stainless-api/stainless-api-cli/pkg/cmd"
+	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/tidwall/gjson"
 )
 
 func main() {
+	updateCheck := cmd.CheckForUpdate()
+
 	app := cmd.Command
 	if err := app.Run(context.Background(), os.Args); err != nil {
 		var apierr *stainless.Error
@@ -30,6 +33,15 @@ func main() {
 		} else {
 			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 		}
+		checkVersionUpdate(updateCheck)
 		os.Exit(1)
+	}
+
+	checkVersionUpdate(updateCheck)
+}
+
+func checkVersionUpdate(updateCheck <-chan string) {
+	if msg := <-updateCheck; msg != "" {
+		console.Warn("%s", msg)
 	}
 }
