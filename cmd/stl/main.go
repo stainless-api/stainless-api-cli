@@ -26,6 +26,8 @@ func main() {
 		prepareForAutocomplete(app)
 	}
 
+	checkVersionUpdate(updateCheck)
+
 	if err := app.Run(context.Background(), os.Args); err != nil {
 		exitCode := 1
 
@@ -59,8 +61,6 @@ func prepareForAutocomplete(cmd *cli.Command) {
 	for _, child := range cmd.Commands {
 		prepareForAutocomplete(child)
 	}
-
-	checkVersionUpdate(updateCheck)
 }
 
 func checkVersionUpdate(updateCheck <-chan string) {
