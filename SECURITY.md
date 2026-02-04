@@ -20,7 +20,7 @@ or products provided by Stainless, please follow the respective company's securi
 
 ### Stainless Terms and Policies
 
-Please contact local-dev@stainless.com for any questions or concerns regarding the security of our services.
+Please contact support@stainless.com for any questions or concerns regarding the security of our services.
 
 ---
 
