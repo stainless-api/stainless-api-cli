@@ -102,44 +102,44 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 
 	projects := fetchUserProjects(ctx, client, org)
 
-	var targets []stainless.Target
-	project := ""
+	var projectName string
+	var project *stainless.Project
 
 	if cmd.IsSet("project") {
-		project = cmd.String("project")
-		projectExists := false
+		projectName = cmd.String("project")
 		for _, p := range projects {
 			// User can specify display name or slug, but we should normalize to slug here:
-			if project == p.Slug || project == p.DisplayName {
-				project = p.Slug
-				projectExists = true
+			if projectName == p.Slug || projectName == p.DisplayName {
+				projectName = p.Slug
+				project = &p
 				break
 			}
 		}
-
-		if !projectExists {
-			return fmt.Errorf("project '%s' does not exist", project)
-		}
 	} else {
-		project, targets, err = askSelectProject(projects)
+		projectName, project, err = askSelectProject(projects)
 		if err != nil {
 			return err
 		}
+	}
 
-		// If project is empty, that means the user selected <New Project>
-		if project == "" {
-			var err error
-			if project, targets, err = askCreateProject(ctx, cmd, client, org, ""); err != nil {
-				return err
-			}
-		} else {
-			console.Property("project", project)
+	if project == nil && projectName != "" {
+		project, _ = client.Projects.Get(ctx, stainless.ProjectGetParams{
+			Project: stainless.String(projectName),
+		})
+	}
+
+	if project == nil {
+		var err error
+		if projectName, project, err = askCreateProject(ctx, cmd, client, org, projectName); err != nil {
+			return err
 		}
+	} else {
+		console.Property("project", projectName)
 	}
 
 	console.Spacer()
 
-	return initializeWorkspace(ctx, cmd, client, project, targets)
+	return initializeWorkspace(ctx, cmd, client, projectName, project.Targets)
 }
 
 func ensureExistingWorkspaceIsDeleted(cmd *cli.Command) error {
@@ -217,7 +217,7 @@ func fetchUserProjects(ctx context.Context, client stainless.Client, org string)
 }
 
 // askSelectProject prompts the user to select from existing projects or create a new one
-func askSelectProject(projects []stainless.Project) (string, []stainless.Target, error) {
+func askSelectProject(projects []stainless.Project) (string, *stainless.Project, error) {
 	options := make([]huh.Option[*stainless.Project], 0, len(projects)+1)
 	options = append(options, huh.NewOption("<New Project>", &stainless.Project{}))
 	projects = slices.SortedFunc(slices.Values(projects), func(p1, p2 stainless.Project) int {
@@ -239,10 +239,10 @@ func askSelectProject(projects []stainless.Project) (string, []stainless.Target,
 	if err != nil {
 		return "", nil, err
 	}
-	return picked.Slug, picked.Targets, nil
+	return picked.Slug, picked, nil
 }
 
-func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Client, org, projectName string) (string, []stainless.Target, error) {
+func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Client, org, projectName string) (string, *stainless.Project, error) {
 	group := console.Property("project", "(new)")
 
 	if projectName == "" {
@@ -334,12 +334,13 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Cl
 		},
 	}
 
-	options := []option.RequestOption{}
-	if cmd.Bool("debug") {
-		options = append(options, debugMiddlewareOption)
-	}
+	var project *stainless.Project
 	err = group.Spinner("Creating project...", func() error {
-		_, err = client.Projects.New(
+		options := []option.RequestOption{}
+		if cmd.Bool("debug") {
+			options = append(options, debugMiddlewareOption)
+		}
+		project, err = client.Projects.New(
 			ctx,
 			params,
 			options...,
@@ -351,7 +352,7 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Cl
 	}
 
 	group.Success("Project created successfully")
-	return slug, selectedTargets, nil
+	return slug, project, nil
 }
 
 // initializeWorkspace sets up the local workspace configuration and downloads files
@@ -652,6 +653,7 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, wc Worksp
 			// If contents are identical, this is a no-op
 			existingContent, readErr := os.ReadFile(path)
 			if readErr == nil && string(existingContent) == string(content) {
+				group.Property(description, fmt.Sprintf("File %s is already up to date", path))
 				return nil
 			}
 

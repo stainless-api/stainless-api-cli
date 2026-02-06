@@ -293,6 +293,10 @@ func countTerminalLines(data []byte, terminalWidth int) int {
 	return bytes.Count([]byte(wrap.String(string(data), terminalWidth)), []byte("\n"))
 }
 
+type HasRawJSON interface {
+	RawJSON() string
+}
+
 // For an iterator over different value types, display its values to the user in
 // different formats.
 func ShowJSONIterator[T any](stdout *os.File, title string, iter jsonview.Iterator[T], format string, transform string) error {
@@ -302,7 +306,8 @@ func ShowJSONIterator[T any](stdout *os.File, title string, iter jsonview.Iterat
 
 	terminalWidth, terminalHeight, err := term.GetSize(os.Stdout.Fd())
 	if err != nil {
-		terminalHeight = 100
+		terminalWidth = 100
+		terminalHeight = 40
 	}
 
 	// Decide whether or not to use a pager based on whether it's a short output or a long output
@@ -311,11 +316,16 @@ func ShowJSONIterator[T any](stdout *os.File, title string, iter jsonview.Iterat
 	numberOfNewlines := 0
 	for iter.Next() {
 		item := iter.Current()
-		jsonData, err := json.Marshal(item)
-		if err != nil {
-			return err
+		var obj gjson.Result
+		if hasRaw, ok := any(item).(HasRawJSON); ok {
+			obj = gjson.Parse(hasRaw.RawJSON())
+		} else {
+			jsonData, err := json.Marshal(item)
+			if err != nil {
+				return err
+			}
+			obj = gjson.ParseBytes(jsonData)
 		}
-		obj := gjson.ParseBytes(jsonData)
 		json, err := formatJSON(stdout, title, obj, format, transform)
 		if err != nil {
 			return err
@@ -349,11 +359,16 @@ func ShowJSONIterator[T any](stdout *os.File, title string, iter jsonview.Iterat
 
 		for iter.Next() {
 			item := iter.Current()
-			jsonData, err := json.Marshal(item)
-			if err != nil {
-				return err
+			var obj gjson.Result
+			if hasRaw, ok := any(item).(HasRawJSON); ok {
+				obj = gjson.Parse(hasRaw.RawJSON())
+			} else {
+				jsonData, err := json.Marshal(item)
+				if err != nil {
+					return err
+				}
+				obj = gjson.ParseBytes(jsonData)
 			}
-			obj := gjson.ParseBytes(jsonData)
 			if err := ShowJSON(pager, title, obj, format, transform); err != nil {
 				return err
 			}

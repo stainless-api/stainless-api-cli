@@ -78,7 +78,7 @@ var projectsUpdate = cli.Command{
 		&requestflag.Flag[string]{
 			Name: "project",
 		},
-		&requestflag.Flag[string]{
+		&requestflag.Flag[any]{
 			Name:     "display-name",
 			BodyPath: "display_name",
 		},
