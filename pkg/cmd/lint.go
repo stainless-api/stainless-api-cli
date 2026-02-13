@@ -13,6 +13,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
+	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/urfave/cli/v3"
 )
@@ -63,7 +64,7 @@ type lintModel struct {
 	ctx         context.Context
 	cmd         *cli.Command
 	client      stainless.Client
-	wc          WorkspaceConfig
+	wc          workspace.Config
 	stopPolling chan struct{}
 	help        help.Model
 }
@@ -155,7 +156,7 @@ type diagnosticsMsg struct {
 	client      stainless.Client
 }
 
-func getDiagnosticsCmd(ctx context.Context, cmd *cli.Command, client stainless.Client, wc WorkspaceConfig) tea.Cmd {
+func getDiagnosticsCmd(ctx context.Context, cmd *cli.Command, client stainless.Client, wc workspace.Config) tea.Cmd {
 	return func() tea.Msg {
 		diagnostics, err := getDiagnostics(ctx, cmd, client, wc)
 		return diagnosticsMsg{

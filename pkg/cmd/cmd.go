@@ -11,8 +11,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/internal/autocomplete"
+	"github.com/stainless-api/stainless-api-cli/pkg/console"
+	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
 	docs "github.com/urfave/cli-docs/v3"
 	"github.com/urfave/cli/v3"
 )
@@ -221,7 +222,7 @@ stl builds create --branch <branch>`,
 }
 
 func before(ctx context.Context, cmd *cli.Command) (context.Context, error) {
-	wc := WorkspaceConfig{}
+	wc := workspace.Config{}
 	if _, err := wc.Find(); err != nil {
 		console.Warn("%s", err)
 	}
@@ -245,8 +246,8 @@ func before(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 	return ctx, nil
 }
 
-func getWorkspace(ctx context.Context) WorkspaceConfig {
-	return ctx.Value("workspace_config").(WorkspaceConfig)
+func getWorkspace(ctx context.Context) workspace.Config {
+	return ctx.Value("workspace_config").(workspace.Config)
 }
 
 func generateManpages(ctx context.Context, c *cli.Command) error {

@@ -27,9 +27,9 @@ var projectsConfigsRetrieve = cli.Command{
 		&requestflag.Flag[string]{
 			Name:        "branch",
 			Usage:       `Branch name, defaults to "main".`,
-			Default:       "main",
+			Default:     "main",
 			DefaultText: "main",
-			QueryPath: "branch",
+			QueryPath:   "branch",
 		},
 		&requestflag.Flag[string]{
 			Name:      "include",
@@ -59,9 +59,9 @@ var projectsConfigsGuess = cli.Command{
 		&requestflag.Flag[string]{
 			Name:        "branch",
 			Usage:       "Branch name",
-			Default:       "main",
+			Default:     "main",
 			DefaultText: "main",
-			BodyPath: "branch",
+			BodyPath:    "branch",
 		},
 	},
 	Before:          before,

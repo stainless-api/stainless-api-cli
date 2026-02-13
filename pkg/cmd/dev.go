@@ -18,6 +18,7 @@ import (
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/dev"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
+	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/stainless-api/stainless-api-go/shared"
@@ -207,7 +208,7 @@ func chooseSelectedTargets(targetInfos []TargetInfo) ([]string, error) {
 	return selectedTargets, nil
 }
 
-func runDevBuild(ctx context.Context, client stainless.Client, wc WorkspaceConfig, cmd *cli.Command, branch string, languages []stainless.Target) error {
+func runDevBuild(ctx context.Context, client stainless.Client, wc workspace.Config, cmd *cli.Command, branch string, languages []stainless.Target) error {
 	projectName := cmd.String("project")
 	buildReq := stainless.BuildNewParams{
 		Project:    stainless.String(projectName),
@@ -314,7 +315,7 @@ type GenerateSpecParams struct {
 	} `json:"source"`
 }
 
-func getDiagnostics(ctx context.Context, cmd *cli.Command, client stainless.Client, wc WorkspaceConfig) ([]stainless.BuildDiagnostic, error) {
+func getDiagnostics(ctx context.Context, cmd *cli.Command, client stainless.Client, wc workspace.Config) ([]stainless.BuildDiagnostic, error) {
 	var specParams GenerateSpecParams
 	if cmd.IsSet("project") {
 		specParams.Project = cmd.String("project")

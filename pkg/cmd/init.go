@@ -16,6 +16,7 @@ import (
 	cbuild "github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
+	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
 	"github.com/stainless-api/stainless-api-go/option"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -143,7 +144,7 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 }
 
 func ensureExistingWorkspaceIsDeleted(cmd *cli.Command) error {
-	var existingConfig WorkspaceConfig
+	var existingConfig workspace.Config
 	if found, err := existingConfig.Find(); err == nil && found {
 		title := fmt.Sprintf("Existing workspace detected: %s (project: %s)", existingConfig.ConfigPath, existingConfig.Project)
 		overwrite, err := console.Confirm(cmd, "", title, "Do you want to overwrite your existing workplace configuration?", true)
@@ -379,7 +380,7 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, client stainless
 		stainlessConfigPath = path
 	}
 
-	config, err := NewWorkspaceConfig(projectSlug, openAPISpecPath, stainlessConfigPath)
+	config, err := workspace.NewConfig(projectSlug, openAPISpecPath, stainlessConfigPath)
 	if err != nil {
 		group.Error("Failed to create workspace config: %v", err)
 		return fmt.Errorf("project created but workspace initialization failed: %v", err)
@@ -621,7 +622,7 @@ func chooseStainlessConfigLocation(group console.Group) (string, error) {
 }
 
 // downloadConfigFiles downloads the OpenAPI spec and Stainless config from the API
-func downloadConfigFiles(ctx context.Context, client stainless.Client, wc WorkspaceConfig) error {
+func downloadConfigFiles(ctx context.Context, client stainless.Client, wc workspace.Config) error {
 	if wc.StainlessConfig == "" {
 		return fmt.Errorf("No destination for the stainless configuration file")
 	}
@@ -686,7 +687,7 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, wc Worksp
 			}
 		}
 
-		if err := writeFileWithConfirm(Relative(wc.StainlessConfig), []byte(stainlessConfig), "Stainless configuration"); err != nil {
+		if err := writeFileWithConfirm(workspace.Relative(wc.StainlessConfig), []byte(stainlessConfig), "Stainless configuration"); err != nil {
 			return err
 		}
 	}
@@ -702,7 +703,7 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, wc Worksp
 		}
 
 		// TODO: we should warn or confirm if the downloaded file has a different file extension than the destination filename
-		if err := writeFileWithConfirm(Relative(wc.OpenAPISpec), []byte(openAPISpec), "OpenAPI spec"); err != nil {
+		if err := writeFileWithConfirm(workspace.Relative(wc.OpenAPISpec), []byte(openAPISpec), "OpenAPI spec"); err != nil {
 			return err
 		}
 	}
@@ -711,7 +712,7 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, wc Worksp
 }
 
 // configureTargets prompts user for target output paths and saves them to workspace config
-func configureTargets(slug string, targets []stainless.Target, config *WorkspaceConfig) error {
+func configureTargets(slug string, targets []stainless.Target, config *workspace.Config) error {
 	if len(targets) == 0 {
 		return nil
 	}
@@ -719,10 +720,10 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 	group := console.Info("Configuring targets...")
 
 	// Initialize target configs with default absolute paths
-	targetConfigs := make(map[stainless.Target]*TargetConfig, len(targets))
+	targetConfigs := make(map[stainless.Target]*workspace.TargetConfig, len(targets))
 	for _, target := range targets {
 		defaultPath := filepath.Join("sdks", fmt.Sprintf("%s-%s", slug, target))
-		targetConfigs[target] = &TargetConfig{OutputPath: defaultPath}
+		targetConfigs[target] = &workspace.TargetConfig{OutputPath: defaultPath}
 	}
 
 	// Create form fields for each target
@@ -752,7 +753,7 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 			if err != nil {
 				return fmt.Errorf("failed to get absolute path for %s target: %w", target, err)
 			}
-			targetConfigs[target] = &TargetConfig{OutputPath: absPath}
+			targetConfigs[target] = &workspace.TargetConfig{OutputPath: absPath}
 		} else {
 			delete(targetConfigs, target)
 		}
@@ -766,7 +767,7 @@ func configureTargets(slug string, targets []stainless.Target, config *Workspace
 	}
 
 	for target, targetConfig := range targetConfigs {
-		group.Property(string(target)+".output_path", Relative(targetConfig.OutputPath))
+		group.Property(string(target)+".output_path", workspace.Relative(targetConfig.OutputPath))
 	}
 
 	group.Success("Targets configured to output locally")
@@ -814,7 +815,7 @@ func targetInfoToOptions(targets []TargetInfo) []huh.Option[string] {
 }
 
 // getAvailableTargetInfo gets available targets from the project's latest build with workspace config for default selection
-func getAvailableTargetInfo(ctx context.Context, client stainless.Client, projectName string, config WorkspaceConfig) []TargetInfo {
+func getAvailableTargetInfo(ctx context.Context, client stainless.Client, projectName string, config workspace.Config) []TargetInfo {
 	targetInfo := getAllTargetInfo()
 
 	// Mark targets from config as selected
@@ -903,4 +904,22 @@ func findFile(name string) string {
 		return nil
 	})
 	return foundPath
+}
+
+// fetchUserOrgs retrieves the list of organizations the user has access to
+func fetchUserOrgs(client stainless.Client, ctx context.Context) []string {
+	res, err := client.Orgs.List(ctx)
+	if err != nil {
+		// Return empty slice if we can't fetch orgs
+		return []string{}
+	}
+
+	var orgs []string
+	for _, org := range res.Data {
+		if org.Slug != "" {
+			orgs = append(orgs, org.Slug)
+		}
+	}
+
+	return orgs
 }
