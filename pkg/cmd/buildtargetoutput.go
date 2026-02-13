@@ -123,7 +123,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 			// Get target output path from downloadPaths (which includes workspace config)
 			targetDir := downloadPaths[target]
 
-			if err := build.PullOutput(res.Output, res.URL, res.Ref, cmd.String("branch"), targetDir, group); err != nil {
+			if err := build.PullOutputWithRetry(res.Output, res.URL, res.Ref, cmd.String("branch"), targetDir, group, 3); err != nil {
 				return fmt.Errorf("failed to pull %s: %v", target, err)
 			}
 		}
