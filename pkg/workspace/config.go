@@ -1,7 +1,6 @@
-package cmd
+package workspace
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -37,16 +36,16 @@ type TargetConfig struct {
 	OutputPath string `json:"output_path"`
 }
 
-// WorkspaceConfigExport represents the on-disk format with relative paths
-type WorkspaceConfigExport struct {
+// ConfigExport represents the on-disk format with relative paths
+type ConfigExport struct {
 	Project         string                             `json:"project"`
 	OpenAPISpec     string                             `json:"openapi_spec,omitempty"`
 	StainlessConfig string                             `json:"stainless_config,omitempty"`
 	Targets         map[stainless.Target]*TargetConfig `json:"targets,omitempty"`
 }
 
-// WorkspaceConfig stores workspace-level configuration with absolute paths
-type WorkspaceConfig struct {
+// Config stores workspace-level configuration with absolute paths
+type Config struct {
 	Project         string
 	OpenAPISpec     string
 	StainlessConfig string
@@ -57,7 +56,7 @@ type WorkspaceConfig struct {
 
 // Find searches for a stainless-workspace.json file starting from the current directory
 // and moving up to parent directories until found or root is reached
-func (config *WorkspaceConfig) Find() (bool, error) {
+func (config *Config) Find() (bool, error) {
 	dir, err := os.Getwd()
 	if err != nil {
 		return false, err
@@ -92,7 +91,7 @@ func (config *WorkspaceConfig) Find() (bool, error) {
 	}
 }
 
-func (config *WorkspaceConfig) Load(configPath string) error {
+func (config *Config) Load(configPath string) error {
 	file, err := os.Open(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -113,7 +112,7 @@ func (config *WorkspaceConfig) Load(configPath string) error {
 	}
 
 	// Load into export format (with relative paths)
-	var export WorkspaceConfigExport
+	var export ConfigExport
 	if err := json.NewDecoder(file).Decode(&export); err != nil {
 		return fmt.Errorf("failed to parse workspace config file %s: %w", configPath, err)
 	}
@@ -146,7 +145,7 @@ func (config *WorkspaceConfig) Load(configPath string) error {
 	return nil
 }
 
-func (config *WorkspaceConfig) Save() error {
+func (config *Config) Save() error {
 	// Create parent directories if they don't exist
 	configDir := filepath.Dir(config.ConfigPath)
 	if err := os.MkdirAll(configDir, 0755); err != nil {
@@ -154,7 +153,7 @@ func (config *WorkspaceConfig) Save() error {
 	}
 
 	// Convert absolute paths to relative paths for export
-	export := WorkspaceConfigExport{
+	export := ConfigExport{
 		Project: config.Project,
 	}
 
@@ -201,51 +200,28 @@ func (config *WorkspaceConfig) Save() error {
 	return encoder.Encode(export)
 }
 
-func NewWorkspaceConfig(projectName, openAPISpecPath, stainlessConfigPath string) (WorkspaceConfig, error) {
+func NewConfig(projectName, openAPISpecPath, stainlessConfigPath string) (Config, error) {
 	dir, err := os.Getwd()
 	if err != nil {
-		return WorkspaceConfig{}, err
+		return Config{}, err
 	}
 
 	// Convert paths to absolute
 	absOpenAPISpec, err := filepath.Abs(openAPISpecPath)
 	if err != nil {
-		return WorkspaceConfig{}, fmt.Errorf("failed to get absolute path for OpenAPI spec: %w", err)
+		return Config{}, fmt.Errorf("failed to get absolute path for OpenAPI spec: %w", err)
 	}
 
 	absStainlessConfig, err := filepath.Abs(stainlessConfigPath)
 	if err != nil {
-		return WorkspaceConfig{}, fmt.Errorf("failed to get absolute path for Stainless config: %w", err)
+		return Config{}, fmt.Errorf("failed to get absolute path for Stainless config: %w", err)
 	}
 
-	return WorkspaceConfig{
+	return Config{
 		Project:         projectName,
 		OpenAPISpec:     absOpenAPISpec,
 		StainlessConfig: absStainlessConfig,
 		Targets:         nil,
 		ConfigPath:      filepath.Join(dir, ".stainless", "workspace.json"),
 	}, nil
-}
-
-type projectInfo struct {
-	Name string
-	Org  string
-}
-
-// fetchUserOrgs retrieves the list of organizations the user has access to
-func fetchUserOrgs(client stainless.Client, ctx context.Context) []string {
-	res, err := client.Orgs.List(ctx)
-	if err != nil {
-		// Return empty slice if we can't fetch orgs
-		return []string{}
-	}
-
-	var orgs []string
-	for _, org := range res.Data {
-		if org.Slug != "" {
-			orgs = append(orgs, org.Slug)
-		}
-	}
-
-	return orgs
 }

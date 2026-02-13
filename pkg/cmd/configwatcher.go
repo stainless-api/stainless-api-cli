@@ -6,12 +6,13 @@ import (
 	"os"
 	"time"
 
+	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
 	"github.com/urfave/cli/v3"
 )
 
 type configChangedEvent struct{}
 
-func waitTillConfigChanges(ctx context.Context, cmd *cli.Command, wc WorkspaceConfig) error {
+func waitTillConfigChanges(ctx context.Context, cmd *cli.Command, wc workspace.Config) error {
 	openapiSpecPath := wc.OpenAPISpec
 	if cmd.IsSet("openapi-spec") {
 		openapiSpecPath = cmd.String("openapi-spec")

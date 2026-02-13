@@ -16,6 +16,7 @@ import (
 	"syscall"
 
 	"github.com/stainless-api/stainless-api-cli/internal/jsonview"
+	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
 	"github.com/stainless-api/stainless-api-go/option"
 
 	"github.com/charmbracelet/x/term"
@@ -63,7 +64,7 @@ func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 	}
 
 	if project := os.Getenv("STAINLESS_PROJECT"); project == "" {
-		workspaceConfig := WorkspaceConfig{}
+		workspaceConfig := workspace.Config{}
 		found, err := workspaceConfig.Find()
 		if err == nil && found && workspaceConfig.Project != "" {
 			cmd.Set("project", workspaceConfig.Project)

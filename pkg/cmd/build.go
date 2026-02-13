@@ -16,6 +16,7 @@ import (
 	cbuild "github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
+	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -25,7 +26,7 @@ import (
 
 // parseTargetPaths processes target flags to extract target:path syntax with workspace config
 // Returns a map of target names to their custom paths
-func parseTargetPaths(workspaceConfig WorkspaceConfig, targetsSlice []string) (downloadPaths map[stainless.Target]string, targets []stainless.Target, specifiedPath bool) {
+func parseTargetPaths(workspaceConfig workspace.Config, targetsSlice []string) (downloadPaths map[stainless.Target]string, targets []stainless.Target, specifiedPath bool) {
 	downloadPaths = make(map[stainless.Target]string)
 
 	// Check workspace configuration for target paths if loaded

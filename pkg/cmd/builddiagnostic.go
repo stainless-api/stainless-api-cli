@@ -33,9 +33,9 @@ var buildsDiagnosticsList = cli.Command{
 		&requestflag.Flag[float64]{
 			Name:        "limit",
 			Usage:       "Maximum number of diagnostics to return, defaults to 100 (maximum: 100)",
-			Default:       100,
+			Default:     100,
 			DefaultText: "100",
-			QueryPath: "limit",
+			QueryPath:   "limit",
 		},
 		&requestflag.Flag[string]{
 			Name:      "severity",
