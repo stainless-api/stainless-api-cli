@@ -141,7 +141,7 @@ func (m Model) downloadTarget(target stainless.Target) tea.Cmd {
 		if err != nil {
 			return ErrorMsg(err)
 		}
-		err = PullOutput(outputRes.Output, outputRes.URL, outputRes.Ref, m.Branch, m.Downloads[target].Path, console.NewGroup(true))
+		err = PullOutputWithRetry(outputRes.Output, outputRes.URL, outputRes.Ref, m.Branch, m.Downloads[target].Path, console.NewGroup(true), 3)
 		if err != nil {
 			return DownloadMsg{
 				Target:     target,
@@ -386,4 +386,33 @@ func PullOutput(output, url, ref, branch, targetDir string, targetGroup console.
 	}
 
 	return nil
+}
+
+// PullOutputWithRetry wraps PullOutput with exponential backoff retry logic
+// maxRetries: maximum number of retry attempts (0 means no retries, just one attempt)
+// Uses 1s initial delay with exponential backoff, clamped at 30s max delay
+func PullOutputWithRetry(output, url, ref, branch, targetDir string, targetGroup console.Group, maxRetries int) error {
+	const (
+		initialDelay = 1 * time.Second
+		maxDelay     = 30 * time.Second
+	)
+
+	var lastErr error
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		err := PullOutput(output, url, ref, branch, targetDir, targetGroup)
+		if err == nil {
+			return nil
+		}
+
+		lastErr = err
+
+		if attempt < maxRetries {
+			delay := min(initialDelay*time.Duration(1<<uint(attempt)), maxDelay)
+			targetGroup.Property("retrying after error", fmt.Sprintf("attempt %d/%d, waiting %v", attempt+1, maxRetries+1, delay))
+			time.Sleep(delay)
+		}
+	}
+
+	return fmt.Errorf("failed after %d attempts: %w", maxRetries+1, lastErr)
 }
