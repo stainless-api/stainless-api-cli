@@ -123,14 +123,6 @@ func runPreview(ctx context.Context, cmd *cli.Command) error {
 
 	// Phase 3: Start build and monitor progress in a loop
 	for {
-		// Make the user get past linter errors
-		if err := runLinter(ctx, cmd, true); err != nil {
-			if errors.Is(err, build.ErrUserCancelled) {
-				return nil
-			}
-			return err
-		}
-
 		// Start the build process
 		if err := runDevBuild(ctx, client, wc, cmd, selectedBranch, targets); err != nil {
 			if errors.Is(err, build.ErrUserCancelled) {
