@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.72 (2026-02-17)
+
+Full Changelog: [v0.1.0-alpha.71...v0.1.0-alpha.72](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.71...v0.1.0-alpha.72)
+
+### Refactors
+
+* remove lint step from preview command ([11cd933](https://github.com/stainless-api/stainless-api-cli/commit/11cd933c8021ea4fff3d936e98b21037699ebff0))
+
 ## 0.1.0-alpha.71 (2026-02-17)
 
 Full Changelog: [v0.1.0-alpha.70...v0.1.0-alpha.71](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.70...v0.1.0-alpha.71)
