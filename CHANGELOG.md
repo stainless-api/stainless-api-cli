@@ -1,5 +1,47 @@
 # Changelog
 
+## 0.1.0-alpha.71 (2026-02-17)
+
+Full Changelog: [v0.1.0-alpha.70...v0.1.0-alpha.71](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.70...v0.1.0-alpha.71)
+
+### ⚠ BREAKING CHANGES
+
+* add support for passing files as parameters
+
+### Features
+
+* add exponential backoff retry to PullOutput ([d218b14](https://github.com/stainless-api/stainless-api-cli/commit/d218b14d95fef2b12a65eabe6d7fa0df37e834f4))
+* add github version check ([3596cbb](https://github.com/stainless-api/stainless-api-cli/commit/3596cbba986e3019e9fc1f9b555728a5c737fe27))
+* add readme documentation for passing files as arguments ([3d5c3eb](https://github.com/stainless-api/stainless-api-cli/commit/3d5c3eb26a45dd52a3113fff16e6beda69434199))
+* add support for passing files as parameters ([5a44115](https://github.com/stainless-api/stainless-api-cli/commit/5a44115f285231ae36c872a9ad510b48b8d4f55c))
+* **api:** update support email address ([a9113c7](https://github.com/stainless-api/stainless-api-cli/commit/a9113c7c26bb474e3118a1d4f096763881cafa15))
+* **client:** provide file completions when using file embed syntax ([d480ff2](https://github.com/stainless-api/stainless-api-cli/commit/d480ff2c074f611580f0a36cf96f316d5bc516ca))
+* **cli:** improve shell completions for namespaced commands and flags ([d11eba5](https://github.com/stainless-api/stainless-api-cli/commit/d11eba51ee4b07e1360cefde3e329c24d47067d0))
+* improved support for passing files for `any`-typed arguments ([73f2409](https://github.com/stainless-api/stainless-api-cli/commit/73f24091a362279a62005946079d6c6f301fc4b4))
+
+
+### Bug Fixes
+
+* cleanup and make passing project flag make more sense ([91a6b99](https://github.com/stainless-api/stainless-api-cli/commit/91a6b9977b85c115ca97eee02e655401809c19e3))
+* fix for file uploads to octet stream and form encoding endpoints ([55530da](https://github.com/stainless-api/stainless-api-cli/commit/55530da089f0017c9815c456b5a2f850a241f122))
+* fix for nullable arguments ([7bbd057](https://github.com/stainless-api/stainless-api-cli/commit/7bbd05715c474f582ce2d076831d01a6fb32e2e4))
+* fix for when terminal width is not available ([78d7919](https://github.com/stainless-api/stainless-api-cli/commit/78d791948a88bb9e509da315f8b51b89d452e945))
+* fix mock tests with inner fields that have underscores ([0fb140a](https://github.com/stainless-api/stainless-api-cli/commit/0fb140aa40f3e52e01a9a8b8142876e9fcee8647))
+* preserve filename in content-disposition for file uploads ([aae338c](https://github.com/stainless-api/stainless-api-cli/commit/aae338c670ad9938b1b2835ceba3407f25bcb2ba))
+* prevent tests from hanging on streaming/paginated endpoints ([257215b](https://github.com/stainless-api/stainless-api-cli/commit/257215b2d77017373910dbc5558e239b7e5a5b7c))
+* use RawJSON for iterated values instead of re-marshalling ([fcc55a6](https://github.com/stainless-api/stainless-api-cli/commit/fcc55a618a14bf956aa0af852d66e463e0073fbf))
+
+
+### Chores
+
+* add build step to ci ([c957b31](https://github.com/stainless-api/stainless-api-cli/commit/c957b31381e935c9f8c80738bf003deb5b05727e))
+* update documentation in readme ([dc0fd28](https://github.com/stainless-api/stainless-api-cli/commit/dc0fd28e141c8f50c90a47144d7257d596612ada))
+
+
+### Refactors
+
+* extract workspaceconfig.go ([23cf851](https://github.com/stainless-api/stainless-api-cli/commit/23cf85125927e0d75b910c7dcb54e300e5b8dc0c))
+
 ## 0.1.0-alpha.70 (2026-01-28)
 
 Full Changelog: [v0.1.0-alpha.69...v0.1.0-alpha.70](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.69...v0.1.0-alpha.70)
