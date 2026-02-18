@@ -419,11 +419,10 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	for _, target := range data.Get("targets.@values").Array() {
-		if target.Get("status").String() == "not_started" ||
-			target.Get("commit.completed.conclusion").String() == "error" ||
+		if target.Get("commit.completed.conclusion").String() == "error" ||
 			target.Get("lint.completed.conclusion").String() == "error" ||
 			target.Get("test.completed.conclusion").String() == "error" {
-			buildGroup.Error("Build did not succeed!")
+			buildGroup.Error("Build resulted in errors!")
 			os.Exit(1)
 		}
 	}
