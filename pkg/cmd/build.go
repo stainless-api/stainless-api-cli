@@ -5,6 +5,7 @@ package cmd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -23,6 +24,29 @@ import (
 	"github.com/tidwall/sjson"
 	"github.com/urfave/cli/v3"
 )
+
+// WaitMode represents the level of waiting for build completion
+type WaitMode int
+
+const (
+	WaitNone   WaitMode = iota // Don't wait
+	WaitCommit                 // Wait for commit only
+	WaitAll                    // Wait for everything including workflows
+)
+
+// parseWaitMode converts the --wait flag string to a WaitMode
+func parseWaitMode(wait string) (WaitMode, error) {
+	switch wait {
+	case "none", "false": // Accept both "none" and "false" for backwards compatibility
+		return WaitNone, nil
+	case "commit":
+		return WaitCommit, nil
+	case "all":
+		return WaitAll, nil
+	default:
+		return 0, fmt.Errorf("invalid --wait value: %q (must be 'none', 'commit', or 'all')", wait)
+	}
+}
 
 // parseTargetPaths processes target flags to extract target:path syntax with workspace config
 // Returns a map of target names to their custom paths
@@ -82,9 +106,10 @@ var buildsCreate = requestflag.WithInnerFlags(cli.Command{
 			Aliases: []string{"config"},
 			Usage:   "Path to Stainless config file",
 		},
-		&cli.BoolFlag{
+		&cli.StringFlag{
 			Name:  "wait",
-			Value: true,
+			Usage: "Wait for build completion: 'all' (wait for workflows, default), 'commit' (wait for commit only), 'none' (don't wait)",
+			Value: "all",
 		},
 		&cli.BoolFlag{
 			Name:  "pull",
@@ -343,6 +368,12 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
+	// Parse and validate --wait flag
+	waitMode, err := parseWaitMode(cmd.String("wait"))
+	if err != nil {
+		return err
+	}
+
 	wc := getWorkspace(ctx)
 
 	buildGroup := console.Info("Creating build...")
@@ -397,10 +428,11 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 	buildGroup.Property("build_id", build.ID)
 
-	if cmd.Bool("wait") {
+	if waitMode > WaitNone {
 		console.Spacer()
 		model := tea.Model(buildCompletionModel{
-			Build: cbuild.NewModel(client, ctx, *build, cmd.String("branch"), downloadPaths),
+			Build:    cbuild.NewModel(client, ctx, *build, cmd.String("branch"), downloadPaths),
+			WaitMode: waitMode,
 		})
 		model, err = tea.NewProgram(model).Run()
 		if err != nil {
@@ -418,21 +450,45 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	for _, target := range data.Get("targets.@values").Array() {
-		if target.Get("status").String() == "not_started" ||
-			target.Get("commit.completed.conclusion").String() == "error" ||
-			target.Get("lint.completed.conclusion").String() == "error" ||
-			target.Get("test.completed.conclusion").String() == "error" {
-			buildGroup.Error("Build did not succeed!")
-			os.Exit(1)
+	// Only check for failures if we waited for the build
+	if waitMode == WaitNone {
+		return nil
+	}
+
+	var failures []error
+	b := stainlessutils.NewBuild(*build)
+
+	for _, target := range b.Languages() {
+		bt := b.BuildTarget(target)
+
+		if bt.Status == stainless.BuildTargetStatusNotStarted {
+			failures = append(failures, fmt.Errorf("%s build did not start", target))
+			continue
 		}
+
+		if !bt.IsGoodCommitConclusion() {
+			failures = append(failures, fmt.Errorf("%s build failed to commit", target))
+			continue
+		}
+
+		// Only check workflow failures if we waited for them
+		if waitMode >= WaitAll {
+			if bt.Lint.Conclusion == "failure" || bt.Test.Conclusion == "failure" || bt.Build.Conclusion == "failure" {
+				failures = append(failures, fmt.Errorf("%s workflow failed", target))
+			}
+		}
+	}
+
+	if len(failures) > 0 {
+		return errors.Join(failures...)
 	}
 
 	return nil
 }
 
 type buildCompletionModel struct {
-	Build cbuild.Model
+	Build    cbuild.Model
+	WaitMode WaitMode
 }
 
 func (c buildCompletionModel) Init() tea.Cmd {
@@ -458,18 +514,25 @@ func (c buildCompletionModel) IsCompleted() bool {
 	for _, target := range b.Languages() {
 		buildTarget := b.BuildTarget(target)
 
-		var downloadIsCompleted = true
+		if buildTarget == nil {
+			return false
+		}
+
+		// Check if download is completed (if applicable)
+		downloadIsCompleted := true
 		if buildTarget.IsCommitCompleted() && stainlessutils.IsGoodCommitConclusion(buildTarget.Commit.Completed.Conclusion) {
 			if download, ok := c.Build.Downloads[target]; ok {
-				if download.Status != "completed" {
-					downloadIsCompleted = false
-				}
+				downloadIsCompleted = download.Status == "completed"
 			}
 		}
 
-		if buildTarget == nil ||
-			!buildTarget.IsCompleted() ||
-			!downloadIsCompleted {
+		// Check if target is done based on wait mode
+		done := buildTarget.IsCommitCompleted()
+		if c.WaitMode >= WaitAll {
+			done = buildTarget.IsCompleted()
+		}
+
+		if !done || !downloadIsCompleted {
 			return false
 		}
 	}
