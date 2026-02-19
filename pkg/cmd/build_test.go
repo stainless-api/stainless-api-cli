@@ -10,7 +10,7 @@ import (
 )
 
 func TestBuildsCreate(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"builds", "create",
@@ -55,7 +55,7 @@ func TestBuildsCreate(t *testing.T) {
 }
 
 func TestBuildsRetrieve(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"builds", "retrieve",
@@ -64,7 +64,7 @@ func TestBuildsRetrieve(t *testing.T) {
 }
 
 func TestBuildsList(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"builds", "list",
@@ -77,7 +77,7 @@ func TestBuildsList(t *testing.T) {
 }
 
 func TestBuildsCompare(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"builds", "compare",
