@@ -143,6 +143,14 @@ func init() {
 				},
 			},
 			{
+				Name:     "user",
+				Category: "API RESOURCE",
+				Suggest:  true,
+				Commands: []*cli.Command{
+					&userRetrieve,
+				},
+			},
+			{
 				Name:            "@manpages",
 				Usage:           "Generate documentation for 'man'",
 				UsageText:       "stl @manpages [-o stl.1] [--gzip]",
