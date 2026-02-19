@@ -9,7 +9,7 @@ import (
 )
 
 func TestOrgsRetrieve(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"orgs", "retrieve",
@@ -18,7 +18,7 @@ func TestOrgsRetrieve(t *testing.T) {
 }
 
 func TestOrgsList(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"orgs", "list",
