@@ -425,8 +425,11 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, client stainless
 		downloadPaths[stainless.Target(targetName)] = targetConfig.OutputPath
 	}
 
+	buildModel := cbuild.NewModel(client, ctx, *build, "main", downloadPaths)
+	buildModel.CommitOnly = true
 	model := buildCompletionModel{
-		Build: cbuild.NewModel(client, ctx, *build, "main", downloadPaths),
+		Build:    buildModel,
+		WaitMode: WaitCommit,
 	}
 
 	_, err = tea.NewProgram(model).Run()
