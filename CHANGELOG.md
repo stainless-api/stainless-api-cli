@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.0-alpha.73 (2026-02-20)
+
+Full Changelog: [v0.1.0-alpha.72...v0.1.0-alpha.73](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.72...v0.1.0-alpha.73)
+
+### Features
+
+* **api:** add a super basic GET /v0/user endpoint ([84c3559](https://github.com/stainless-api/stainless-api-cli/commit/84c3559be8e2d3a322db4f72a4f77ffeee030d8c))
+* **api:** manual updates ([81595c3](https://github.com/stainless-api/stainless-api-cli/commit/81595c30b3f24ae68951ad66c05a20a556395902))
+* **api:** manual updates ([2aa45b8](https://github.com/stainless-api/stainless-api-cli/commit/2aa45b852b865f4af42b47d430e67dd1f6c45809))
+* **api:** manual updates ([a3ab921](https://github.com/stainless-api/stainless-api-cli/commit/a3ab921d6ed19120d0a7f0a37574c3476f9282a7))
+* make --wait configurable with error handling ([53bffdf](https://github.com/stainless-api/stainless-api-cli/commit/53bffdf8c25250bc35e3747a87c3db536abcb388))
+* make --wait configurable with error handling ([#171](https://github.com/stainless-api/stainless-api-cli/issues/171)) ([b02c3e3](https://github.com/stainless-api/stainless-api-cli/commit/b02c3e38c0b8e2b6465a3edce475207e383ea4da))
+
+
+### Chores
+
+* **internal:** remove mock server code ([6040746](https://github.com/stainless-api/stainless-api-cli/commit/60407467a68e98b08f9920479b3e012b45023690))
+* update mock server docs ([7b64f39](https://github.com/stainless-api/stainless-api-cli/commit/7b64f39fb5bede6621a07f6307d0a976073ab71e))
+
 ## 0.1.0-alpha.72 (2026-02-17)
 
 Full Changelog: [v0.1.0-alpha.71...v0.1.0-alpha.72](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.71...v0.1.0-alpha.72)

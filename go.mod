@@ -15,13 +15,14 @@ require (
 	github.com/logrusorgru/aurora/v4 v4.0.0
 	github.com/muesli/reflow v0.3.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
-	github.com/stainless-api/stainless-api-go v0.27.1
+	github.com/stainless-api/stainless-api-go v0.29.0
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/pretty v1.2.1
 	github.com/tidwall/sjson v1.2.5
 	github.com/urfave/cli-docs/v3 v3.1.0
 	github.com/urfave/cli/v3 v3.6.2
+	golang.org/x/mod v0.32.0
 	golang.org/x/sys v0.40.0
 	golang.org/x/term v0.39.0
 	golang.org/x/text v0.33.0
@@ -62,7 +63,6 @@ require (
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yuin/goldmark v1.7.16 // indirect
 	github.com/yuin/goldmark-emoji v1.0.6 // indirect
-	golang.org/x/mod v0.32.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

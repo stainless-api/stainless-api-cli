@@ -9,7 +9,6 @@ import (
 )
 
 func TestBuildsTargetOutputsRetrieve(t *testing.T) {
-	t.Skip("Prism tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"builds:target-outputs", "retrieve",
