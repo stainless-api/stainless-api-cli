@@ -11,6 +11,10 @@ import (
 )
 
 func (m Model) View() string {
+	if m.Err != nil {
+		return m.Err.Error()
+	}
+
 	s := strings.Builder{}
 
 	idx := slices.IndexFunc(parts, func(part ViewPart) bool {
