@@ -9,7 +9,6 @@ import (
 )
 
 func TestUserRetrieve(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"user", "retrieve",

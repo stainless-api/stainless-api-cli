@@ -9,7 +9,6 @@ import (
 )
 
 func TestProjectsBranchesCreate(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"projects:branches", "create",
@@ -21,7 +20,6 @@ func TestProjectsBranchesCreate(t *testing.T) {
 }
 
 func TestProjectsBranchesRetrieve(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"projects:branches", "retrieve",
@@ -31,7 +29,6 @@ func TestProjectsBranchesRetrieve(t *testing.T) {
 }
 
 func TestProjectsBranchesList(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"projects:branches", "list",
@@ -42,7 +39,6 @@ func TestProjectsBranchesList(t *testing.T) {
 }
 
 func TestProjectsBranchesDelete(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"projects:branches", "delete",
@@ -52,7 +48,6 @@ func TestProjectsBranchesDelete(t *testing.T) {
 }
 
 func TestProjectsBranchesRebase(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"projects:branches", "rebase",
@@ -63,7 +58,6 @@ func TestProjectsBranchesRebase(t *testing.T) {
 }
 
 func TestProjectsBranchesReset(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"projects:branches", "reset",
