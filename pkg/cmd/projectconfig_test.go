@@ -9,7 +9,6 @@ import (
 )
 
 func TestProjectsConfigsRetrieve(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"projects:configs", "retrieve",
@@ -20,7 +19,6 @@ func TestProjectsConfigsRetrieve(t *testing.T) {
 }
 
 func TestProjectsConfigsGuess(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"projects:configs", "guess",
