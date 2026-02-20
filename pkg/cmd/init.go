@@ -220,7 +220,7 @@ func fetchUserProjects(ctx context.Context, client stainless.Client, org string)
 // askSelectProject prompts the user to select from existing projects or create a new one
 func askSelectProject(projects []stainless.Project) (string, *stainless.Project, error) {
 	options := make([]huh.Option[*stainless.Project], 0, len(projects)+1)
-	options = append(options, huh.NewOption("<New Project>", &stainless.Project{}))
+	options = append(options, huh.NewOption("<New Project>", (*stainless.Project)(nil)))
 	projects = slices.SortedFunc(slices.Values(projects), func(p1, p2 stainless.Project) int {
 		if p1.Slug < p2.Slug {
 			return -1
@@ -239,6 +239,9 @@ func askSelectProject(projects []stainless.Project) (string, *stainless.Project,
 		Value(&picked))
 	if err != nil {
 		return "", nil, err
+	}
+	if picked == nil {
+		return "", nil, nil
 	}
 	return picked.Slug, picked, nil
 }
