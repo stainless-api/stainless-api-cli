@@ -3,7 +3,6 @@ package dev
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -34,7 +33,6 @@ type Model struct {
 	Diagnostics diagnostics.Model
 }
 
-type TickMsg time.Time
 type ErrorMsg error
 type FileChangeMsg struct{}
 
@@ -52,9 +50,8 @@ func NewModel(client stainless.Client, ctx context.Context, branch string, fn fu
 
 func (m Model) Init() tea.Cmd {
 	return tea.Batch(
-		tea.Tick(time.Second, func(t time.Time) tea.Msg {
-			return TickMsg(t)
-		}),
+		m.Build.Init(),
+		m.Diagnostics.Init(),
 		func() tea.Msg {
 			res, err := m.start()
 			if err != nil {
@@ -62,8 +59,6 @@ func (m Model) Init() tea.Cmd {
 			}
 			return build.FetchBuildMsg(*res)
 		},
-		m.Build.Init(),
-		m.Diagnostics.Init(),
 	)
 }
 
