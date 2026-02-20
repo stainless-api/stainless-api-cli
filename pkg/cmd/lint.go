@@ -13,6 +13,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
+	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/urfave/cli/v3"
@@ -211,7 +212,7 @@ func runLinter(ctx context.Context, cmd *cli.Command, canSkip bool) error {
 		help:        help.New(),
 	}
 
-	p := tea.NewProgram(m, tea.WithContext(ctx))
+	p := console.NewProgram(m, tea.WithContext(ctx))
 
 	// Start the diagnostics process
 	go func() {
