@@ -28,7 +28,8 @@ type Model struct {
 	Ctx       context.Context
 	Branch    string                              // Optional branch name for git checkout
 	Downloads map[stainless.Target]DownloadStatus // When a BuildTarget has a commit available, this target will download it, if it has been specified in the initialization.
-	Err       error                               // This will be populated if the model concludes with an error
+	Err        error                               // This will be populated if the model concludes with an error
+	CommitOnly bool                                // When true, only show the commit step in the pipeline view
 }
 
 type DownloadStatus struct {

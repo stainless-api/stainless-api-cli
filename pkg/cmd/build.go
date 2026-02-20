@@ -430,8 +430,10 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 	if waitMode > WaitNone {
 		console.Spacer()
+		buildModel := cbuild.NewModel(client, ctx, *build, cmd.String("branch"), downloadPaths)
+		buildModel.CommitOnly = waitMode == WaitCommit
 		model := tea.Model(buildCompletionModel{
-			Build:    cbuild.NewModel(client, ctx, *build, cmd.String("branch"), downloadPaths),
+			Build:    buildModel,
 			WaitMode: waitMode,
 		})
 		model, err = tea.NewProgram(model).Run()
@@ -541,6 +543,7 @@ func (c buildCompletionModel) IsCompleted() bool {
 }
 
 func (c buildCompletionModel) View() string {
+	c.Build.CommitOnly = c.WaitMode == WaitCommit
 	return c.Build.View()
 }
 

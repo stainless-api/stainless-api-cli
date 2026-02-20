@@ -14,16 +14,16 @@ func (m Model) View() string {
 	if m.Err != nil {
 		return m.Err.Error()
 	}
-	return View(m.Build, m.Downloads)
+	return View(m.Build, m.Downloads, m.CommitOnly)
 }
 
-func View(build stainless.Build, downloads map[stainless.Target]DownloadStatus) string {
+func View(build stainless.Build, downloads map[stainless.Target]DownloadStatus, commitOnly bool) string {
 	s := strings.Builder{}
 	buildObj := stainlessutils.NewBuild(build)
 	languages := buildObj.Languages()
 	// Target rows with colors
 	for _, target := range languages {
-		pipeline := ViewBuildPipeline(build, target, downloads)
+		pipeline := ViewBuildPipeline(build, target, downloads, commitOnly)
 		langStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true)
 
 		s.WriteString(fmt.Sprintf("%s %s\n", langStyle.Render(fmt.Sprintf("%-13s", string(target))), pipeline))
@@ -53,7 +53,7 @@ func View(build stainless.Build, downloads map[stainless.Target]DownloadStatus) 
 }
 
 // View renders the build pipeline for a target
-func ViewBuildPipeline(build stainless.Build, target stainless.Target, downloads map[stainless.Target]DownloadStatus) string {
+func ViewBuildPipeline(build stainless.Build, target stainless.Target, downloads map[stainless.Target]DownloadStatus, commitOnly bool) string {
 	buildObj := stainlessutils.NewBuild(build)
 	buildTarget := buildObj.BuildTarget(target)
 	if buildTarget == nil {
@@ -64,6 +64,9 @@ func ViewBuildPipeline(build stainless.Build, target stainless.Target, downloads
 	var pipeline strings.Builder
 
 	for _, step := range stepOrder {
+		if commitOnly && step != "commit" {
+			continue
+		}
 		status, url, conclusion := buildTarget.StepInfo(step)
 		if status == "" {
 			continue // Skip steps that don't exist for this target
