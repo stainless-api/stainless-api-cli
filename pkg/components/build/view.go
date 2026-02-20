@@ -11,6 +11,9 @@ import (
 )
 
 func (m Model) View() string {
+	if m.Err != nil {
+		return m.Err.Error()
+	}
 	return View(m.Build, m.Downloads)
 }
 

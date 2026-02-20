@@ -121,6 +121,7 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 
 	case ErrorMsg:
 		m.Err = msg
+		cmds = append(cmds, tea.Quit)
 	}
 
 	return m, tea.Batch(cmds...)
