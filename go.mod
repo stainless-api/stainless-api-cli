@@ -15,7 +15,7 @@ require (
 	github.com/logrusorgru/aurora/v4 v4.0.0
 	github.com/muesli/reflow v0.3.0
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c
-	github.com/stainless-api/stainless-api-go v0.28.0
+	github.com/stainless-api/stainless-api-go v0.29.0
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/pretty v1.2.1
