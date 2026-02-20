@@ -1,0 +1,55 @@
+[1;97mtypescript   [0m [90mqueued[0m
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m [90mqueued[0m
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m [90mgenerating [0m|
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m ]8;;https://github.com/org/repo/commit/abc1234567890abc1234]8;; [90m([0m[32m+100[0m[90m/[0m[31m-30[0m[90m)[0m
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m ]8;;https://github.com/org/repo/commit/abc1234567890abc1234]8;; [90m(unchanged)[0m
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m ]8;;https://github.com/org/repo/commit/abc1234567890abc1234]8;; [90m([0m[32m+50[0m[90m/[0m[31m-10[0m[90m)[0m with [33mwarning[0m diagnostic(s)
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m ]8;;https://github.com/org/repo/commit/abc1234567890abc1234]8;; [90m([0m[32m+50[0m[90m/[0m[31m-10[0m[90m)[0m with [31merror[0m diagnostic(s)
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m [31mfatal error[0m
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m [33m]8;;https://github.com/org/repo/pull/42merge conflict]8;;[0m
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m [31mpayment required[0m
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m [90mcancelled[0m
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m [31mtimed out[0m
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m [90mno-op[0m
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m ]8;;https://github.com/org/repo/commit/def5678901234def5678]8;; [90m([0m[32m+3[0m[90m/[0m[31m-3[0m[90m)[0m
+              [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m ]8;;https://github.com/org/repo/commit/abc1234567890abc1234]8;; [90m([0m[32m+10[0m[90m/[0m[31m-5[0m[90m)[0m
+              [90m○[0m lint  [33m●[0m build  [90m[0m test  [90m○[0m download
+
+[1;97mtypescript   [0m ]8;;https://github.com/org/repo/commit/abc1234567890abc1234]8;; [90m([0m[32m+10[0m[90m/[0m[31m-5[0m[90m)[0m
+
+
+[1;97mtypescript   [0m ]8;;https://github.com/org/repo/commit/abc1234567890abc1234]8;; [90m([0m[32m+10[0m[90m/[0m[31m-5[0m[90m)[0m
+              [32m✓[0m download
+
+[1;97mtypescript   [0m ]8;;https://github.com/org/repo/commit/abc1234567890abc1234]8;; [90m([0m[32m+10[0m[90m/[0m[31m-5[0m[90m)[0m
+[31m  Error: connection refused[0m
+              [31m⚠[0m download
+

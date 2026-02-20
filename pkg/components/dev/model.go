@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/diagnostics"
@@ -81,7 +82,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-	case build.TickMsg, build.DownloadMsg, build.ErrorMsg:
+	case build.TickMsg, build.DownloadMsg, build.ErrorMsg, spinner.TickMsg:
 		m.Build, cmd = m.Build.Update(msg)
 		cmds = append(cmds, cmd)
 

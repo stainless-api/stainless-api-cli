@@ -12,7 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/git"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
@@ -30,6 +32,7 @@ type Model struct {
 	Downloads map[stainless.Target]DownloadStatus // When a BuildTarget has a commit available, this target will download it, if it has been specified in the initialization.
 	Err        error                               // This will be populated if the model concludes with an error
 	CommitOnly bool                                // When true, only show the commit step in the pipeline view
+	Spinner    spinner.Model                       // Spinner for in-progress animation
 }
 
 type DownloadStatus struct {
@@ -61,19 +64,27 @@ func NewModel(client stainless.Client, ctx context.Context, build stainless.Buil
 		}
 	}
 
+	s := spinner.New()
+	s.Spinner = spinner.MiniDot
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+
 	return Model{
 		Build:     build,
 		Client:    client,
 		Ctx:       ctx,
 		Branch:    branch,
 		Downloads: downloads,
+		Spinner:   s,
 	}
 }
 
 func (m Model) Init() tea.Cmd {
-	return func() tea.Msg {
-		return TickMsg(time.Now())
-	}
+	return tea.Batch(
+		m.Spinner.Tick,
+		func() tea.Msg {
+			return TickMsg(time.Now())
+		},
+	)
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -119,6 +130,11 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 				m.Downloads[target] = download
 			}
 		}
+
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.Spinner, cmd = m.Spinner.Update(msg)
+		cmds = append(cmds, cmd)
 
 	case ErrorMsg:
 		m.Err = msg
