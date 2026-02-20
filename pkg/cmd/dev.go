@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/dev"
@@ -255,7 +254,7 @@ func runDevBuild(ctx context.Context, client stainless.Client, wc workspace.Conf
 		cmd.Bool("watch"),
 	)
 
-	p := tea.NewProgram(model)
+	p := console.NewProgram(model)
 	finalModel, err := p.Run()
 
 	if err != nil {

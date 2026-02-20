@@ -19,7 +19,6 @@ import (
 	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
 	"github.com/stainless-api/stainless-api-go/option"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/term"
@@ -432,7 +431,7 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, client stainless
 		WaitMode: WaitCommit,
 	}
 
-	_, err = tea.NewProgram(model).Run()
+	_, err = console.NewProgram(model).Run()
 	if err != nil {
 		console.Warn("%s", err.Error())
 	}
