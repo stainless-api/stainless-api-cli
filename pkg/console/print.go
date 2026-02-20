@@ -12,7 +12,24 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/logrusorgru/aurora/v4"
 	"github.com/urfave/cli/v3"
+	"golang.org/x/term"
 )
+
+// NewProgram wraps tea.NewProgram with better handling for tty environments
+func NewProgram(model tea.Model, opts ...tea.ProgramOption) *tea.Program {
+	// Always output to stderr, in case we want to also output JSON so that the json is redirectable e.g. to jq.
+	opts = append(opts, tea.WithOutput(os.Stderr))
+
+	// If not a TTY, use stdin and disable renderer
+	if !term.IsTerminal(int(os.Stderr.Fd())) {
+		opts = append(opts,
+			tea.WithInput(os.Stdin),
+			tea.WithoutRenderer(),
+		)
+	}
+
+	return tea.NewProgram(model, opts...)
+}
 
 // Group represents a nested logging group
 type Group struct {
@@ -255,7 +272,7 @@ func spinnerWithIndent(indent int, message string, operation func() error) error
 		execute: operation,
 	}
 
-	finalModel, err := tea.NewProgram(model).Run()
+	finalModel, err := NewProgram(model).Run()
 	if err != nil {
 		return err
 	}
