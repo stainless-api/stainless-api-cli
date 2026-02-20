@@ -30,7 +30,7 @@ func (m Model) View() string {
 // Line 1: codegen status text + optional download
 // Line 2: post-commit steps (lint/build/test), only when !commitOnly
 func ViewBuildPipeline(build stainless.Build, target stainless.Target, downloads map[stainless.Target]DownloadStatus, commitOnly bool, sp spinner.Model) string {
-	langStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true)
+	langStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Bold(true)
 	greenStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
 	redStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 	yellowStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("3"))

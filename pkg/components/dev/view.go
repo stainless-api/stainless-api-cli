@@ -50,18 +50,10 @@ var parts = []ViewPart{
 		Name: "build diagnostics",
 		View: func(m *Model, s *strings.Builder) {
 			if m.Diagnostics.Diagnostics == nil {
-				s.WriteString(console.SProperty(0, "build diagnostics", "(waiting for build to finish)"))
+				gray := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+				s.WriteString(gray.Render("waiting for build") + "\n")
 			} else {
 				s.WriteString(m.Diagnostics.View())
-			}
-		},
-	},
-	{
-		Name: "studio",
-		View: func(m *Model, s *strings.Builder) {
-			if m.Build.ID != "" {
-				url := fmt.Sprintf("https://app.stainless.com/%s/%s/studio?branch=%s", m.Build.Org, m.Build.Project, m.Branch)
-				s.WriteString(console.SProperty(0, "studio", console.Hyperlink(url, url)))
 			}
 		},
 	},
@@ -70,6 +62,18 @@ var parts = []ViewPart{
 		View: func(m *Model, s *strings.Builder) {
 			s.WriteString("\n")
 			s.WriteString(m.Build.View())
+		},
+	},
+	{
+		Name: "studio",
+		View: func(m *Model, s *strings.Builder) {
+			if m.Build.ID != "" {
+				gray := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+				url := fmt.Sprintf("https://app.stainless.com/%s/%s/studio?branch=%s", m.Build.Org, m.Build.Project, m.Branch)
+				s.WriteString("\n")
+				s.WriteString(gray.Render(console.Hyperlink(url, url)))
+				s.WriteString("\n")
+			}
 		},
 	},
 	{
