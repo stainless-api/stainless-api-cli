@@ -434,7 +434,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 			Build:    cbuild.NewModel(client, ctx, *build, cmd.String("branch"), downloadPaths),
 			WaitMode: waitMode,
 		})
-		model, err = tea.NewProgram(model).Run()
+		model, err = console.NewProgram(model).Run()
 		if err != nil {
 			console.Warn("%s", err.Error())
 		}
