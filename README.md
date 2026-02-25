@@ -15,8 +15,7 @@ It is generated with [Stainless](https://www.stainless.com/).
 ### Installing with Homebrew
 
 ```sh
-brew tap stainless-api/tap
-brew install stl
+brew install stainless-api/tap/stl
 ```
 
 ### Installing with Go
