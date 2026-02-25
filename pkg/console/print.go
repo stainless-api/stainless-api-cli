@@ -20,10 +20,10 @@ func NewProgram(model tea.Model, opts ...tea.ProgramOption) *tea.Program {
 	// Always output to stderr, in case we want to also output JSON so that the json is redirectable e.g. to jq.
 	opts = append(opts, tea.WithOutput(os.Stderr))
 
-	// If not a TTY, use stdin and disable renderer
+	// If not a TTY, disable input & disable renderer
 	if !term.IsTerminal(int(os.Stderr.Fd())) {
 		opts = append(opts,
-			tea.WithInput(os.Stdin),
+			tea.WithInput(nil),
 			tea.WithoutRenderer(),
 		)
 	}
