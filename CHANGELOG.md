@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.1.0-alpha.74 (2026-02-25)
+
+Full Changelog: [v0.1.0-alpha.73...v0.1.0-alpha.74](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.73...v0.1.0-alpha.74)
+
+### Features
+
+* add CommitOnly option to build model ([93e3e0c](https://github.com/stainless-api/stainless-api-cli/commit/93e3e0cfb46c70982b70b9768200d8ce992326dd))
+* **api:** manual updates ([5d1a904](https://github.com/stainless-api/stainless-api-cli/commit/5d1a9048221995d8103d5abc945c9a03f1df520a))
+* remove unused dev.TickMsg ([5e5b7cf](https://github.com/stainless-api/stainless-api-cli/commit/5e5b7cfdfc7cb5f1baa72cb2d74b016d7f78558c))
+
+
+### Bug Fixes
+
+* fix project creation ([27237e2](https://github.com/stainless-api/stainless-api-cli/commit/27237e28927e936ca9efe213baef180933a050ea))
+* improve error handling in build errors ([c4d1866](https://github.com/stainless-api/stainless-api-cli/commit/c4d186657c0f944a9dc736df4280d8c4fb77fc38))
+
+
+### Chores
+
+* **internal:** remove mock server code ([c4dd9e7](https://github.com/stainless-api/stainless-api-cli/commit/c4dd9e705c0e9d7de3df03f42034e7cd9b4322ec))
+
 ## 0.1.0-alpha.73 (2026-02-20)
 
 Full Changelog: [v0.1.0-alpha.72...v0.1.0-alpha.73](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.72...v0.1.0-alpha.73)
