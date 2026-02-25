@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.76 (2026-02-25)
+
+Full Changelog: [v0.1.0-alpha.75...v0.1.0-alpha.76](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.75...v0.1.0-alpha.76)
+
+### Bug Fixes
+
+* don't read input in non-tty ([2b5bd0c](https://github.com/stainless-api/stainless-api-cli/commit/2b5bd0ca870fbc7a2fa5a00b009ea66db98f430e))
+
 ## 0.1.0-alpha.75 (2026-02-25)
 
 Full Changelog: [v0.1.0-alpha.74...v0.1.0-alpha.75](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.74...v0.1.0-alpha.75)
