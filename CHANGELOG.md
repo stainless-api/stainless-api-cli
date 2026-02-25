@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-alpha.75 (2026-02-25)
+
+Full Changelog: [v0.1.0-alpha.74...v0.1.0-alpha.75](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.74...v0.1.0-alpha.75)
+
+### Bug Fixes
+
+* don't log tty error ([e5409eb](https://github.com/stainless-api/stainless-api-cli/commit/e5409eb8fd0a7109dc15523b63f4cdf42d180b13))
+* pin formatting for headers to always use repeat/dot formats ([40924d6](https://github.com/stainless-api/stainless-api-cli/commit/40924d6fecfcd4cadd6b4baab9792fbce5eb3e48))
+
+
+### Chores
+
+* update readme with better instructions for installing with homebrew ([2322bbb](https://github.com/stainless-api/stainless-api-cli/commit/2322bbb40f839258b7ee41123c8a248ddec18496))
+
 ## 0.1.0-alpha.74 (2026-02-25)
 
 Full Changelog: [v0.1.0-alpha.73...v0.1.0-alpha.74](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.73...v0.1.0-alpha.74)
