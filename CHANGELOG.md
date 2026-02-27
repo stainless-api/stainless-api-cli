@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.77 (2026-02-26)
+
+Full Changelog: [v0.1.0-alpha.76...v0.1.0-alpha.77](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.76...v0.1.0-alpha.77)
+
+### Bug Fixes
+
+* **mcp:** update prompt ([79fbfe8](https://github.com/stainless-api/stainless-api-cli/commit/79fbfe8790ba3d98f57befdbce40c2e79f25d61b))
+
 ## 0.1.0-alpha.76 (2026-02-25)
 
 Full Changelog: [v0.1.0-alpha.75...v0.1.0-alpha.76](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.75...v0.1.0-alpha.76)
