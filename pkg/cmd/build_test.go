@@ -13,6 +13,7 @@ func TestBuildsCreate(t *testing.T) {
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"builds", "create",
+		"--wait", "none",
 		"--project", "project",
 		"--revision", "string",
 		"--allow-empty=true",
@@ -30,6 +31,7 @@ func TestBuildsCreate(t *testing.T) {
 	mocktest.TestRunMockTestWithFlags(
 		t,
 		"builds", "create",
+		"--wait", "none",
 		"--project", "project",
 		"--revision", "string",
 		"--allow-empty=true",
