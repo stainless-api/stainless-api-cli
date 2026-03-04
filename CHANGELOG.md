@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.0-alpha.79 (2026-03-04)
+
+Full Changelog: [v0.1.0-alpha.78...v0.1.0-alpha.79](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.78...v0.1.0-alpha.79)
+
 ## 0.1.0-alpha.78 (2026-02-27)
 
 Full Changelog: [v0.1.0-alpha.77...v0.1.0-alpha.78](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.77...v0.1.0-alpha.78)
