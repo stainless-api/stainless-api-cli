@@ -13,6 +13,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
+	"github.com/stainless-api/stainless-api-cli/pkg/components/diagnostics"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
 	"github.com/stainless-api/stainless-api-go"
@@ -137,7 +138,7 @@ func (m lintModel) View() string {
 			content = m.spinner.View() + " Linting"
 		}
 	} else {
-		// content = build.ViewDiagnosticsPrint(m.diagnostics, -1)
+		content = diagnostics.ViewDiagnostics(m.diagnostics, -1)
 		if m.skipped {
 			content += "\nContinuing..."
 		} else if m.watching {
