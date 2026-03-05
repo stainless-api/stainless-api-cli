@@ -20,7 +20,7 @@ buildGoModule rec {
   doCheck = false;
 
   meta = {
-    description = "Stainless CLI";
+    description = "The official CLI for the Stainless REST API";
     homepage = "https://github.com/stainless-api/stainless-api-cli";
     license = lib.licenses.asl20;
     mainProgram = pname;
