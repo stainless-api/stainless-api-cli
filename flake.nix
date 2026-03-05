@@ -21,14 +21,7 @@
     forEachSystem (
       system:
       let
-        pkgs = import nixpkgs {
-          inherit system;
-          config.allowUnfreePredicate =
-            pkg:
-            builtins.elem (lib.getName pkg) [
-              "terraform"
-            ];
-        };
+        pkgs = nixpkgs.legacyPackages.${system};
       in
       {
         packages.${system} = rec {
