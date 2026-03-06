@@ -9,60 +9,86 @@ import (
 )
 
 func TestProjectsBranchesCreate(t *testing.T) {
-	mocktest.TestRunMockTestWithFlags(
-		t,
-		"projects:branches", "create",
-		"--project", "project",
-		"--branch", "branch",
-		"--branch-from", "branch_from",
-		"--force=true",
-	)
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t, "projects:branches", "create",
+			"--api-key", "string",
+			"--project", "project",
+			"--branch", "branch",
+			"--branch-from", "branch_from",
+			"--force=true",
+		)
+	})
+
+	t.Run("piping data", func(t *testing.T) {
+		// Test piping YAML data over stdin
+		pipeData := []byte("" +
+			"branch: branch\n" +
+			"branch_from: branch_from\n" +
+			"force: true\n")
+		mocktest.TestRunMockTestWithPipeAndFlags(
+			t, pipeData, "projects:branches", "create",
+			"--api-key", "string",
+			"--project", "project",
+		)
+	})
 }
 
 func TestProjectsBranchesRetrieve(t *testing.T) {
-	mocktest.TestRunMockTestWithFlags(
-		t,
-		"projects:branches", "retrieve",
-		"--project", "project",
-		"--branch", "branch",
-	)
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t, "projects:branches", "retrieve",
+			"--api-key", "string",
+			"--project", "project",
+			"--branch", "branch",
+		)
+	})
 }
 
 func TestProjectsBranchesList(t *testing.T) {
-	mocktest.TestRunMockTestWithFlags(
-		t,
-		"projects:branches", "list",
-		"--project", "project",
-		"--cursor", "cursor",
-		"--limit", "1",
-	)
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t, "projects:branches", "list",
+			"--api-key", "string",
+			"--max-items", "10",
+			"--project", "project",
+			"--cursor", "cursor",
+			"--limit", "1",
+		)
+	})
 }
 
 func TestProjectsBranchesDelete(t *testing.T) {
-	mocktest.TestRunMockTestWithFlags(
-		t,
-		"projects:branches", "delete",
-		"--project", "project",
-		"--branch", "branch",
-	)
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t, "projects:branches", "delete",
+			"--api-key", "string",
+			"--project", "project",
+			"--branch", "branch",
+		)
+	})
 }
 
 func TestProjectsBranchesRebase(t *testing.T) {
-	mocktest.TestRunMockTestWithFlags(
-		t,
-		"projects:branches", "rebase",
-		"--project", "project",
-		"--branch", "branch",
-		"--base", "base",
-	)
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t, "projects:branches", "rebase",
+			"--api-key", "string",
+			"--project", "project",
+			"--branch", "branch",
+			"--base", "base",
+		)
+	})
 }
 
 func TestProjectsBranchesReset(t *testing.T) {
-	mocktest.TestRunMockTestWithFlags(
-		t,
-		"projects:branches", "reset",
-		"--project", "project",
-		"--branch", "branch",
-		"--target-config-sha", "target_config_sha",
-	)
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t, "projects:branches", "reset",
+			"--api-key", "string",
+			"--project", "project",
+			"--branch", "branch",
+			"--target-config-sha", "target_config_sha",
+		)
+	})
 }

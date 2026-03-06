@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
@@ -14,12 +15,14 @@ import (
 	"github.com/stainless-api/stainless-api-cli/internal/autocomplete"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
+	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	docs "github.com/urfave/cli-docs/v3"
 	"github.com/urfave/cli/v3"
 )
 
 var (
-	Command *cli.Command
+	Command            *cli.Command
+	CommandErrorBuffer bytes.Buffer
 )
 
 func init() {
@@ -32,8 +35,9 @@ stl auth login
 stl init
 stl dev
 stl builds create --branch <branch>`,
-		Suggest: true,
-		Version: Version,
+		Suggest:   true,
+		Version:   Version,
+		ErrWriter: &CommandErrorBuffer,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "debug",
@@ -73,6 +77,13 @@ stl builds create --branch <branch>`,
 			&cli.StringFlag{
 				Name:  "transform-error",
 				Usage: "The GJSON transformation for errors.",
+			},
+			&requestflag.Flag[string]{
+				Name:    "api-key",
+				Sources: cli.EnvVars("STAINLESS_API_KEY"),
+			},
+			&requestflag.Flag[string]{
+				Name: "project",
 			},
 			&cli.StringFlag{
 				Name:  "environment",
