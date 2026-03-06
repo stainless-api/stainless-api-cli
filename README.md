@@ -59,20 +59,23 @@ stl [resource] <command> [flags...]
 
 ```sh
 stl builds create \
+  --api-key 'My API Key' \
   --project stainless \
-  --revision main \
-  --allow-empty \
-  --branch branch \
-  --commit-message commit_message \
-  --enable-ai-commit-message \
-  --target-commit-messages '{cli: cli, csharp: csharp, go: go, java: java, kotlin: kotlin, node: node, openapi: openapi, php: php, python: python, ruby: ruby, sql: sql, terraform: terraform, typescript: typescript}' \
-  --target node
+  --revision main
 ```
 
 For details about specific commands, use the `--help` flag.
 
-### Global Flags
+### Environment variables
 
+| Environment variable | Required | Default value |
+| -------------------- | -------- | ------------- |
+| `STAINLESS_API_KEY`  | no       | `null`        |
+
+### Global flags
+
+- `--api-key` (can also be set with `STAINLESS_API_KEY` env var)
+- `--project`
 - `--help` - Show command line usage
 - `--debug` - Enable debug logging (includes HTTP request/response details)
 - `--version`, `-v` - Show the CLI version

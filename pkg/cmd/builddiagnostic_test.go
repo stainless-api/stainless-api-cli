@@ -9,13 +9,16 @@ import (
 )
 
 func TestBuildsDiagnosticsList(t *testing.T) {
-	mocktest.TestRunMockTestWithFlags(
-		t,
-		"builds:diagnostics", "list",
-		"--build-id", "buildId",
-		"--cursor", "cursor",
-		"--limit", "1",
-		"--severity", "fatal",
-		"--targets", "targets",
-	)
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t, "builds:diagnostics", "list",
+			"--api-key", "string",
+			"--max-items", "10",
+			"--build-id", "buildId",
+			"--cursor", "cursor",
+			"--limit", "1",
+			"--severity", "fatal",
+			"--targets", "targets",
+		)
+	})
 }

@@ -9,8 +9,10 @@ import (
 )
 
 func TestUserRetrieve(t *testing.T) {
-	mocktest.TestRunMockTestWithFlags(
-		t,
-		"user", "retrieve",
-	)
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t, "user", "retrieve",
+			"--api-key", "string",
+		)
+	})
 }
