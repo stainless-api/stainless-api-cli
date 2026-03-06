@@ -9,12 +9,14 @@ import (
 )
 
 func TestBuildsTargetOutputsRetrieve(t *testing.T) {
-	mocktest.TestRunMockTestWithFlags(
-		t,
-		"builds:target-outputs", "retrieve",
-		"--build-id", "build_id",
-		"--target", "node",
-		"--type", "source",
-		"--output", "url",
-	)
+	t.Run("regular flags", func(t *testing.T) {
+		mocktest.TestRunMockTestWithFlags(
+			t, "builds:target-outputs", "retrieve",
+			"--api-key", "string",
+			"--build-id", "build_id",
+			"--target", "node",
+			"--type", "source",
+			"--output", "url",
+		)
+	})
 }
