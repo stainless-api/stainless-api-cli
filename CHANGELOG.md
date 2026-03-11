@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.81 (2026-03-11)
+
+Full Changelog: [v0.1.0-alpha.80...v0.1.0-alpha.81](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.80...v0.1.0-alpha.81)
+
+### Features
+
+* support --path ([504bf64](https://github.com/stainless-api/stainless-api-cli/commit/504bf642d7ccfbfabf0709e208d9067af0d4904f))
+
 ## 0.1.0-alpha.80 (2026-03-11)
 
 Full Changelog: [v0.1.0-alpha.79...v0.1.0-alpha.80](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.79...v0.1.0-alpha.80)
