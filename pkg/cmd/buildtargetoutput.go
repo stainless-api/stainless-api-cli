@@ -56,6 +56,11 @@ var buildsTargetOutputsRetrieve = cli.Command{
 			HideDefault: true,
 			QueryPath:   "output",
 		},
+		&requestflag.Flag[string]{
+			Name:      "path",
+			Usage:     `The path of the file to get when used with "type": "file".`,
+			QueryPath: "path",
+		},
 	},
 	Before: before,
 	Action: handleBuildsTargetOutputsRetrieve,
