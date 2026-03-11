@@ -17,6 +17,7 @@ func TestBuildsTargetOutputsRetrieve(t *testing.T) {
 			"--target", "node",
 			"--type", "source",
 			"--output", "url",
+			"--path", "path",
 		)
 	})
 }
