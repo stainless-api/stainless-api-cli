@@ -100,6 +100,9 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 			Type:    stainless.BuildTargetOutputGetParamsType(outputType),
 			Output:  stainless.BuildTargetOutputGetParamsOutput(outputFormat),
 		}
+		if cmd.IsSet("path") {
+			params.Path = stainless.String(cmd.String("path"))
+		}
 		options := []option.RequestOption{}
 		if cmd.Bool("debug") {
 			options = append(options, debugMiddlewareOption)
