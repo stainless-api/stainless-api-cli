@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.0-alpha.80 (2026-03-11)
+
+Full Changelog: [v0.1.0-alpha.79...v0.1.0-alpha.80](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.79...v0.1.0-alpha.80)
+
+### Features
+
+* **api:** add a way to fetch specific files via /v0/build_target_outputs ([1f25deb](https://github.com/stainless-api/stainless-api-cli/commit/1f25deb1f11fe7382ff8a9f35cd7f6b8bf0035b3))
+
+
+### Chores
+
+* bump go sdk ([aa5056c](https://github.com/stainless-api/stainless-api-cli/commit/aa5056cebc0b78f1ce7161d8029d34b9f8265e95))
+* **internal:** codegen related update ([4b48fac](https://github.com/stainless-api/stainless-api-cli/commit/4b48facc8c10ba678247b19f08f8738a7ee85afa))
+* **internal:** codegen related update ([c5ce5bf](https://github.com/stainless-api/stainless-api-cli/commit/c5ce5bf51fcd4078d746e0b8f936454e6074c63f))
+* **internal:** codegen related update ([cb4959b](https://github.com/stainless-api/stainless-api-cli/commit/cb4959b52ed304f64a3a0a333a1e0acced2dff1e))
+
 ## 0.1.0-alpha.79 (2026-03-04)
 
 Full Changelog: [v0.1.0-alpha.78...v0.1.0-alpha.79](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.78...v0.1.0-alpha.79)
