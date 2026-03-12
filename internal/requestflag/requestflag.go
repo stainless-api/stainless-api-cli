@@ -28,6 +28,7 @@ type Flag[
 	Sources     cli.ValueSourceChain // sources to load flag value from
 	Required    bool                 // whether the flag is required or not
 	Hidden      bool                 // whether to hide the flag in help output
+	Local       bool                 // whether or not this flag should be applied to subcommands
 	Default     T                    // default value for this flag if not set by from any source
 	Aliases     []string             // aliases that are allowed for this flag
 	Validator   func(T) error        // custom function to validate this flag value
@@ -53,6 +54,10 @@ type InRequest interface {
 	GetHeaderPath() string
 	GetBodyPath() string
 	IsBodyRoot() bool
+}
+
+func (f Flag[T]) IsLocal() bool {
+	return f.Local
 }
 
 func (f Flag[T]) GetQueryPath() string {
