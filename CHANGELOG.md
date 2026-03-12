@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.0-alpha.82 (2026-03-12)
+
+Full Changelog: [v0.1.0-alpha.81...v0.1.0-alpha.82](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.81...v0.1.0-alpha.82)
+
+### Bug Fixes
+
+* fix api-key being passed into command ([74a2a46](https://github.com/stainless-api/stainless-api-cli/commit/74a2a46a697ca526395d7ee360c54204d5f86656))
+* fix auth ([ace94ad](https://github.com/stainless-api/stainless-api-cli/commit/ace94ad5a0ee88b334b5752e12cfa8c60e9a88ca))
+* fix for test cases with newlines in YAML and better error reporting ([d7ddfce](https://github.com/stainless-api/stainless-api-cli/commit/d7ddfcefaf919400d052b9741eb4f61163c6da62))
+
 ## 0.1.0-alpha.81 (2026-03-11)
 
 Full Changelog: [v0.1.0-alpha.80...v0.1.0-alpha.81](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.80...v0.1.0-alpha.81)
