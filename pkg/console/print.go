@@ -175,6 +175,10 @@ func (g Group) Confirm(cmd *cli.Command, flagName, title, description string, de
 		return cmd.Bool(flagName), Group{prefix: "✱", indent: g.indent + 1}, nil
 	}
 
+	if !term.IsTerminal(int(os.Stderr.Fd())) {
+		return defaultValue, Group{prefix: "✱", indent: g.indent + 1}, nil
+	}
+
 	foreground := lipgloss.Color("15")
 	cyanBright := lipgloss.Color("6")
 

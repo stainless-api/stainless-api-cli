@@ -34,6 +34,10 @@ var authLogin = cli.Command{
 			Value: defaultClientID,
 			Usage: "OAuth client ID",
 		},
+		&cli.BoolFlag{
+			Name:  "browser",
+			Usage: "Open browser for authentication (use --browser=false to skip)",
+		},
 	},
 	Before:          before,
 	Action:          handleAuthLogin,
