@@ -2,12 +2,18 @@ package dev
 
 import (
 	"fmt"
+	"path/filepath"
 	"slices"
 	"strings"
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
+)
+
+var (
+	grayStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+	previewStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Background(lipgloss.Color("6")).Bold(true)
 )
 
 func (m Model) View() string {
@@ -38,21 +44,26 @@ var parts = []ViewPart{
 	{
 		Name: "header",
 		View: func(m *Model, s *strings.Builder) {
-			buildIDStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Background(lipgloss.Color("6")).Bold(true)
+			s.WriteString("\n")
 			if m.Build.ID != "" {
-				fmt.Fprintf(s, "\n\n%s %s\n\n", buildIDStyle.Render(" BUILD "), m.Build.ID)
+				s.WriteString(previewStyle.Render(" PREVIEW "))
+				s.WriteString("  ")
+				s.WriteString(grayStyle.Render(m.Build.ID))
 			} else {
-				fmt.Fprintf(s, "\n\n%s\n\n", buildIDStyle.Render(" BUILD "))
+				s.WriteString(previewStyle.Render(" PREVIEW "))
 			}
+			s.WriteString("\n")
 		},
 	},
 	{
 		Name: "build diagnostics",
 		View: func(m *Model, s *strings.Builder) {
 			if m.Diagnostics.Diagnostics == nil {
-				gray := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-				s.WriteString(gray.Render("waiting for build") + "\n")
+				s.WriteString("\n")
+				s.WriteString(grayStyle.Render("waiting for build diagnostics"))
+				s.WriteString("\n")
 			} else {
+				s.WriteString("\n")
 				s.WriteString(m.Diagnostics.View())
 			}
 		},
@@ -61,6 +72,32 @@ var parts = []ViewPart{
 		Name: "build_status",
 		View: func(m *Model, s *strings.Builder) {
 			s.WriteString("\n")
+
+			// Config section (only when build exists)
+			if m.Build.ID != "" {
+				configStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Bold(true)
+				s.WriteString(configStyle.Render("config") + "\n")
+
+				configCommit := m.Build.ConfigCommit
+				if len(configCommit) > 7 {
+					configCommit = configCommit[:7]
+				}
+				if configCommit != "" {
+					s.WriteString("  " + grayStyle.Render("commit") + "  " + configCommit + "\n")
+				}
+				if m.Branch != "" {
+					s.WriteString("  " + grayStyle.Render("branch") + "  " + m.Branch + "\n")
+				}
+				if m.OASPath != "" {
+					s.WriteString("  " + filepath.Base(m.OASPath) + "\n")
+				}
+				if m.ConfigPath != "" {
+					s.WriteString("  " + filepath.Base(m.ConfigPath) + "\n")
+				}
+				s.WriteString("\n")
+			}
+
+			// Targets
 			s.WriteString(m.Build.View())
 		},
 	},
@@ -68,10 +105,9 @@ var parts = []ViewPart{
 		Name: "studio",
 		View: func(m *Model, s *strings.Builder) {
 			if m.Build.ID != "" {
-				gray := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 				url := fmt.Sprintf("https://app.stainless.com/%s/%s/studio?branch=%s", m.Build.Org, m.Build.Project, m.Branch)
 				s.WriteString("\n")
-				s.WriteString(gray.Render(console.Hyperlink(url, url)))
+				s.WriteString(grayStyle.Render(console.Hyperlink(url, "Open in Studio")))
 				s.WriteString("\n")
 			}
 		},

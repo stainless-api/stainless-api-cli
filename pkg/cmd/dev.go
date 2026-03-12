@@ -203,25 +203,18 @@ func runDevBuild(ctx context.Context, client stainless.Client, wc workspace.Conf
 
 	// Build base revision: try git show at --base ref, otherwise fall back to "main"
 	var baseRevision stainless.BuildCompareParamsBaseRevisionUnion
-	var baseDescription string
 
 	baseRef := cmd.String("base")
 	if inGitRepo && oasPath != "" {
 		files := gitShowFileInputMap(repoDir, baseRef, oasPath, configPath)
 		if len(files) > 0 {
 			baseRevision.OfFileInputMap = files
-			baseDescription = baseRef
 		} else {
 			baseRevision.OfString = stainless.String("main")
-			baseDescription = "main (files not found in git)"
 		}
 	} else {
 		baseRevision.OfString = stainless.String("main")
-		baseDescription = "main (not in a git repo)"
 	}
-
-	console.Property("base", baseDescription)
-	console.Property("head", "working tree")
 
 	compareReq := stainless.BuildCompareParams{
 		Project: stainless.String(projectName),
@@ -242,11 +235,11 @@ func runDevBuild(ctx context.Context, client stainless.Client, wc workspace.Conf
 		downloads[stainless.Target(targetName)] = targetConfig.OutputPath
 	}
 
-	model := dev.NewModel(
-		client,
-		ctx,
-		headBranch,
-		func() (*stainless.Build, error) {
+	model := dev.NewModel(dev.ModelConfig{
+		Client: client,
+		Ctx:    ctx,
+		Branch: headBranch,
+		Start: func() (*stainless.Build, error) {
 			options := []option.RequestOption{}
 			if cmd.Bool("debug") {
 				options = append(options, debugMiddlewareOption)
@@ -261,9 +254,11 @@ func runDevBuild(ctx context.Context, client stainless.Client, wc workspace.Conf
 			}
 			return &resp.Head, nil
 		},
-		downloads,
-		cmd.Bool("watch"),
-	)
+		DownloadPaths: downloads,
+		Watch:         cmd.Bool("watch"),
+		OASPath:       oasPath,
+		ConfigPath:    configPath,
+	})
 
 	p := console.NewProgram(model)
 	finalModel, err := p.Run()
