@@ -9,6 +9,8 @@ import (
 
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
+	"github.com/stainless-api/stainless-api-cli/pkg/components/diagnostics"
+	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
 	"github.com/stainless-api/stainless-api-go"
 	"github.com/stainless-api/stainless-api-go/option"
 	"github.com/tidwall/gjson"
@@ -67,6 +69,8 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
+	wc := getWorkspace(ctx)
+
 	params := stainless.BuildDiagnosticListParams{}
 
 	options, err := flagOptions(
@@ -107,6 +111,21 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 		if cmd.IsSet("max-items") {
 			maxItems = cmd.Value("max-items").(int64)
 		}
+		if format == "auto" && isTerminal(os.Stdout) {
+			var diags []stainless.BuildDiagnostic
+			for iter.Next() {
+				if maxItems >= 0 && len(diags) >= int(maxItems) {
+					break
+				}
+				diags = append(diags, iter.Current())
+			}
+			if err := iter.Err(); err != nil {
+				return err
+			}
+			fmt.Print(diagnostics.ViewDiagnostics(diags, int(maxItems), workspace.Relative(wc.OpenAPISpec), workspace.Relative(wc.StainlessConfig)))
+			return nil
+		}
+
 		return ShowJSONIterator(os.Stdout, "builds:diagnostics list", iter, format, transform, maxItems)
 	}
 }
