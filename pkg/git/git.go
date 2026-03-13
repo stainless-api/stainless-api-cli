@@ -79,3 +79,29 @@ func Fetch(dir, url string, refspecs ...string) error {
 	}
 	return nil
 }
+
+// Show returns the contents of a file at a given ref
+func Show(dir, ref, path string) ([]byte, error) {
+	cmd := exec.Command("git", "-C", dir, "show", ref+":"+path)
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	if err := cmd.Run(); err != nil {
+		return nil, err
+	}
+	return stdout.Bytes(), nil
+}
+
+// CurrentBranch returns the current branch name
+func CurrentBranch(dir string) (string, error) {
+	cmd := exec.Command("git", "-C", dir, "rev-parse", "--abbrev-ref", "HEAD")
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+	branch := strings.TrimSpace(stdout.String())
+	if branch == "" {
+		return "", fmt.Errorf("could not determine current git branch")
+	}
+	return branch, nil
+}
