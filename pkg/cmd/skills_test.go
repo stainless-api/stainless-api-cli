@@ -18,21 +18,12 @@ func chdir(t *testing.T, dir string) {
 	t.Cleanup(func() { os.Chdir(oldWd) })
 }
 
-func TestInstall(t *testing.T) {
-	t.Run("no flags returns error", func(t *testing.T) {
-		tmpDir := t.TempDir()
-		chdir(t, tmpDir)
-
-		err := Command.Run(context.Background(), []string{"stl", "install"})
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "--skills")
-	})
-
+func TestSkills(t *testing.T) {
 	t.Run("neither dir exists defaults to .agents", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		chdir(t, tmpDir)
 
-		err := Command.Run(context.Background(), []string{"stl", "install", "--skills"})
+		err := Command.Run(context.Background(), []string{"stl", "skills"})
 		require.NoError(t, err)
 		require.FileExists(t,filepath.Join(tmpDir, ".agents", "skills", "stl-cli", "SKILL.md"))
 		assert.NoDirExists(t, filepath.Join(tmpDir, ".claude"))
@@ -43,7 +34,7 @@ func TestInstall(t *testing.T) {
 		chdir(t, tmpDir)
 		require.NoError(t, os.Mkdir(filepath.Join(tmpDir, ".claude"), 0755))
 
-		err := Command.Run(context.Background(), []string{"stl", "install", "--skills"})
+		err := Command.Run(context.Background(), []string{"stl", "skills"})
 		require.NoError(t, err)
 		require.FileExists(t,filepath.Join(tmpDir, ".claude", "skills", "stl-cli", "SKILL.md"))
 		assert.NoDirExists(t, filepath.Join(tmpDir, ".agents"))
@@ -54,7 +45,7 @@ func TestInstall(t *testing.T) {
 		chdir(t, tmpDir)
 		require.NoError(t, os.Mkdir(filepath.Join(tmpDir, ".agents"), 0755))
 
-		err := Command.Run(context.Background(), []string{"stl", "install", "--skills"})
+		err := Command.Run(context.Background(), []string{"stl", "skills"})
 		require.NoError(t, err)
 		require.FileExists(t,filepath.Join(tmpDir, ".agents", "skills", "stl-cli", "SKILL.md"))
 		assert.NoDirExists(t, filepath.Join(tmpDir, ".claude"))
@@ -66,7 +57,7 @@ func TestInstall(t *testing.T) {
 		require.NoError(t, os.Mkdir(filepath.Join(tmpDir, ".claude"), 0755))
 		require.NoError(t, os.Mkdir(filepath.Join(tmpDir, ".agents"), 0755))
 
-		err := Command.Run(context.Background(), []string{"stl", "install", "--skills"})
+		err := Command.Run(context.Background(), []string{"stl", "skills"})
 		require.NoError(t, err)
 
 		// Primary install goes to .agents
@@ -87,9 +78,9 @@ func TestInstall(t *testing.T) {
 		chdir(t, tmpDir)
 		require.NoError(t, os.Mkdir(filepath.Join(tmpDir, ".claude"), 0755))
 
-		err := Command.Run(context.Background(), []string{"stl", "install", "--skills"})
+		err := Command.Run(context.Background(), []string{"stl", "skills"})
 		require.NoError(t, err)
-		err = Command.Run(context.Background(), []string{"stl", "install", "--skills"})
+		err = Command.Run(context.Background(), []string{"stl", "skills"})
 		require.NoError(t, err)
 		require.FileExists(t,filepath.Join(tmpDir, ".claude", "skills", "stl-cli", "SKILL.md"))
 	})
@@ -100,9 +91,9 @@ func TestInstall(t *testing.T) {
 		require.NoError(t, os.Mkdir(filepath.Join(tmpDir, ".claude"), 0755))
 		require.NoError(t, os.Mkdir(filepath.Join(tmpDir, ".agents"), 0755))
 
-		err := Command.Run(context.Background(), []string{"stl", "install", "--skills"})
+		err := Command.Run(context.Background(), []string{"stl", "skills"})
 		require.NoError(t, err)
-		err = Command.Run(context.Background(), []string{"stl", "install", "--skills"})
+		err = Command.Run(context.Background(), []string{"stl", "skills"})
 		require.NoError(t, err)
 
 		require.FileExists(t,filepath.Join(tmpDir, ".agents", "skills", "stl-cli", "SKILL.md"))
@@ -118,7 +109,7 @@ func TestInstall(t *testing.T) {
 		require.NoError(t, os.Mkdir(filepath.Join(tmpDir, ".claude"), 0755))
 
 		// First install: only .claude exists → real directory
-		err := Command.Run(context.Background(), []string{"stl", "install", "--skills"})
+		err := Command.Run(context.Background(), []string{"stl", "skills"})
 		require.NoError(t, err)
 		info, err := os.Lstat(filepath.Join(tmpDir, ".claude", "skills", "stl-cli"))
 		require.NoError(t, err)
@@ -126,7 +117,7 @@ func TestInstall(t *testing.T) {
 
 		// Now add .agents and re-run → should replace with symlink
 		require.NoError(t, os.Mkdir(filepath.Join(tmpDir, ".agents"), 0755))
-		err = Command.Run(context.Background(), []string{"stl", "install", "--skills"})
+		err = Command.Run(context.Background(), []string{"stl", "skills"})
 		require.NoError(t, err)
 
 		info, err = os.Lstat(filepath.Join(tmpDir, ".claude", "skills", "stl-cli"))
@@ -143,7 +134,7 @@ func TestInstall(t *testing.T) {
 		require.NoError(t, os.Mkdir(filepath.Join(tmpDir, ".agents"), 0755))
 		require.NoError(t, os.Symlink(".agents", filepath.Join(tmpDir, ".claude")))
 
-		err := Command.Run(context.Background(), []string{"stl", "install", "--skills"})
+		err := Command.Run(context.Background(), []string{"stl", "skills"})
 		require.NoError(t, err)
 
 		// Files should be in .agents

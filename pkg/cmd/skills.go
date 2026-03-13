@@ -15,24 +15,14 @@ import (
 //go:embed skill
 var embeddedSkill embed.FS
 
-var installCommand = cli.Command{
-	Name:  "install",
-	Usage: "Install Stainless development tools",
-	Flags: []cli.Flag{
-		&cli.BoolFlag{
-			Name:  "skills",
-			Usage: "Install coding agent skills for the Stainless CLI",
-		},
-	},
-	Action:          handleInstall,
+var skillsCommand = cli.Command{
+	Name:            "skills",
+	Usage:           "Install coding agent skills for the Stainless CLI",
+	Action:          handleSkills,
 	HideHelpCommand: true,
 }
 
-func handleInstall(ctx context.Context, cmd *cli.Command) error {
-	if !cmd.Bool("skills") {
-		return fmt.Errorf("specify what to install, e.g.: stl install --skills")
-	}
-
+func handleSkills(ctx context.Context, cmd *cli.Command) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("failed to get working directory: %w", err)

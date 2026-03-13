@@ -181,7 +181,7 @@ stl builds create --branch <branch>`,
 
 			&initCommand,
 
-			&installCommand,
+			&skillsCommand,
 
 			&mcpCommand,
 
