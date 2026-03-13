@@ -205,9 +205,9 @@ func (bt *BuildTarget) StepInfo(step string) (status, url, conclusion string) {
 	}
 	if u, ok := stepUnion.(stainless.CheckStepUnion); ok {
 		status = u.Status
+		url = u.URL
 		if u.Status == "completed" {
 			conclusion = u.Completed.Conclusion
-			url = u.Completed.URL
 		}
 	}
 	return
