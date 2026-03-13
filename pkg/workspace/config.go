@@ -18,6 +18,10 @@ func Resolve(baseDir, path string) string {
 }
 
 func Relative(path string) string {
+	if path == "" {
+		return ""
+	}
+
 	cwd, err := os.Getwd()
 	if err != nil {
 		return path

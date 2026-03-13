@@ -252,6 +252,7 @@ func runDevBuild(ctx context.Context, client stainless.Client, wc workspace.Conf
 		downloads,
 		cmd.Bool("watch"),
 	)
+	model.Diagnostics.WorkspaceConfig = wc
 
 	p := console.NewProgram(model)
 	finalModel, err := p.Run()

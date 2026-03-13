@@ -5,16 +5,18 @@ import (
 	"errors"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
 	"github.com/stainless-api/stainless-api-go"
 )
 
 var ErrUserCancelled = errors.New("user cancelled")
 
 type Model struct {
-	Diagnostics []stainless.BuildDiagnostic
-	Client      stainless.Client
-	Ctx         context.Context
-	Err         error
+	Diagnostics     []stainless.BuildDiagnostic
+	Client          stainless.Client
+	Ctx             context.Context
+	Err             error
+	WorkspaceConfig workspace.Config
 }
 
 type FetchDiagnosticsMsg []stainless.BuildDiagnostic
@@ -58,7 +60,7 @@ func (m Model) View() string {
 	if m.Diagnostics == nil {
 		return ""
 	}
-	return ViewDiagnostics(m.Diagnostics, 10)
+	return ViewDiagnostics(m.Diagnostics, 10, workspace.Relative(m.WorkspaceConfig.OpenAPISpec), workspace.Relative(m.WorkspaceConfig.StainlessConfig))
 }
 
 func (m Model) FetchDiagnostics(buildID string) tea.Cmd {
