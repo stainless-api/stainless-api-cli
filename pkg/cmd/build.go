@@ -621,6 +621,22 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 		if cmd.IsSet("max-items") {
 			maxItems = cmd.Value("max-items").(int64)
 		}
+
+		if format == "auto" && isTerminal(os.Stdout) {
+			for iter.Next() {
+				if maxItems == 0 {
+					break
+				}
+				maxItems--
+				b := iter.Current()
+				fmt.Print(cbuild.ViewHeader("BUILD", b))
+				m := cbuild.Model{Build: b}
+				fmt.Print(m.View())
+				fmt.Println()
+			}
+			return iter.Err()
+		}
+
 		return ShowJSONIterator(os.Stdout, "builds list", iter, format, transform, maxItems)
 	}
 }
