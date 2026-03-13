@@ -1,0 +1,23 @@
+[90m(no diagnostics)[0m
+
+[90m(no diagnostics)[0m
+
+[1;31merror[0m: failed to fetch diagnostics: connection refused
+
+[1;31merror[0m[31m[MissingField][0m: The field 'name' is required but missing
+[90m  --> openapi.yml: /paths/~1users/post/requestBody[0m
+[90m  --> stainless.yml: /endpoints/~1users/post[0m
+
+[1;31mfatal[0m[31m[FatalError][0m: Build failed due to configuration error
+[90m  --> openapi.yml: /paths/~1users[0m
+  Check your stainless.yml for syntax errors.
+  See docs for details.
+
+[1;33mwarning[0m[33m[DeprecatedUsage][0m: The x-deprecated extension is deprecated
+[90m  --> openapi.yml: /paths/~1foo/get[0m
+
+... and 1 more diagnostics
+
+[1;31merror[0m[31m[MissingField][0m: Field 'id' is required
+[90m  --> specs/openapi.json: /paths/~1pets/get[0m
+[90m  --> .stainless/stainless.yaml: /endpoints/~1pets/get[0m
