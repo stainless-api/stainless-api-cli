@@ -40,7 +40,7 @@
 [1;36mtypescript   [0m ]8;;https://github.com/org/repo/commit/def5678901234def5678]8;; [90m([0m[32m+3[0m[90m/[0m[31m-3[0m[90m)[0m                               [90m○[0m lint  [90m○[0m build  [90m○[0m test  [90m○[0m download
 
 
-[1;36mtypescript   [0m ]8;;https://github.com/org/repo/commit/abc1234567890abc1234]8;; [90m([0m[32m+10[0m[90m/[0m[31m-5[0m[90m)[0m                              [90m○[0m lint  [33m●[0m build  [90m[0m test  [90m○[0m download
+[1;36mtypescript   [0m ]8;;https://github.com/org/repo/commit/abc1234567890abc1234]8;; [90m([0m[32m+10[0m[90m/[0m[31m-5[0m[90m)[0m                              [90m○[0m lint  [33m●[0m build  [32m✓[0m test  [90m○[0m download
 
 
 [1;36mtypescript   [0m ]8;;https://github.com/org/repo/commit/abc1234567890abc1234]8;; [90m([0m[32m+10[0m[90m/[0m[31m-5[0m[90m)[0m                            

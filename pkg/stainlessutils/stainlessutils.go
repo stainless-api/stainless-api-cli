@@ -207,7 +207,7 @@ func (bt *BuildTarget) StepInfo(step string) (status, url, conclusion string) {
 		status = u.Status
 		url = u.URL
 		if u.Status == "completed" {
-			conclusion = u.Completed.Conclusion
+			conclusion = u.Conclusion
 		}
 	}
 	return
