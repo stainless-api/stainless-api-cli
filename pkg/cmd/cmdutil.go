@@ -41,11 +41,11 @@ func getDefaultRequestOptions(cmd *cli.Command) []option.RequestOption {
 		option.WithHeader("X-Stainless-CLI-Command", cmd.FullName()),
 	}
 
-	if cmd.IsSet("api-key") {
+	if cmd.IsSet("api-key") && cmd.String("api-key") != "" {
 		opts = append(opts, option.WithAPIKey(cmd.String("api-key")))
 	}
 
-	if cmd.IsSet("project") {
+	if cmd.IsSet("project") && cmd.String("project") != ""  {
 		opts = append(opts, option.WithProject(cmd.String("project")))
 	}
 
