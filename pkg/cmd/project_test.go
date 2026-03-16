@@ -11,8 +11,9 @@ import (
 func TestProjectsCreate(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "projects", "create",
+			t,
 			"--api-key", "string",
+			"projects", "create",
 			"--display-name", "display_name",
 			"--org", "org",
 			"--revision", "{foo: {content: content}}",
@@ -33,8 +34,9 @@ func TestProjectsCreate(t *testing.T) {
 			"targets:\n" +
 			"  - node\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
-			t, pipeData, "projects", "create",
+			t, pipeData,
 			"--api-key", "string",
+			"projects", "create",
 		)
 	})
 }
@@ -42,8 +44,9 @@ func TestProjectsCreate(t *testing.T) {
 func TestProjectsRetrieve(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "projects", "retrieve",
+			t,
 			"--api-key", "string",
+			"projects", "retrieve",
 			"--project", "project",
 		)
 	})
@@ -52,8 +55,9 @@ func TestProjectsRetrieve(t *testing.T) {
 func TestProjectsUpdate(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "projects", "update",
+			t,
 			"--api-key", "string",
+			"projects", "update",
 			"--project", "project",
 			"--display-name", "display_name",
 		)
@@ -63,8 +67,9 @@ func TestProjectsUpdate(t *testing.T) {
 		// Test piping YAML data over stdin
 		pipeData := []byte("display_name: display_name")
 		mocktest.TestRunMockTestWithPipeAndFlags(
-			t, pipeData, "projects", "update",
+			t, pipeData,
 			"--api-key", "string",
+			"projects", "update",
 			"--project", "project",
 		)
 	})
@@ -73,8 +78,9 @@ func TestProjectsUpdate(t *testing.T) {
 func TestProjectsList(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "projects", "list",
+			t,
 			"--api-key", "string",
+			"projects", "list",
 			"--max-items", "10",
 			"--cursor", "cursor",
 			"--limit", "1",
@@ -86,8 +92,9 @@ func TestProjectsList(t *testing.T) {
 func TestProjectsGenerateCommitMessage(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "projects", "generate-commit-message",
+			t,
 			"--api-key", "string",
+			"projects", "generate-commit-message",
 			"--project", "project",
 			"--target", "python",
 			"--base-ref", "base_ref",
@@ -101,8 +108,9 @@ func TestProjectsGenerateCommitMessage(t *testing.T) {
 			"base_ref: base_ref\n" +
 			"head_ref: head_ref\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
-			t, pipeData, "projects", "generate-commit-message",
+			t, pipeData,
 			"--api-key", "string",
+			"projects", "generate-commit-message",
 			"--project", "project",
 			"--target", "python",
 		)

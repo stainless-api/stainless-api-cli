@@ -11,8 +11,9 @@ import (
 func TestUserRetrieve(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "user", "retrieve",
+			t,
 			"--api-key", "string",
+			"user", "retrieve",
 		)
 	})
 }

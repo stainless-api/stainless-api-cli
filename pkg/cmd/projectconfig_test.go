@@ -11,8 +11,9 @@ import (
 func TestProjectsConfigsRetrieve(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "projects:configs", "retrieve",
+			t,
 			"--api-key", "string",
+			"projects:configs", "retrieve",
 			"--project", "project",
 			"--branch", "branch",
 			"--include", "include",
@@ -23,8 +24,9 @@ func TestProjectsConfigsRetrieve(t *testing.T) {
 func TestProjectsConfigsGuess(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "projects:configs", "guess",
+			t,
 			"--api-key", "string",
+			"projects:configs", "guess",
 			"--project", "project",
 			"--spec", "spec",
 			"--branch", "branch",
@@ -37,8 +39,9 @@ func TestProjectsConfigsGuess(t *testing.T) {
 			"spec: spec\n" +
 			"branch: branch\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
-			t, pipeData, "projects:configs", "guess",
+			t, pipeData,
 			"--api-key", "string",
+			"projects:configs", "guess",
 			"--project", "project",
 		)
 	})
