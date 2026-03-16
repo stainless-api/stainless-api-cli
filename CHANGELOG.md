@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.84 (2026-03-16)
+
+Full Changelog: [v0.1.0-alpha.83...v0.1.0-alpha.84](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.83...v0.1.0-alpha.84)
+
+### Features
+
+* add stl install --skills command and stl-cli skill ([c20c87a](https://github.com/stainless-api/stainless-api-cli/commit/c20c87ab4fa2be93ecf58b0e57cd9ce74c7eb097))
+
 ## 0.1.0-alpha.83 (2026-03-12)
 
 Full Changelog: [v0.1.0-alpha.82...v0.1.0-alpha.83](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.82...v0.1.0-alpha.83)
