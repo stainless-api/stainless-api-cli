@@ -16,10 +16,6 @@ var (
 )
 
 func (m Model) View() string {
-	if m.Err != nil {
-		return m.Err.Error()
-	}
-
 	s := strings.Builder{}
 
 	idx := slices.IndexFunc(parts, func(part ViewPart) bool {
@@ -28,6 +24,10 @@ func (m Model) View() string {
 
 	for i := idx; i < len(parts); i++ {
 		parts[i].View(&m, &s)
+	}
+
+	if m.Err != nil && m.Err != ErrUserCancelled {
+		s.WriteString("\n" + m.Err.Error() + "\n")
 	}
 
 	return s.String()
