@@ -630,6 +630,7 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 				maxItems--
 				b := iter.Current()
 				fmt.Print(cbuild.ViewHeader("BUILD", b))
+				fmt.Println()
 				m := cbuild.Model{Build: b}
 				fmt.Print(m.View())
 				fmt.Println()
