@@ -2,6 +2,8 @@ package build
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -38,7 +40,7 @@ func ViewHeader(label string, b stainless.Build) string {
 		s.WriteString("  ")
 		s.WriteString(headerIDStyle.Render(relativeTime(b.CreatedAt)))
 	}
-	s.WriteString("\n\n")
+	s.WriteString("\n")
 	return s.String()
 }
 
@@ -188,7 +190,17 @@ func ViewBuildPipeline(build stainless.Build, target stainless.Target, downloads
 	}
 
 	if download, ok := downloads[target]; ok {
-		stepParts = append(stepParts, ViewStepSymbol(download.Status, download.Conclusion)+" "+"download")
+		downloadLabel := "download"
+		if download.Path != "" {
+			displayPath := download.Path
+			if cwd, err := os.Getwd(); err == nil {
+				if rel, err := filepath.Rel(cwd, displayPath); err == nil {
+					displayPath = rel
+				}
+			}
+			downloadLabel += " " + grayStyle.Render("("+displayPath+")")
+		}
+		stepParts = append(stepParts, ViewStepSymbol(download.Status, download.Conclusion)+" "+downloadLabel)
 		if download.Conclusion == "failure" && download.Error != "" {
 			errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
 			line.WriteString("  " + strings.Join(stepParts, "  "))
