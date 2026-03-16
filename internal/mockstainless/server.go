@@ -1,0 +1,191 @@
+package mockstainless
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
+)
+
+func writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	enc.Encode(v)
+}
+
+// Page wraps data in a paginated response envelope.
+func Page(data []M) M {
+	return M{
+		"data":        data,
+		"next_cursor": "",
+	}
+}
+
+// newServeMux creates an http.Handler with all mock endpoints registered.
+func newServeMux(m *Mock) http.Handler {
+	authCounter := &CallCounter{}
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	mux.HandleFunc("POST /api/oauth/device", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, M{
+			"device_code":               "demo_device_code_abc123",
+			"user_code":                 "DEMO-CODE",
+			"verification_uri":          "https://app.stainless.com/activate",
+			"verification_uri_complete": "https://app.stainless.com/activate?code=DEMO-CODE",
+			"expires_in":               300,
+			"interval":                 1,
+		})
+	})
+
+	mux.HandleFunc("POST /v0/oauth/token", func(w http.ResponseWriter, r *http.Request) {
+		count := authCounter.Increment()
+		if count <= m.AuthPendingCount {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "authorization_pending",
+			})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{
+			"access_token":  "demo_access_token_xyz789",
+			"refresh_token": "demo_refresh_token_abc456",
+			"token_type":    "bearer",
+		})
+	})
+
+	mux.HandleFunc("GET /v0/orgs", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, M{
+			"data":     m.Orgs,
+			"has_more": false,
+		})
+	})
+
+	mux.HandleFunc("GET /v0/projects", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, Page(m.Projects))
+	})
+
+	mux.HandleFunc("GET /v0/projects/{project}", func(w http.ResponseWriter, r *http.Request) {
+		slug := r.PathValue("project")
+		for _, p := range m.Projects {
+			if p["slug"] == slug {
+				writeJSON(w, http.StatusOK, p)
+				return
+			}
+		}
+		if len(m.Projects) > 0 {
+			writeJSON(w, http.StatusOK, m.Projects[0])
+		}
+	})
+
+	mux.HandleFunc("GET /v0/projects/{project}/configs", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, m.ProjectConfigs)
+	})
+
+	mux.HandleFunc("GET /v0/builds", func(w http.ResponseWriter, r *http.Request) {
+		builds := make([]M, len(m.Builds))
+		for i, b := range m.Builds {
+			builds[i] = b.Snapshot()
+		}
+		writeJSON(w, http.StatusOK, Page(builds))
+	})
+
+	mux.HandleFunc("GET /v0/builds/{id}", func(w http.ResponseWriter, r *http.Request) {
+		if pb := m.GetBuild(r.PathValue("id")); pb != nil {
+			writeJSON(w, http.StatusOK, pb.Snapshot())
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	})
+
+	mux.HandleFunc("GET /v0/builds/{id}/diagnostics", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, http.StatusOK, Page(m.Diagnostics(r.PathValue("id"))))
+	})
+
+	mux.HandleFunc("GET /v0/build_target_outputs", func(w http.ResponseWriter, r *http.Request) {
+		buildID := r.URL.Query().Get("build_id")
+		target := r.URL.Query().Get("target")
+		outputType := r.URL.Query().Get("output")
+		sourceType := r.URL.Query().Get("type")
+
+		pb := m.GetBuild(buildID)
+		if pb == nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		targetData, ok := pb.CompletedData[target]
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		// Extract commit info: target["commit"]["commit"]["sha"] and repo info
+		commitStep, _ := targetData["commit"].(M)
+		commitObj, _ := commitStep["commit"].(M)
+		repo, _ := commitObj["repo"].(M)
+		sha, _ := commitObj["sha"].(string)
+		owner, _ := repo["owner"].(string)
+		name, _ := repo["name"].(string)
+
+		if sha == "" || owner == "" || name == "" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
+		gitURL := fmt.Sprintf("https://github.com/%s/%s", owner, name)
+		ref := sha
+
+		// Use local git repo if available
+		if repoPath, localRef, ok := m.GetGitRepo(owner, name); ok {
+			gitURL = "file://" + repoPath
+			ref = localRef
+		}
+
+		switch outputType {
+		case "git":
+			writeJSON(w, http.StatusOK, M{
+				"output": "git",
+				"target": target,
+				"type":   sourceType,
+				"url":    gitURL,
+				"ref":    ref,
+				"token":  "mock_token_123",
+			})
+		default:
+			writeJSON(w, http.StatusOK, M{
+				"output": "url",
+				"target": target,
+				"type":   sourceType,
+				"url":    gitURL + "/archive/" + ref + ".tar.gz",
+			})
+		}
+	})
+
+	if m.CompareBuild != nil {
+		mux.HandleFunc("POST /v0/builds/compare", func(w http.ResponseWriter, r *http.Request) {
+			if m.CompareBuild.PreviewBuild != nil {
+				m.CompareBuild.PreviewBuild.Reset()
+			}
+			writeJSON(w, http.StatusOK, M{
+				"base": m.CompareBuild.Base,
+				"head": m.CompareBuild.Head,
+			})
+		})
+	}
+
+	// Add simulated latency to all requests (except health checks).
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/health" {
+			time.Sleep(150 * time.Millisecond)
+		}
+		mux.ServeHTTP(w, r)
+	})
+}

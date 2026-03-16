@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+
+set -e
+
+cd "$(dirname "$0")/.."
+REPO_ROOT="$(pwd)"
+
+PIDS=()
+SERVERS=()
+
+kill_tree() {
+  local pid=$1
+  # Kill children first (the actual server under go run), then the parent
+  pkill -P "$pid" 2>/dev/null || true
+  kill "$pid" 2>/dev/null || true
+}
+
+cleanup() {
+  for pid in "${SERVERS[@]}"; do
+    kill_tree "$pid"
+  done
+  for pid in "${PIDS[@]}"; do
+    wait "$pid" 2>/dev/null || true
+  done
+  rm -f /tmp/stl
+  rm -rf /tmp/stl-demo-*
+}
+trap cleanup EXIT
+
+echo "==> Building stl"
+go build -o /tmp/stl ./cmd/stl
+
+wait_for_server() {
+  local port=$1
+  local attempts=0
+  while ! curl -sf "http://localhost:${port}/health" > /dev/null 2>&1; do
+    attempts=$((attempts + 1))
+    if [ "$attempts" -ge 50 ]; then
+      echo "Timed out waiting for demo server on port ${port}"
+      exit 1
+    fi
+    sleep 0.1
+  done
+}
+
+# Record a single tape with its own isolated server and HOME directory.
+# Usage: record_tape <tape_file> <port>
+record_tape() {
+  local tape=$1
+  local port=$2
+  local name
+  name=$(basename "$tape" .tape)
+  local home="/tmp/stl-demo-${name}"
+
+  # Start an isolated server
+  go run "${REPO_ROOT}/internal/cmd/mock-server" -port "$port" &
+  local server_pid=$!
+  SERVERS+=("$server_pid")
+  wait_for_server "$port"
+
+  # Create isolated HOME with pre-created auth config
+  mkdir -p "${home}/.config/stainless"
+  cat > "${home}/.config/stainless/auth.json" <<'AUTHEOF'
+{"access_token":"demo_access_token_xyz789","refresh_token":"demo_refresh_token_abc456","token_type":"bearer"}
+AUTHEOF
+
+  # Ensure /tmp is first in PATH inside the VHS shell.
+  # macOS /etc/profile runs path_helper which reorders PATH, so we
+  # need .bash_profile in the fake HOME to restore it.
+  cat > "${home}/.bash_profile" <<'PROFILEEOF'
+export PATH="/tmp:$PATH"
+PROFILEEOF
+
+  # Create dummy spec files in the HOME dir
+  echo '{}' > "${home}/openapi.yml"
+  echo '{}' > "${home}/stainless.yml"
+
+  # For tapes that start with auth login (demo), use a fresh HOME and work dir
+  if [ "$name" = "demo" ]; then
+    rm -rf "${home}"
+    local workdir="${home}/project"
+    mkdir -p "$workdir"
+    home="${workdir}"
+    # Re-create .bash_profile since we wiped the home dir
+    cat > "${home}/.bash_profile" <<'PROFILEEOF'
+export PATH="/tmp:$PATH"
+PROFILEEOF
+  fi
+
+  echo "==> Recording $tape (port $port)"
+  # Run VHS from the HOME dir so stl init writes to the temp dir, not the repo.
+  # Use -o to write the GIF back to the repo's assets/ directory.
+  local gif
+  gif="${REPO_ROOT}/assets/${name}.gif"
+  (cd "$home" && \
+  PATH="/tmp:$PATH" \
+  HOME="$home" \
+  STAINLESS_API_KEY="" \
+  STAINLESS_BASE_URL="http://localhost:${port}" \
+  BROWSER=true \
+    vhs -o "$gif" "${REPO_ROOT}/${tape}")
+
+  kill_tree "$server_pid"
+  echo "==> Done: $tape"
+}
+
+# Record a single tape or all tapes
+# Usage: build-demo-gif [name]  e.g. build-demo-gif preview
+port=4010
+if [ $# -eq 1 ]; then
+  tape="assets/${1}.tape"
+  if [ ! -f "$tape" ]; then
+    echo "Error: $tape not found"
+    exit 1
+  fi
+  record_tape "$tape" "$port"
+else
+  for tape in assets/*.tape; do
+    record_tape "$tape" "$port" &
+    PIDS+=($!)
+    port=$((port + 1))
+  done
+fi
+
+# Wait for all recordings to finish
+failed=0
+for pid in "${PIDS[@]}"; do
+  if ! wait "$pid"; then
+    failed=1
+  fi
+done
+
+if [ "$failed" -ne 0 ]; then
+  echo "==> Some recordings failed"
+  exit 1
+fi
+
+echo "==> Done! Output: assets/*.gif"
