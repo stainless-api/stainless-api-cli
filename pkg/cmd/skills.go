@@ -45,6 +45,22 @@ func handleSkills(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	destDir := filepath.Join(cwd, primaryBase, "skills")
+	skillDir := filepath.Join(destDir, "stl-cli")
+	skillRel, _ := filepath.Rel(cwd, skillDir)
+
+	console.Info("This will install skills to `%s`.", skillRel)
+	if symlink {
+		symlinkRel, _ := filepath.Rel(cwd, filepath.Join(cwd, ".claude", "skills", "stl-cli"))
+		console.Info("A symlink will be created at `%s`.", symlinkRel)
+	}
+
+	ok, err := console.Confirm(cmd, "", "Proceed?", "", true)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
 
 	err = fs.WalkDir(embeddedSkill, "skill", func(p string, d fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
@@ -72,12 +88,7 @@ func handleSkills(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("failed to install skills: %w", err)
 	}
 
-	skillDir := filepath.Join(destDir, "stl-cli")
-	rel, err := filepath.Rel(cwd, skillDir)
-	if err != nil {
-		return fmt.Errorf("failed to compute relative path: %w", err)
-	}
-	console.Success("Skills installed to `%s`.", rel)
+	console.Success("Skills installed to `%s`.", skillRel)
 
 	if symlink {
 		symlinkPath := filepath.Join(cwd, ".claude", "skills", "stl-cli")
@@ -109,7 +120,7 @@ func handleSkills(ctx context.Context, cmd *cli.Command) error {
 			if err != nil {
 				return fmt.Errorf("failed to compute relative path: %w", err)
 			}
-			console.Success("Symlinked `%s` → `%s`.", symRel, rel)
+			console.Success("Symlinked `%s` → `%s`.", symRel, skillRel)
 		}
 	}
 
