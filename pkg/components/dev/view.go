@@ -2,7 +2,6 @@ package dev
 
 import (
 	"fmt"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -50,11 +49,7 @@ var parts = []ViewPart{
 	{
 		Name: "build diagnostics",
 		View: func(m *Model, s *strings.Builder) {
-			if m.Diagnostics.Diagnostics == nil {
-				s.WriteString("\n")
-				s.WriteString(grayStyle.Render("waiting for build diagnostics"))
-				s.WriteString("\n")
-			} else {
+			if m.Diagnostics.Diagnostics != nil {
 				s.WriteString("\n")
 				s.WriteString(m.Diagnostics.View())
 			}
@@ -64,9 +59,11 @@ var parts = []ViewPart{
 		Name: "build_status",
 		View: func(m *Model, s *strings.Builder) {
 			s.WriteString("\n")
-
-			// Targets
-			s.WriteString(m.Build.View())
+			if m.Build.ID == "" {
+				s.WriteString(m.Build.Spinner.View() + " " + grayStyle.Render("Creating build...") + "\n")
+			} else {
+				s.WriteString(m.Build.View())
+			}
 		},
 	},
 	{
