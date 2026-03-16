@@ -48,13 +48,13 @@ func handleSkills(ctx context.Context, cmd *cli.Command) error {
 	skillDir := filepath.Join(destDir, "stl-cli")
 	skillRel, _ := filepath.Rel(cwd, skillDir)
 
-	console.Info("This will install skills to `%s`.", skillRel)
+	title := fmt.Sprintf("Install skills to `%s`", skillRel)
 	if symlink {
 		symlinkRel, _ := filepath.Rel(cwd, filepath.Join(cwd, ".claude", "skills", "stl-cli"))
-		console.Info("A symlink will be created at `%s`.", symlinkRel)
+		title += fmt.Sprintf(" and symlink from `%s`", symlinkRel)
 	}
 
-	ok, err := console.Confirm(cmd, "", "Proceed?", "", true)
+	ok, err := console.Confirm(cmd, "", title, "Do you want to install?", true)
 	if err != nil {
 		return err
 	}
