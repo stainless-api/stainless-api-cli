@@ -188,18 +188,18 @@ func (bt *BuildTarget) StepInfo(step string) (status, url, conclusion string) {
 	if u, ok := stepUnion.(stainless.BuildTargetCommitUnion); ok {
 		status = u.Status
 		if u.Status == "completed" {
-			conclusion = u.Completed.Conclusion
+			conclusion = u.Conclusion
 			// Use merge conflict PR URL if available, otherwise use commit URL
-			if u.Completed.JSON.MergeConflictPr.Valid() {
+			if u.JSON.MergeConflictPr.Valid() {
 				url = fmt.Sprintf("https://github.com/%s/%s/pull/%.0f",
-					u.Completed.MergeConflictPr.Repo.Owner,
-					u.Completed.MergeConflictPr.Repo.Name,
-					u.Completed.MergeConflictPr.Number)
-			} else if u.Completed.JSON.Commit.Valid() {
+					u.MergeConflictPr.Repo.Owner,
+					u.MergeConflictPr.Repo.Name,
+					u.MergeConflictPr.Number)
+			} else if u.JSON.Commit.Valid() {
 				url = fmt.Sprintf("https://github.com/%s/%s/commit/%s",
-					u.Completed.Commit.Repo.Owner,
-					u.Completed.Commit.Repo.Name,
-					u.Completed.Commit.Sha)
+					u.Commit.Repo.Owner,
+					u.Commit.Repo.Name,
+					u.Commit.Sha)
 			}
 		}
 	}

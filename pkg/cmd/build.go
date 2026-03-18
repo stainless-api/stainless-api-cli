@@ -523,7 +523,7 @@ func (c buildCompletionModel) IsCompleted() bool {
 
 		// Check if download is completed (if applicable)
 		downloadIsCompleted := true
-		if buildTarget.IsCommitCompleted() && stainlessutils.IsGoodCommitConclusion(buildTarget.Commit.Completed.Conclusion) {
+		if buildTarget.IsCommitCompleted() && buildTarget.IsGoodCommitConclusion() {
 			if download, ok := c.Build.Downloads[target]; ok {
 				downloadIsCompleted = download.Status == "completed"
 			}
