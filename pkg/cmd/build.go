@@ -158,7 +158,6 @@ var buildsCreate = requestflag.WithInnerFlags(cli.Command{
 		},
 	},
 	Action:          handleBuildsCreate,
-	Before:          before,
 	HideHelpCommand: true,
 }, map[string][]requestflag.HasOuterFlag{
 	"target-commit-messages": {
@@ -229,7 +228,6 @@ var buildsRetrieve = cli.Command{
 		},
 	},
 	Action:          handleBuildsRetrieve,
-	Before:          before,
 	HideHelpCommand: true,
 }
 
@@ -272,7 +270,6 @@ var buildsList = cli.Command{
 		},
 	},
 	Action:          handleBuildsList,
-	Before:          before,
 	HideHelpCommand: true,
 }
 
@@ -305,7 +302,6 @@ var buildsCompare = requestflag.WithInnerFlags(cli.Command{
 		},
 	},
 	Action:          handleBuildsCompare,
-	Before:          before,
 	HideHelpCommand: true,
 }, map[string][]requestflag.HasOuterFlag{
 	"base": {

@@ -51,7 +51,6 @@ var projectsCreate = cli.Command{
 			BodyPath: "targets",
 		},
 	},
-	Before:          before,
 	Action:          handleProjectsCreate,
 	HideHelpCommand: true,
 }
@@ -65,7 +64,6 @@ var projectsRetrieve = cli.Command{
 			Name: "project",
 		},
 	},
-	Before:          before,
 	Action:          handleProjectsRetrieve,
 	HideHelpCommand: true,
 }
@@ -83,7 +81,6 @@ var projectsUpdate = cli.Command{
 			BodyPath: "display_name",
 		},
 	},
-	Before:          before,
 	Action:          handleProjectsUpdate,
 	HideHelpCommand: true,
 }
@@ -114,7 +111,6 @@ var projectsList = cli.Command{
 			Usage: "The maximum number of items to return (use -1 for unlimited).",
 		},
 	},
-	Before:          before,
 	Action:          handleProjectsList,
 	HideHelpCommand: true,
 }

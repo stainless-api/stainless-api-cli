@@ -15,7 +15,6 @@ var mcpCommand = cli.Command{
 	Name:            "mcp",
 	Usage:           "Run Stainless MCP server",
 	Description:     "Wrapper around @stainless-api/mcp@latest with environment variables set",
-	Before:          before,
 	Action:          handleMCP,
 	ArgsUsage:       "[MCP_ARGS...]",
 	HideHelpCommand: true,

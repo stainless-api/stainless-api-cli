@@ -39,7 +39,6 @@ var authLogin = cli.Command{
 			Usage: "Open browser for authentication (use --browser=false to skip)",
 		},
 	},
-	Before:          before,
 	Action:          handleAuthLogin,
 	HideHelpCommand: true,
 }
@@ -47,7 +46,6 @@ var authLogin = cli.Command{
 var authLogout = cli.Command{
 	Name:            "logout",
 	Usage:           "Log out and remove saved credentials",
-	Before:          before,
 	Action:          handleAuthLogout,
 	HideHelpCommand: true,
 }
@@ -55,7 +53,6 @@ var authLogout = cli.Command{
 var authStatus = cli.Command{
 	Name:            "status",
 	Usage:           "Check authentication status",
-	Before:          before,
 	Action:          handleAuthStatus,
 	HideHelpCommand: true,
 }

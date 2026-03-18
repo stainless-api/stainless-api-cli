@@ -64,7 +64,6 @@ var workspaceInit = cli.Command{
 			Value: true,
 		},
 	},
-	Before:          before,
 	Action:          handleInit,
 	HideHelpCommand: true,
 }
@@ -72,7 +71,6 @@ var workspaceInit = cli.Command{
 var workspaceStatus = cli.Command{
 	Name:            "status",
 	Usage:           "Show workspace configuration status",
-	Before:          before,
 	Action:          handleWorkspaceStatus,
 	HideHelpCommand: true,
 }

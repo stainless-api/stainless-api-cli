@@ -240,6 +240,24 @@ stl builds create --branch <branch>`,
 		},
 		HideHelpCommand: true,
 	}
+
+	// Recursively set Before on all subcommands that have an Action.
+	// This ensures workspace config is always loaded without needing to
+	// manually add Before: before to every command definition.
+	// Excludes:
+	//   - "init": the workspace Before would cause stale config values to be treated as user-supplied flags.
+	//   - "__complete": workspace warnings on stderr become bogus completion
+	//     candidates in shells that merge stderr into stdout (e.g. PowerShell).
+	var setBefore func(cmd *cli.Command)
+	setBefore = func(cmd *cli.Command) {
+		for _, sub := range cmd.Commands {
+			if sub.Action != nil && sub.Before == nil && sub.Name != "init" && sub.Name != "__complete" {
+				sub.Before = before
+			}
+			setBefore(sub)
+		}
+	}
+	setBefore(Command)
 }
 
 func before(ctx context.Context, cmd *cli.Command) (context.Context, error) {

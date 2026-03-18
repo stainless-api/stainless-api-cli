@@ -42,7 +42,6 @@ var projectsBranchesCreate = cli.Command{
 			BodyPath: "force",
 		},
 	},
-	Before:          before,
 	Action:          handleProjectsBranchesCreate,
 	HideHelpCommand: true,
 }
@@ -60,7 +59,6 @@ var projectsBranchesRetrieve = cli.Command{
 			Required: true,
 		},
 	},
-	Before:          before,
 	Action:          handleProjectsBranchesRetrieve,
 	HideHelpCommand: true,
 }
@@ -90,7 +88,6 @@ var projectsBranchesList = cli.Command{
 			Usage: "The maximum number of items to return (use -1 for unlimited).",
 		},
 	},
-	Before:          before,
 	Action:          handleProjectsBranchesList,
 	HideHelpCommand: true,
 }
@@ -108,7 +105,6 @@ var projectsBranchesDelete = cli.Command{
 			Required: true,
 		},
 	},
-	Before:          before,
 	Action:          handleProjectsBranchesDelete,
 	HideHelpCommand: true,
 }
@@ -133,7 +129,6 @@ var projectsBranchesRebase = cli.Command{
 			QueryPath:   "base",
 		},
 	},
-	Before:          before,
 	Action:          handleProjectsBranchesRebase,
 	HideHelpCommand: true,
 }
@@ -156,7 +151,6 @@ var projectsBranchesReset = cli.Command{
 			QueryPath: "target_config_sha",
 		},
 	},
-	Before:          before,
 	Action:          handleProjectsBranchesReset,
 	HideHelpCommand: true,
 }
