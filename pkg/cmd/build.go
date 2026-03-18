@@ -270,7 +270,6 @@ var buildsList = cli.Command{
 		},
 	},
 	Action:          handleBuildsList,
-	Before:          before,
 	HideHelpCommand: true,
 }
 
