@@ -157,7 +157,12 @@ func (m Model) downloadTarget(target stainless.Target) tea.Cmd {
 			params,
 		)
 		if err != nil {
-			return ErrorMsg(err)
+			return DownloadMsg{
+				Target:     target,
+				Status:     "completed",
+				Conclusion: "failure",
+				Error:      err.Error(),
+			}
 		}
 		err = PullOutputWithRetry(outputRes.Output, outputRes.URL, outputRes.Ref, m.Branch, m.Downloads[target].Path, console.NewGroup(true), 3)
 		if err != nil {
