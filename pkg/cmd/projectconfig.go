@@ -36,7 +36,6 @@ var projectsConfigsRetrieve = cli.Command{
 			QueryPath: "include",
 		},
 	},
-	Before:          before,
 	Action:          handleProjectsConfigsRetrieve,
 	HideHelpCommand: true,
 }
@@ -64,7 +63,6 @@ var projectsConfigsGuess = cli.Command{
 			BodyPath:    "branch",
 		},
 	},
-	Before:          before,
 	Action:          handleProjectsConfigsGuess,
 	HideHelpCommand: true,
 }

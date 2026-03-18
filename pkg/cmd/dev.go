@@ -62,7 +62,6 @@ var devCommand = cli.Command{
 			Usage:   "Run in 'watch' mode to loop and rebuild when files change.",
 		},
 	},
-	Before: before,
 	Action: runPreview,
 }
 

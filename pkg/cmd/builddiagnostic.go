@@ -52,7 +52,6 @@ var buildsDiagnosticsList = cli.Command{
 			Usage: "The maximum number of items to return (use -1 for unlimited).",
 		},
 	},
-	Before:          before,
 	Action:          handleBuildsDiagnosticsList,
 	HideHelpCommand: true,
 }

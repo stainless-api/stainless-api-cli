@@ -62,7 +62,6 @@ var buildsTargetOutputsRetrieve = cli.Command{
 			QueryPath: "path",
 		},
 	},
-	Before: before,
 	Action: handleBuildsTargetOutputsRetrieve,
 }
 

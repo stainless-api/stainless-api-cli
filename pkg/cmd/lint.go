@@ -45,7 +45,6 @@ var lintCommand = cli.Command{
 			Usage:   "Watch for files to change and re-run linting",
 		},
 	},
-	Before: before,
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		if cmd.Bool("watch") {
 			// Clear the screen and move the cursor to the top
