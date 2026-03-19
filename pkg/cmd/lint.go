@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -17,6 +18,8 @@ import (
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
 	"github.com/stainless-api/stainless-api-go"
+	"github.com/stainless-api/stainless-api-go/option"
+	"github.com/tidwall/gjson"
 	"github.com/urfave/cli/v3"
 )
 
@@ -168,6 +171,73 @@ func getDiagnosticsCmd(ctx context.Context, cmd *cli.Command, client stainless.C
 			client:      client,
 		}
 	}
+}
+
+type GenerateSpecParams struct {
+	Project string `json:"project"`
+	Source  struct {
+		Type            string `json:"type"`
+		OpenAPISpec     string `json:"openapi_spec"`
+		StainlessConfig string `json:"stainless_config"`
+	} `json:"source"`
+}
+
+func getDiagnostics(ctx context.Context, cmd *cli.Command, client stainless.Client, wc workspace.Config) ([]stainless.BuildDiagnostic, error) {
+	var specParams GenerateSpecParams
+	if cmd.IsSet("project") {
+		specParams.Project = cmd.String("project")
+	} else {
+		specParams.Project = wc.Project
+	}
+	specParams.Source.Type = "upload"
+
+	configPath := wc.StainlessConfig
+	if cmd.IsSet("stainless-config") {
+		configPath = cmd.String("stainless-config")
+	} else if configPath == "" {
+		return nil, fmt.Errorf("You must provide a stainless configuration file with `--config /path/to/stainless.yml` or run this command from an initialized workspace.")
+	}
+
+	stainlessConfig, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("Could not read your stainless configuration file:\n%w", err)
+	}
+	specParams.Source.StainlessConfig = string(stainlessConfig)
+
+	oasPath := wc.OpenAPISpec
+	if cmd.IsSet("openapi-spec") {
+		oasPath = cmd.String("openapi-spec")
+	} else if oasPath == "" {
+		return nil, fmt.Errorf("You must provide an OpenAPI specification with `--oas /path/to/openapi.json` or run this command from an initialized workspace.")
+	}
+
+	openAPISpec, err := os.ReadFile(oasPath)
+	if err != nil {
+		return nil, fmt.Errorf("Could not read your stainless configuration file:\n%w", err)
+	}
+	specParams.Source.OpenAPISpec = string(openAPISpec)
+
+	options := []option.RequestOption{}
+	if cmd.Bool("debug") {
+		options = append(options, debugMiddlewareOption)
+	}
+	var result []byte
+	err = client.Post(
+		ctx,
+		"api/generate/spec",
+		specParams,
+		&result,
+		options...,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	transform := "spec.diagnostics.@values.@flatten.#(ignored==false)#"
+	jsonObj := gjson.Parse(string(result)).Get(transform)
+	var diagnostics []stainless.BuildDiagnostic
+	json.Unmarshal([]byte(jsonObj.Raw), &diagnostics)
+	return diagnostics, nil
 }
 
 func (m lintModel) ShortHelp() []key.Binding {
