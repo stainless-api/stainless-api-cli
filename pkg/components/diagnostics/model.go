@@ -60,7 +60,10 @@ func (m Model) View() string {
 	if m.Diagnostics == nil {
 		return ""
 	}
-	return ViewDiagnostics(m.Diagnostics, 10, workspace.Relative(m.WorkspaceConfig.OpenAPISpec), workspace.Relative(m.WorkspaceConfig.StainlessConfig))
+	return ViewDiagnostics(m.Diagnostics, 10,
+		workspace.Relative(m.WorkspaceConfig.OpenAPISpec),
+		workspace.Relative(m.WorkspaceConfig.StainlessConfig),
+	)
 }
 
 func (m Model) FetchDiagnostics(buildID string) tea.Cmd {

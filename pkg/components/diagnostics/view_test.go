@@ -15,9 +15,15 @@ import (
 )
 
 var update = flag.Bool("update", false, "update snapshot files")
+var packageDir string
 
 func TestMain(m *testing.M) {
 	lipgloss.SetColorProfile(termenv.ANSI)
+	var err error
+	packageDir, err = os.Getwd()
+	if err != nil {
+		panic(err)
+	}
 	os.Exit(m.Run())
 }
 
@@ -32,9 +38,9 @@ func mustDiags(t *testing.T, jsonStr string) []stainless.BuildDiagnostic {
 
 func snapshot(t *testing.T, name string, got string) {
 	t.Helper()
-	path := filepath.Join("testdata", name+".snapshot")
+	path := filepath.Join(packageDir, "testdata", name+".snapshot")
 	if *update {
-		if err := os.MkdirAll("testdata", 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			t.Fatal(err)
 		}
 		if err := os.WriteFile(path, []byte(got), 0o644); err != nil {
@@ -53,6 +59,109 @@ func snapshot(t *testing.T, name string, got string) {
 
 func TestViewDiagnostics(t *testing.T) {
 	var out strings.Builder
+	dir := t.TempDir()
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(cwd)
+	})
+
+	oasPath := "openapi.yml"
+	if err := os.WriteFile(oasPath, []byte(strings.TrimSpace(`
+openapi: 3.1.0
+paths:
+  /users:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+  /foo:
+    get:
+      responses:
+        "200":
+          description: ok
+  /pets:
+    get:
+      responses:
+        "200":
+          description: ok
+`)+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	configPath := "stainless.yml"
+	if err := os.WriteFile(configPath, []byte(strings.TrimSpace(`
+targets:
+  typescript:
+    package_name: example
+endpoints:
+  /users:
+    post:
+      settings:
+        name: users-post
+  /pets:
+    get:
+      settings:
+        name: pets-get
+`)+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.MkdirAll("specs", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(".stainless", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join("specs", "openapi.json"), []byte(strings.TrimSpace(`
+openapi: 3.1.0
+paths:
+  /pets:
+    get:
+      responses:
+        "200":
+          description: ok
+`)+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(".stainless", "stainless.yaml"), []byte(strings.TrimSpace(`
+endpoints:
+  /pets:
+    get:
+      settings:
+        name: pets-get
+`)+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile("openapi.json", []byte(strings.TrimSpace(`
+openapi: 3.1.0
+paths:
+  /users:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+`)+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile("openapi.stainless.yml", []byte(strings.TrimSpace(`
+endpoints:
+  /users:
+    post:
+      settings:
+        name: users-post
+`)+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	// no diagnostics
 	out.WriteString(ViewDiagnostics(nil, 10, "", ""))
@@ -109,7 +218,7 @@ func TestViewDiagnostics(t *testing.T) {
 			"ignored": false,
 			"more": null
 		}
-	]`), 3, "", ""))
+	]`), 3, oasPath, configPath))
 	out.WriteString("\n")
 
 	// custom labels (e.g. relative paths from workspace config)
@@ -124,6 +233,20 @@ func TestViewDiagnostics(t *testing.T) {
 			"config_ref": "/endpoints/~1pets/get"
 		}
 	]`), 10, "specs/openapi.json", ".stainless/stainless.yaml"))
+	out.WriteString("\n")
+
+	// fragment-style refs with percent-encoded path keys
+	out.WriteString(ViewDiagnostics(mustDiags(t, `[
+		{
+			"code": "BothSpecifiedAndUnspecified",
+			"level": "error",
+			"message": "Endpoint is in both places",
+			"ignored": false,
+			"more": null,
+			"oas_ref": "#/paths/%2Fusers/post/requestBody",
+			"config_ref": "#/endpoints/%2Fusers/post"
+		}
+	]`), 10, "openapi.json", "openapi.stainless.yml"))
 
 	snapshot(t, "view_diagnostics", out.String())
 }

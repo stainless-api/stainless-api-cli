@@ -122,7 +122,10 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 			if err := iter.Err(); err != nil {
 				return err
 			}
-			fmt.Print(diagnostics.ViewDiagnostics(diags, int(maxItems), workspace.Relative(wc.OpenAPISpec), workspace.Relative(wc.StainlessConfig)))
+			fmt.Print(diagnostics.ViewDiagnostics(diags, int(maxItems),
+				workspace.Relative(wc.OpenAPISpec),
+				workspace.Relative(wc.StainlessConfig),
+			))
 			return nil
 		}
 
