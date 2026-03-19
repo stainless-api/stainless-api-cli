@@ -64,7 +64,6 @@ type lintModel struct {
 	error       error
 	watching    bool
 	skipped     bool
-	canSkip     bool
 	ctx         context.Context
 	cmd         *cli.Command
 	client      stainless.Client
@@ -96,11 +95,6 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.ctx = msg.ctx
 		m.cmd = msg.cmd
 		m.client = msg.client
-
-		if m.canSkip && !hasBlockingDiagnostic(m.diagnostics) {
-			m.watching = false
-			return m, tea.Quit
-		}
 
 		if m.watching {
 			return m, func() tea.Msg {
@@ -240,26 +234,28 @@ func getDiagnostics(ctx context.Context, cmd *cli.Command, client stainless.Clie
 	return diagnostics, nil
 }
 
-func (m lintModel) ShortHelp() []key.Binding {
-	if m.canSkip {
-		return []key.Binding{
-			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit")),
-			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "skip diagnostics")),
+func hasBlockingDiagnostic(diagnostics []stainless.BuildDiagnostic) bool {
+	for _, d := range diagnostics {
+		if !d.Ignored {
+			switch d.Level {
+			case stainless.BuildDiagnosticLevelFatal:
+			case stainless.BuildDiagnosticLevelError:
+			case stainless.BuildDiagnosticLevelWarning:
+				return true
+			case stainless.BuildDiagnosticLevelNote:
+				continue
+			}
 		}
-	} else {
-		return []key.Binding{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}
 	}
+	return false
+}
+
+func (m lintModel) ShortHelp() []key.Binding {
+	return []key.Binding{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}
 }
 
 func (m lintModel) FullHelp() [][]key.Binding {
-	if m.canSkip {
-		return [][]key.Binding{{
-			key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit")),
-			key.NewBinding(key.WithKeys("enter"), key.WithHelp("enter", "skip diagnostics")),
-		}}
-	} else {
-		return [][]key.Binding{{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}}
-	}
+	return [][]key.Binding{{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}}
 }
 
 func runLinter(ctx context.Context, cmd *cli.Command, canSkip bool) error {
@@ -274,7 +270,6 @@ func runLinter(ctx context.Context, cmd *cli.Command, canSkip bool) error {
 	m := lintModel{
 		spinner:     s,
 		watching:    cmd.Bool("watch"),
-		canSkip:     canSkip,
 		ctx:         ctx,
 		cmd:         cmd,
 		client:      client,
@@ -306,7 +301,7 @@ func runLinter(ctx context.Context, cmd *cli.Command, canSkip bool) error {
 	}
 
 	// If not in watch mode and we have blocking diagnostics, exit with error code
-	if !cmd.Bool("watch") && hasBlockingDiagnostic(finalModel.diagnostics) {
+	if !cmd.Bool("watch") {
 		os.Exit(1)
 	}
 
