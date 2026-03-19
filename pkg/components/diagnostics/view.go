@@ -2,9 +2,15 @@ package diagnostics
 
 import (
 	"fmt"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/goccy/go-yaml/ast"
+	"github.com/goccy/go-yaml/parser"
 	"github.com/stainless-api/stainless-api-go"
 )
 
@@ -15,6 +21,15 @@ var (
 	codeStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 	refStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 )
+
+type sourceResolver struct {
+	parsed map[string]parsedSource
+}
+
+type parsedSource struct {
+	file *ast.File
+	err  error
+}
 
 // levelLabel returns the colored level prefix and bracket-wrapped code for a diagnostic.
 func levelLabel(level stainless.BuildDiagnosticLevel, code string) string {
@@ -48,15 +63,9 @@ func ViewDiagnosticsError(err error) string {
 }
 
 // ViewDiagnostics renders build diagnostics in Rust-style formatting.
-// Notes are hidden by default. oasLabel and configLabel are the filenames
-// shown in source references (e.g. "openapi.json", "stainless.yaml").
-func ViewDiagnostics(diagnostics []stainless.BuildDiagnostic, maxDiagnostics int, oasLabel, configLabel string) string {
-	if oasLabel == "" {
-		oasLabel = "openapi.yml"
-	}
-	if configLabel == "" {
-		configLabel = "stainless.yml"
-	}
+// Notes are hidden by default. oasPath and configPath should be display paths,
+// typically relative to the current working directory.
+func ViewDiagnostics(diagnostics []stainless.BuildDiagnostic, maxDiagnostics int, oasPath, configPath string) string {
 	// Filter out notes
 	var visible []stainless.BuildDiagnostic
 	for _, d := range diagnostics {
@@ -71,6 +80,7 @@ func ViewDiagnostics(diagnostics []stainless.BuildDiagnostic, maxDiagnostics int
 	}
 
 	var s strings.Builder
+	resolver := sourceResolver{parsed: map[string]parsedSource{}}
 
 	truncated := false
 	shown := len(visible)
@@ -98,11 +108,11 @@ func ViewDiagnostics(diagnostics []stainless.BuildDiagnostic, maxDiagnostics int
 
 		// Source references
 		if diag.OasRef != "" {
-			s.WriteString(refStyle.Render("  --> " + oasLabel + ": " + diag.OasRef))
+			s.WriteString(refStyle.Render("  --> " + resolver.resolveRef(oasPath, "openapi.yml", diag.OasRef)))
 			s.WriteString("\n")
 		}
 		if diag.ConfigRef != "" {
-			s.WriteString(refStyle.Render("  --> " + configLabel + ": " + diag.ConfigRef))
+			s.WriteString(refStyle.Render("  --> " + resolver.resolveRef(configPath, "stainless.yml", diag.ConfigRef)))
 			s.WriteString("\n")
 		}
 
@@ -136,4 +146,166 @@ func ViewDiagnostics(diagnostics []stainless.BuildDiagnostic, maxDiagnostics int
 	}
 
 	return s.String()
+}
+
+func (r *sourceResolver) resolveRef(path, fallbackLabel, pointer string) string {
+	label := sourceLabel(path, fallbackLabel)
+	if line, column, ok := r.resolvePointer(path, pointer); ok {
+		return fmt.Sprintf("%s:%d:%d: %s", label, line, column, pointer)
+	}
+	return label + ": " + pointer
+}
+
+func sourceLabel(path, fallbackLabel string) string {
+	if path == "" {
+		return fallbackLabel
+	}
+	return path
+}
+
+func (r *sourceResolver) resolvePointer(displayPath, pointer string) (int, int, bool) {
+	path, ok := resolveSourcePath(displayPath)
+	if !ok {
+		return 0, 0, false
+	}
+
+	parsed, ok := r.parsed[path]
+	if !ok {
+		content, err := os.ReadFile(path)
+		if err != nil {
+			parsed = parsedSource{err: err}
+		} else {
+			file, err := parser.ParseBytes(content, 0)
+			parsed = parsedSource{file: file, err: err}
+		}
+		r.parsed[path] = parsed
+	}
+	if parsed.err != nil || parsed.file == nil {
+		return 0, 0, false
+	}
+
+	node, ok := resolveJSONPointer(parsed.file, pointer)
+	if !ok {
+		return 0, 0, false
+	}
+
+	token := node.GetToken()
+	if token == nil || token.Position == nil {
+		return 0, 0, false
+	}
+	return token.Position.Line, token.Position.Column, true
+}
+
+func resolveSourcePath(displayPath string) (string, bool) {
+	if displayPath == "" {
+		return "", false
+	}
+
+	path, err := filepath.Abs(displayPath)
+	if err != nil {
+		return "", false
+	}
+	return path, true
+}
+
+func resolveJSONPointer(file *ast.File, pointer string) (ast.Node, bool) {
+	node := firstDocumentNode(file)
+	if node == nil {
+		return nil, false
+	}
+
+	segments, ok := parseJSONPointer(pointer)
+	if !ok {
+		return nil, false
+	}
+
+	for _, segment := range segments {
+		var found bool
+		node, found = descendNode(node, segment)
+		if !found {
+			return nil, false
+		}
+	}
+
+	return node, true
+}
+
+func firstDocumentNode(file *ast.File) ast.Node {
+	for _, doc := range file.Docs {
+		if doc.Body == nil || doc.Body.Type() == ast.DirectiveType {
+			continue
+		}
+		return doc.Body
+	}
+	return nil
+}
+
+func parseJSONPointer(pointer string) ([]string, bool) {
+	if pointer == "" || pointer == "#" {
+		return nil, true
+	}
+
+	switch {
+	case strings.HasPrefix(pointer, "#/"):
+		pointer = pointer[1:]
+	case !strings.HasPrefix(pointer, "/"):
+		return nil, false
+	}
+
+	parts := strings.Split(pointer[1:], "/")
+	segments := make([]string, 0, len(parts))
+	for _, part := range parts {
+		unescaped, err := url.PathUnescape(part)
+		if err != nil {
+			return nil, false
+		}
+		part = unescaped
+		part = strings.ReplaceAll(part, "~1", "/")
+		part = strings.ReplaceAll(part, "~0", "~")
+		segments = append(segments, part)
+	}
+	return segments, true
+}
+
+func descendNode(node ast.Node, segment string) (ast.Node, bool) {
+	switch node := node.(type) {
+	case *ast.MappingNode:
+		for _, value := range node.Values {
+			if mapKeyString(value.Key) == segment {
+				return value.Value, true
+			}
+		}
+	case *ast.SequenceNode:
+		idx, err := strconv.Atoi(segment)
+		if err != nil || idx < 0 || idx >= len(node.Values) {
+			return nil, false
+		}
+		return node.Values[idx], true
+	}
+	return nil, false
+}
+
+func mapKeyString(key ast.MapKeyNode) string {
+	if key == nil || key.GetToken() == nil {
+		return ""
+	}
+
+	value := key.GetToken().Value
+	if len(value) == 0 {
+		return value
+	}
+
+	switch value[0] {
+	case '"':
+		unquoted, err := strconv.Unquote(value)
+		if err == nil {
+			return unquoted
+		}
+	case '\'':
+		if len(value) > 1 && value[len(value)-1] == '\'' {
+			return value[1 : len(value)-1]
+		}
+	}
+
+	return value
 }

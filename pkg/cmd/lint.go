@@ -134,7 +134,10 @@ func (m lintModel) View() string {
 			content = m.spinner.View() + " Linting"
 		}
 	} else {
-		content = diagnostics.ViewDiagnostics(m.diagnostics, -1, workspace.Relative(m.wc.OpenAPISpec), workspace.Relative(m.wc.StainlessConfig))
+		content = diagnostics.ViewDiagnostics(m.diagnostics, -1,
+			workspace.Relative(m.wc.OpenAPISpec),
+			workspace.Relative(m.wc.StainlessConfig),
+		)
 		if m.skipped {
 			content += "\nContinuing..."
 		} else if m.watching {
