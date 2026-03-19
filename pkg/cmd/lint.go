@@ -54,7 +54,7 @@ var lintCommand = cli.Command{
 			fmt.Print("\033[2J\033[H")
 			os.Stdout.Sync()
 		}
-		return runLinter(ctx, cmd, false)
+		return runLinter(ctx, cmd)
 	},
 }
 
@@ -108,7 +108,7 @@ func (m lintModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case configChangedEvent:
 		m.diagnostics = nil // Clear diagnostics while linting
-		return m, getDiagnosticsCmd(m.ctx, m.cmd, m.client, m.wc)
+		return m, getDiagnosticsCmd(m.ctx, m.cmd, m.client)
 
 	case spinner.TickMsg:
 		var cmd tea.Cmd
@@ -154,9 +154,9 @@ type diagnosticsMsg struct {
 	client      stainless.Client
 }
 
-func getDiagnosticsCmd(ctx context.Context, cmd *cli.Command, client stainless.Client, wc workspace.Config) tea.Cmd {
+func getDiagnosticsCmd(ctx context.Context, cmd *cli.Command, client stainless.Client) tea.Cmd {
 	return func() tea.Msg {
-		diagnostics, err := getDiagnostics(ctx, cmd, client, wc)
+		diagnostics, err := getDiagnostics(ctx, cmd, client)
 		return diagnosticsMsg{
 			diagnostics: diagnostics,
 			err:         err,
@@ -176,40 +176,34 @@ type GenerateSpecParams struct {
 	} `json:"source"`
 }
 
-func getDiagnostics(ctx context.Context, cmd *cli.Command, client stainless.Client, wc workspace.Config) ([]stainless.BuildDiagnostic, error) {
+func getDiagnostics(ctx context.Context, cmd *cli.Command, client stainless.Client) ([]stainless.BuildDiagnostic, error) {
 	var specParams GenerateSpecParams
-	if cmd.IsSet("project") {
-		specParams.Project = cmd.String("project")
-	} else {
-		specParams.Project = wc.Project
-	}
+	specParams.Project = cmd.String("project")
+
 	specParams.Source.Type = "upload"
 
-	configPath := wc.StainlessConfig
-	if cmd.IsSet("stainless-config") {
-		configPath = cmd.String("stainless-config")
-	} else if configPath == "" {
+	var (
+		oas    []byte
+		config []byte
+		err    error
+	)
+
+	if _, config, err = convertFileFlag(cmd, "stainless-config"); err != nil {
+		return nil, err
+	}
+	if _, oas, err = convertFileFlag(cmd, "openapi-spec"); err != nil {
+		return nil, err
+	}
+
+	if config == nil {
 		return nil, fmt.Errorf("You must provide a stainless configuration file with `--config /path/to/stainless.yml` or run this command from an initialized workspace.")
 	}
-
-	stainlessConfig, err := os.ReadFile(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("Could not read your stainless configuration file:\n%w", err)
-	}
-	specParams.Source.StainlessConfig = string(stainlessConfig)
-
-	oasPath := wc.OpenAPISpec
-	if cmd.IsSet("openapi-spec") {
-		oasPath = cmd.String("openapi-spec")
-	} else if oasPath == "" {
+	if oas == nil {
 		return nil, fmt.Errorf("You must provide an OpenAPI specification with `--oas /path/to/openapi.json` or run this command from an initialized workspace.")
 	}
 
-	openAPISpec, err := os.ReadFile(oasPath)
-	if err != nil {
-		return nil, fmt.Errorf("Could not read your stainless configuration file:\n%w", err)
-	}
-	specParams.Source.OpenAPISpec = string(openAPISpec)
+	specParams.Source.StainlessConfig = string(config)
+	specParams.Source.OpenAPISpec = string(oas)
 
 	options := []option.RequestOption{}
 	if cmd.Bool("debug") {
@@ -234,22 +228,6 @@ func getDiagnostics(ctx context.Context, cmd *cli.Command, client stainless.Clie
 	return diagnostics, nil
 }
 
-func hasBlockingDiagnostic(diagnostics []stainless.BuildDiagnostic) bool {
-	for _, d := range diagnostics {
-		if !d.Ignored {
-			switch d.Level {
-			case stainless.BuildDiagnosticLevelFatal:
-			case stainless.BuildDiagnosticLevelError:
-			case stainless.BuildDiagnosticLevelWarning:
-				return true
-			case stainless.BuildDiagnosticLevelNote:
-				continue
-			}
-		}
-	}
-	return false
-}
-
 func (m lintModel) ShortHelp() []key.Binding {
 	return []key.Binding{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}
 }
@@ -258,7 +236,7 @@ func (m lintModel) FullHelp() [][]key.Binding {
 	return [][]key.Binding{{key.NewBinding(key.WithKeys("ctrl+c"), key.WithHelp("ctrl-c", "quit"))}}
 }
 
-func runLinter(ctx context.Context, cmd *cli.Command, canSkip bool) error {
+func runLinter(ctx context.Context, cmd *cli.Command) error {
 	client := stainless.NewClient(getDefaultRequestOptions(cmd)...)
 
 	wc := getWorkspace(ctx)
@@ -283,7 +261,7 @@ func runLinter(ctx context.Context, cmd *cli.Command, canSkip bool) error {
 	// Start the diagnostics process
 	go func() {
 		time.Sleep(100 * time.Millisecond) // Small delay to let the UI initialize
-		p.Send(getDiagnosticsCmd(ctx, cmd, client, wc)())
+		p.Send(getDiagnosticsCmd(ctx, cmd, client)())
 	}()
 
 	model, err := p.Run()
@@ -300,9 +278,16 @@ func runLinter(ctx context.Context, cmd *cli.Command, canSkip bool) error {
 		return finalModel.error
 	}
 
-	// If not in watch mode and we have blocking diagnostics, exit with error code
 	if !cmd.Bool("watch") {
-		os.Exit(1)
+		for _, d := range finalModel.diagnostics {
+			if d.Ignored {
+				continue
+			}
+			switch d.Level {
+			case stainless.BuildDiagnosticLevelFatal, stainless.BuildDiagnosticLevelError, stainless.BuildDiagnosticLevelWarning:
+				return cli.Exit("", 1)
+			}
+		}
 	}
 
 	return nil
