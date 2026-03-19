@@ -1,10 +1,14 @@
 package mockstainless
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
+
+	"github.com/tidwall/gjson"
 )
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -39,8 +43,8 @@ func newServeMux(m *Mock) http.Handler {
 			"user_code":                 "DEMO-CODE",
 			"verification_uri":          "https://app.stainless.com/activate",
 			"verification_uri_complete": "https://app.stainless.com/activate?code=DEMO-CODE",
-			"expires_in":               300,
-			"interval":                 1,
+			"expires_in":                300,
+			"interval":                  1,
 		})
 	})
 
@@ -85,11 +89,132 @@ func newServeMux(m *Mock) http.Handler {
 		}
 	})
 
+	mux.HandleFunc("PATCH /v0/projects/{project}", func(w http.ResponseWriter, r *http.Request) {
+		project := r.PathValue("project")
+		if project == "" {
+			writeJSON(w, http.StatusBadRequest, M{"error": "project is required"})
+			return
+		}
+		body := mustReadBody(r)
+		writeJSON(w, http.StatusOK, M{
+			"slug":         project,
+			"display_name": gjson.GetBytes(body, "display_name").String(),
+			"object":       "project",
+		})
+	})
+
+	mux.HandleFunc("POST /v0/projects/{project}/generate_commit_message", func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("project") == "" {
+			writeJSON(w, http.StatusBadRequest, M{"error": "project is required"})
+			return
+		}
+		writeJSON(w, http.StatusOK, M{
+			"message": "mock commit message",
+		})
+	})
+
 	mux.HandleFunc("GET /v0/projects/{project}/configs", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, m.ProjectConfigs)
 	})
 
+	mux.HandleFunc("POST /v0/projects/{project}/configs/guess", func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("project") == "" {
+			writeJSON(w, http.StatusBadRequest, M{"error": "project is required"})
+			return
+		}
+		writeJSON(w, http.StatusOK, M{
+			"stainless.yml": M{
+				"content": "# guessed",
+			},
+		})
+	})
+
+	mux.HandleFunc("POST /v0/projects/{project}/branches", func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("project") == "" {
+			writeJSON(w, http.StatusBadRequest, M{"error": "project is required"})
+			return
+		}
+		body := mustReadBody(r)
+		writeJSON(w, http.StatusOK, M{
+			"branch": gjson.GetBytes(body, "branch").String(),
+			"object": "project_branch",
+		})
+	})
+
+	mux.HandleFunc("GET /v0/projects/{project}/branches", func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("project") == "" {
+			writeJSON(w, http.StatusBadRequest, M{"error": "project is required"})
+			return
+		}
+		writeJSON(w, http.StatusOK, Page([]M{
+			{"branch": "main", "object": "project_branch"},
+		}))
+	})
+
+	mux.HandleFunc("GET /v0/projects/{project}/branches/{branch}", func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("project") == "" {
+			writeJSON(w, http.StatusBadRequest, M{"error": "project is required"})
+			return
+		}
+		writeJSON(w, http.StatusOK, M{
+			"branch": r.PathValue("branch"),
+			"object": "project_branch",
+		})
+	})
+
+	mux.HandleFunc("DELETE /v0/projects/{project}/branches/{branch}", func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("project") == "" {
+			writeJSON(w, http.StatusBadRequest, M{"error": "project is required"})
+			return
+		}
+		writeJSON(w, http.StatusOK, M{"deleted": true})
+	})
+
+	mux.HandleFunc("PUT /v0/projects/{project}/branches/{branch}/rebase", func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("project") == "" {
+			writeJSON(w, http.StatusBadRequest, M{"error": "project is required"})
+			return
+		}
+		writeJSON(w, http.StatusOK, M{
+			"branch": r.PathValue("branch"),
+			"object": "project_branch",
+		})
+	})
+
+	mux.HandleFunc("PUT /v0/projects/{project}/branches/{branch}/reset", func(w http.ResponseWriter, r *http.Request) {
+		if r.PathValue("project") == "" {
+			writeJSON(w, http.StatusBadRequest, M{"error": "project is required"})
+			return
+		}
+		writeJSON(w, http.StatusOK, M{
+			"branch": r.PathValue("branch"),
+			"object": "project_branch",
+		})
+	})
+
+	mux.HandleFunc("POST /v0/builds", func(w http.ResponseWriter, r *http.Request) {
+		body := mustReadBody(r)
+		if gjson.GetBytes(body, "project").String() == "" {
+			writeJSON(w, http.StatusBadRequest, M{"error": "project is required"})
+			return
+		}
+		if len(m.Builds) == 0 {
+			writeJSON(w, http.StatusNotFound, M{"error": "missing build"})
+			return
+		}
+		build := m.CreateBuildFromTemplate(m.Builds[0])
+		if build == nil {
+			writeJSON(w, http.StatusNotFound, M{"error": "missing build"})
+			return
+		}
+		writeJSON(w, http.StatusOK, build.Snapshot())
+	})
+
 	mux.HandleFunc("GET /v0/builds", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("project") == "" {
+			writeJSON(w, http.StatusBadRequest, M{"error": "project is required"})
+			return
+		}
 		builds := make([]M, len(m.Builds))
 		for i, b := range m.Builds {
 			builds[i] = b.Snapshot()
@@ -171,21 +296,61 @@ func newServeMux(m *Mock) http.Handler {
 
 	if m.CompareBuild != nil {
 		mux.HandleFunc("POST /v0/builds/compare", func(w http.ResponseWriter, r *http.Request) {
-			if m.CompareBuild.PreviewBuild != nil {
-				m.CompareBuild.PreviewBuild.Reset()
+			body := mustReadBody(r)
+			if gjson.GetBytes(body, "project").String() == "" {
+				writeJSON(w, http.StatusBadRequest, M{"error": "project is required"})
+				return
 			}
+			headBuild := m.CreateBuildFromTemplate(m.CompareBuild.PreviewBuild)
+			if headBuild == nil {
+				writeJSON(w, http.StatusNotFound, M{"error": "missing preview build"})
+				return
+			}
+			head := cloneMap(m.CompareBuild.Head)
+			head["id"] = headBuild.ID
+			head["created_at"] = time.Now().Format(time.RFC3339)
 			writeJSON(w, http.StatusOK, M{
 				"base": m.CompareBuild.Base,
-				"head": m.CompareBuild.Head,
+				"head": head,
 			})
 		})
 	}
 
+	mux.HandleFunc("POST /api/generate/spec", func(w http.ResponseWriter, r *http.Request) {
+		body := mustReadBody(r)
+		if gjson.GetBytes(body, "project").String() == "" ||
+			gjson.GetBytes(body, "source.openapi_spec").String() == "" ||
+			gjson.GetBytes(body, "source.stainless_config").String() == "" {
+			writeJSON(w, http.StatusBadRequest, M{"error": "project, openapi_spec, and stainless_config are required"})
+			return
+		}
+		writeJSON(w, http.StatusOK, M{
+			"spec": M{
+				"diagnostics": M{},
+			},
+		})
+	})
+
 	// Add simulated latency to all requests (except health checks).
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := mustReadBody(r)
+		m.RecordRequest(RecordedRequest{
+			Method:   r.Method,
+			Path:     r.URL.Path,
+			RawQuery: r.URL.RawQuery,
+			Body:     string(body),
+		})
+		r.Body = io.NopCloser(bytes.NewReader(body))
+
 		if r.URL.Path != "/health" {
 			time.Sleep(150 * time.Millisecond)
 		}
 		mux.ServeHTTP(w, r)
 	})
+}
+
+func mustReadBody(r *http.Request) []byte {
+	body, _ := io.ReadAll(r.Body)
+	r.Body = io.NopCloser(bytes.NewReader(body))
+	return body
 }
