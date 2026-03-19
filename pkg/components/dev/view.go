@@ -7,14 +7,15 @@ import (
 
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 )
 
-func (m Model) View() string {
-	if m.Err != nil {
-		return m.Err.Error()
-	}
+var (
+	grayStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+)
 
+func (m Model) View() string {
 	s := strings.Builder{}
 
 	idx := slices.IndexFunc(parts, func(part ViewPart) bool {
@@ -23,6 +24,10 @@ func (m Model) View() string {
 
 	for i := idx; i < len(parts); i++ {
 		parts[i].View(&m, &s)
+	}
+
+	if m.Err != nil && m.Err != ErrUserCancelled {
+		s.WriteString("\n" + m.Err.Error() + "\n")
 	}
 
 	return s.String()
@@ -38,21 +43,26 @@ var parts = []ViewPart{
 	{
 		Name: "header",
 		View: func(m *Model, s *strings.Builder) {
-			buildIDStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("0")).Background(lipgloss.Color("6")).Bold(true)
-			if m.Build.ID != "" {
-				fmt.Fprintf(s, "\n\n%s %s\n\n", buildIDStyle.Render(" BUILD "), m.Build.ID)
-			} else {
-				fmt.Fprintf(s, "\n\n%s\n\n", buildIDStyle.Render(" BUILD "))
-			}
+			s.WriteString(build.ViewHeader("PREVIEW", m.Build.Build))
 		},
 	},
 	{
 		Name: "build diagnostics",
 		View: func(m *Model, s *strings.Builder) {
-			if m.Diagnostics.Diagnostics == nil {
-				s.WriteString(console.SProperty(0, "build diagnostics", "(waiting for build to finish)"))
-			} else {
+			if m.Diagnostics.Diagnostics != nil {
+				s.WriteString("\n")
 				s.WriteString(m.Diagnostics.View())
+			}
+		},
+	},
+	{
+		Name: "build_status",
+		View: func(m *Model, s *strings.Builder) {
+			s.WriteString("\n")
+			if m.Build.ID == "" {
+				s.WriteString(m.Build.Spinner.View() + " " + grayStyle.Render("Creating build...") + "\n")
+			} else {
+				s.WriteString(m.Build.View())
 			}
 		},
 	},
@@ -61,15 +71,10 @@ var parts = []ViewPart{
 		View: func(m *Model, s *strings.Builder) {
 			if m.Build.ID != "" {
 				url := fmt.Sprintf("https://app.stainless.com/%s/%s/studio?branch=%s", m.Build.Org, m.Build.Project, m.Branch)
-				s.WriteString(console.SProperty(0, "studio", console.Hyperlink(url, url)))
+				s.WriteString("\n")
+				s.WriteString(grayStyle.Render(console.Hyperlink(url, "Open in Studio")))
+				s.WriteString("\n")
 			}
-		},
-	},
-	{
-		Name: "build_status",
-		View: func(m *Model, s *strings.Builder) {
-			s.WriteString("\n")
-			s.WriteString(m.Build.View())
 		},
 	},
 	{

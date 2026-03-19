@@ -13,9 +13,9 @@ import (
 	"strings"
 
 	"github.com/stainless-api/stainless-api-cli/internal/autocomplete"
+	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
-	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	docs "github.com/urfave/cli-docs/v3"
 	"github.com/urfave/cli/v3"
 )
@@ -240,6 +240,24 @@ stl builds create --branch <branch>`,
 		},
 		HideHelpCommand: true,
 	}
+
+	// Recursively set Before on all subcommands that have an Action.
+	// This ensures workspace config is always loaded without needing to
+	// manually add Before: before to every command definition.
+	// Excludes:
+	//   - "init": the workspace Before would cause stale config values to be treated as user-supplied flags.
+	//   - "__complete": workspace warnings on stderr become bogus completion
+	//     candidates in shells that merge stderr into stdout (e.g. PowerShell).
+	var setBefore func(cmd *cli.Command)
+	setBefore = func(cmd *cli.Command) {
+		for _, sub := range cmd.Commands {
+			if sub.Action != nil && sub.Before == nil && sub.Name != "init" && sub.Name != "__complete" {
+				sub.Before = before
+			}
+			setBefore(sub)
+		}
+	}
+	setBefore(Command)
 }
 
 func before(ctx context.Context, cmd *cli.Command) (context.Context, error) {
@@ -247,22 +265,41 @@ func before(ctx context.Context, cmd *cli.Command) (context.Context, error) {
 	if _, err := wc.Find(); err != nil {
 		console.Warn("%s", err)
 	}
-	ctx = context.WithValue(ctx, "workspace_config", wc)
 
 	var names []string
 	for _, flag := range cmd.Flags {
 		names = append(names, flag.Names()...)
 	}
 
+	// Set the in-memory version of the workspace to the values that the flags override
+	if cmd.IsSet("project") {
+		wc.Project = cmd.String("project")
+	}
+	if cmd.IsSet("openapi-spec") {
+		wc.OpenAPISpec = cmd.String("openapi-spec")
+	}
+	if cmd.IsSet("stainless-config") {
+		wc.StainlessConfig = cmd.String("stainless-config")
+	}
+
 	if slices.Contains(names, "project") && wc.Project != "" && !cmd.IsSet("project") {
 		cmd.Set("project", wc.Project)
 	}
-	if slices.Contains(names, "openapi-spec") && wc.OpenAPISpec != "" && !cmd.IsSet("openapi-spec") && !cmd.IsSet("revision") {
+
+	// if any of the revisions are supplied, then it's more confusing to partially fill in data from the
+	// workspace so we just don't.
+	isRevisionSupplied := cmd.IsSet("stainless-config") || cmd.IsSet("openapi-spec") || cmd.IsSet("revision")
+
+	if slices.Contains(names, "openapi-spec") && wc.OpenAPISpec != "" && !isRevisionSupplied {
 		cmd.Set("openapi-spec", wc.OpenAPISpec)
 	}
-	if slices.Contains(names, "stainless-config") && wc.StainlessConfig != "" && !cmd.IsSet("stainless-config") && !cmd.IsSet("revision") {
+	if slices.Contains(names, "stainless-config") && wc.StainlessConfig != "" && !isRevisionSupplied {
 		cmd.Set("stainless-config", wc.StainlessConfig)
 	}
+
+	// Store workspace config after merging CLI overrides so downstream
+	// consumers always see the effective paths.
+	ctx = context.WithValue(ctx, "workspace_config", wc)
 
 	return ctx, nil
 }

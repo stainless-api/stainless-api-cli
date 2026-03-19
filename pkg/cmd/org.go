@@ -25,7 +25,6 @@ var orgsRetrieve = cli.Command{
 			Required: true,
 		},
 	},
-	Before:          before,
 	Action:          handleOrgsRetrieve,
 	HideHelpCommand: true,
 }
@@ -35,7 +34,6 @@ var orgsList = cli.Command{
 	Usage:           "List organizations accessible to the current authentication method.",
 	Suggest:         true,
 	Flags:           []cli.Flag{},
-	Before:          before,
 	Action:          handleOrgsList,
 	HideHelpCommand: true,
 }

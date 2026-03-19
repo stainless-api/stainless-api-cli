@@ -6,6 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/diagnostics"
@@ -36,15 +37,25 @@ type Model struct {
 type ErrorMsg error
 type FileChangeMsg struct{}
 
-func NewModel(client stainless.Client, ctx context.Context, branch string, fn func() (*stainless.Build, error), downloadPaths map[stainless.Target]string, watch bool) Model {
+type ModelConfig struct {
+	Client        stainless.Client
+	Ctx           context.Context
+	Branch        string
+	Start         func() (*stainless.Build, error)
+	DownloadPaths map[stainless.Target]string
+	Watch         bool
+}
+
+func NewModel(cfg ModelConfig) Model {
 	return Model{
-		start:       fn,
-		Client:      client,
-		Ctx:         ctx,
-		Branch:      branch,
+		start:       cfg.Start,
+		Client:      cfg.Client,
+		Ctx:         cfg.Ctx,
+		Branch:      cfg.Branch,
+		Watch:       cfg.Watch,
 		Help:        help.New(),
-		Build:       build.NewModel(client, ctx, stainless.Build{}, branch, downloadPaths),
-		Diagnostics: diagnostics.NewModel(client, ctx, nil),
+		Build:       build.NewModel(cfg.Client, cfg.Ctx, stainless.Build{}, cfg.Branch, cfg.DownloadPaths),
+		Diagnostics: diagnostics.NewModel(cfg.Client, cfg.Ctx, nil),
 	}
 }
 
@@ -81,7 +92,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-	case build.TickMsg, build.DownloadMsg, build.ErrorMsg:
+	case build.TickMsg, build.DownloadMsg, build.ErrorMsg, spinner.TickMsg:
 		m.Build, cmd = m.Build.Update(msg)
 		cmds = append(cmds, cmd)
 

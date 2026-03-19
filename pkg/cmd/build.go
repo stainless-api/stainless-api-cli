@@ -158,7 +158,6 @@ var buildsCreate = requestflag.WithInnerFlags(cli.Command{
 		},
 	},
 	Action:          handleBuildsCreate,
-	Before:          before,
 	HideHelpCommand: true,
 }, map[string][]requestflag.HasOuterFlag{
 	"target-commit-messages": {
@@ -229,7 +228,6 @@ var buildsRetrieve = cli.Command{
 		},
 	},
 	Action:          handleBuildsRetrieve,
-	Before:          before,
 	HideHelpCommand: true,
 }
 
@@ -304,7 +302,6 @@ var buildsCompare = requestflag.WithInnerFlags(cli.Command{
 		},
 	},
 	Action:          handleBuildsCompare,
-	Before:          before,
 	HideHelpCommand: true,
 }, map[string][]requestflag.HasOuterFlag{
 	"base": {
@@ -526,7 +523,7 @@ func (c buildCompletionModel) IsCompleted() bool {
 
 		// Check if download is completed (if applicable)
 		downloadIsCompleted := true
-		if buildTarget.IsCommitCompleted() && stainlessutils.IsGoodCommitConclusion(buildTarget.Commit.Completed.Conclusion) {
+		if buildTarget.IsCommitCompleted() && buildTarget.IsGoodCommitConclusion() {
 			if download, ok := c.Build.Downloads[target]; ok {
 				downloadIsCompleted = download.Status == "completed"
 			}
@@ -624,6 +621,23 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 		if cmd.IsSet("max-items") {
 			maxItems = cmd.Value("max-items").(int64)
 		}
+
+		if format == "auto" && isTerminal(os.Stdout) {
+			for iter.Next() {
+				if maxItems == 0 {
+					break
+				}
+				maxItems--
+				b := iter.Current()
+				fmt.Print(cbuild.ViewHeader("BUILD", b))
+				fmt.Println()
+				m := cbuild.Model{Build: b}
+				fmt.Print(m.View())
+				fmt.Println()
+			}
+			return iter.Err()
+		}
+
 		return ShowJSONIterator(os.Stdout, "builds list", iter, format, transform, maxItems)
 	}
 }
