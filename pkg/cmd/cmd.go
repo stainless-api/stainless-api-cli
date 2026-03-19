@@ -308,6 +308,21 @@ func getWorkspace(ctx context.Context) workspace.Config {
 	return ctx.Value("workspace_config").(workspace.Config)
 }
 
+func setFlagValue(cmd *cli.Command, name string, value string) error {
+	for _, flag := range cmd.Flags {
+		for _, flagName := range flag.Names() {
+			if flagName != name {
+				continue
+			}
+			if setter, ok := flag.(interface{ Set(string, string) error }); ok {
+				return setter.Set(name, value)
+			}
+			return cmd.Set(name, value)
+		}
+	}
+	return cmd.Set(name, value)
+}
+
 func generateManpages(ctx context.Context, c *cli.Command) error {
 	manpage, err := docs.ToManWithSection(Command, 1)
 	if err != nil {

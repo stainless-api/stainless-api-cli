@@ -30,9 +30,18 @@ type Mock struct {
 
 	mu             sync.Mutex
 	buildIndex     map[string]*ProgressiveBuild
+	nextBuildSeq   int
 	enableGitRepos bool
 	gitRepos       map[string]gitRepo // key: "owner/name"
 	tempDir        string
+	requests       []RecordedRequest
+}
+
+type RecordedRequest struct {
+	Method   string
+	Path     string
+	RawQuery string
+	Body     string
 }
 
 type gitRepo struct {
@@ -55,6 +64,7 @@ func (m *Mock) init() {
 	if m.CompareBuild != nil && m.CompareBuild.PreviewBuild != nil {
 		m.buildIndex[m.CompareBuild.PreviewBuild.ID] = m.CompareBuild.PreviewBuild
 	}
+	m.nextBuildSeq = len(m.buildIndex)
 	if m.enableGitRepos {
 		m.initGitRepos()
 	}
@@ -173,6 +183,26 @@ func (m *Mock) GetBuild(id string) *ProgressiveBuild {
 	return m.buildIndex[id]
 }
 
+func (m *Mock) RecordRequest(request RecordedRequest) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.requests = append(m.requests, request)
+}
+
+func (m *Mock) Requests() []RecordedRequest {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := make([]RecordedRequest, len(m.requests))
+	copy(out, m.requests)
+	return out
+}
+
+func (m *Mock) ResetRequests() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.requests = nil
+}
+
 func (m *Mock) Diagnostics(id string) []M {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -180,6 +210,77 @@ func (m *Mock) Diagnostics(id string) []M {
 		return pb.Diagnostics
 	}
 	return []M{}
+}
+
+func (m *Mock) CreateBuildFromTemplate(template *ProgressiveBuild) *ProgressiveBuild {
+	if template == nil {
+		return nil
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.nextBuildSeq++
+	build := cloneProgressiveBuild(template)
+	build.ID = fmt.Sprintf("bui_mock_%06d", m.nextBuildSeq)
+	build.StartTime = time.Now()
+
+	m.Builds = append([]*ProgressiveBuild{build}, m.Builds...)
+	m.buildIndex[build.ID] = build
+	return build
+}
+
+func cloneProgressiveBuild(template *ProgressiveBuild) *ProgressiveBuild {
+	build := &ProgressiveBuild{
+		ID:            template.ID,
+		ConfigCommit:  template.ConfigCommit,
+		Targets:       append([]string(nil), template.Targets...),
+		CompletedData: make(map[string]M, len(template.CompletedData)),
+		Diagnostics:   make([]M, len(template.Diagnostics)),
+		Delay:         template.Delay,
+	}
+
+	for name, target := range template.CompletedData {
+		build.CompletedData[name] = cloneMap(target)
+	}
+	for i, diagnostic := range template.Diagnostics {
+		build.Diagnostics[i] = cloneMap(diagnostic)
+	}
+
+	return build
+}
+
+func cloneMap(src M) M {
+	if src == nil {
+		return nil
+	}
+	out := make(M, len(src))
+	for key, value := range src {
+		out[key] = cloneValue(value)
+	}
+	return out
+}
+
+func cloneSlice(src []any) []any {
+	if src == nil {
+		return nil
+	}
+	out := make([]any, len(src))
+	for i, value := range src {
+		out[i] = cloneValue(value)
+	}
+	return out
+}
+
+func cloneValue(value any) any {
+	switch v := value.(type) {
+	case M:
+		return cloneMap(v)
+	case []any:
+		return cloneSlice(v)
+	default:
+		return v
+	}
 }
 
 // MockOption configures a Mock via NewMock.
