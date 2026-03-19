@@ -254,19 +254,3 @@ func runDevBuild(ctx context.Context, client stainless.Client, wc workspace.Conf
 	}
 	return nil
 }
-
-func hasBlockingDiagnostic(diagnostics []stainless.BuildDiagnostic) bool {
-	for _, d := range diagnostics {
-		if !d.Ignored {
-			switch d.Level {
-			case stainless.BuildDiagnosticLevelFatal:
-			case stainless.BuildDiagnosticLevelError:
-			case stainless.BuildDiagnosticLevelWarning:
-				return true
-			case stainless.BuildDiagnosticLevelNote:
-				continue
-			}
-		}
-	}
-	return false
-}
