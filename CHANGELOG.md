@@ -1,5 +1,46 @@
 # Changelog
 
+## 0.1.0-alpha.85 (2026-03-19)
+
+Full Changelog: [v0.1.0-alpha.84...v0.1.0-alpha.85](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.84...v0.1.0-alpha.85)
+
+### Features
+
+* add git Show and CurrentBranch helpers ([7427170](https://github.com/stainless-api/stainless-api-cli/commit/742717047b54e4f56e5a1d5f4447fc4e633fcd1d))
+* **cmd/build:** add spacing between header and targets in builds list ([63df786](https://github.com/stainless-api/stainless-api-cli/commit/63df786562d05cae6d20d891a71a42dc6d286562))
+* **cmd/builddiagnostic:** use diagnostics component for diagnostics list ([407ce31](https://github.com/stainless-api/stainless-api-cli/commit/407ce3128688896f29f019eac428c15ded055355))
+* **cmd/build:** use build component view for builds list ([0c0c4ee](https://github.com/stainless-api/stainless-api-cli/commit/0c0c4ee740627b83995989538d8808943b6ce53d))
+* **cmd/dev:** refactor dev command to use compare builds ([b7cc41a](https://github.com/stainless-api/stainless-api-cli/commit/b7cc41a9d81e5442aeffeca81730f51c94b83f1e))
+* **components/build:** rewrite build pipeline view as single-line with header ([270e85b](https://github.com/stainless-api/stainless-api-cli/commit/270e85bd52601694c07ddd264b952b8ab0a18cc4))
+* **components/build:** single newline after header, show download path ([cba8ce9](https://github.com/stainless-api/stainless-api-cli/commit/cba8ce92565082a607a0510d54c3b6b56e95ac93))
+* **components/dev:** remove config section and waiting message from preview ([83b7995](https://github.com/stainless-api/stainless-api-cli/commit/83b7995c29b9435d1eee2f2edcaaddf1a5457725))
+* **components/diagnostics:** add line number and column numbers ([970ee80](https://github.com/stainless-api/stainless-api-cli/commit/970ee8039334c4f1b6c4a6e4ae4f8b7aa43686b7))
+* **components/diagnostics:** rewrite diagnostics view with Rust-style formatting ([c094b0f](https://github.com/stainless-api/stainless-api-cli/commit/c094b0f12cca78e4028311a8624696a842b643ea))
+
+
+### Bug Fixes
+
+* **components/dev:** preserve preview content on quit ([fcb4d88](https://github.com/stainless-api/stainless-api-cli/commit/fcb4d8846b0a84dcc64f05e00fa4a8bdd7a23f45))
+* fill project property more uniformly ([23b8227](https://github.com/stainless-api/stainless-api-cli/commit/23b822757485c5aab9796ea36733a20d79363b3b))
+* make download error display better ([31a38dc](https://github.com/stainless-api/stainless-api-cli/commit/31a38dcc710de76b127fc76d01be7fadce7430c9))
+* only set client options when the corresponding CLI flag or env var is explicitly set ([64c31cf](https://github.com/stainless-api/stainless-api-cli/commit/64c31cf020960b1dc7ed20840aa850073d5587ff))
+* read check step conclusion from top-level field ([e16abc3](https://github.com/stainless-api/stainless-api-cli/commit/e16abc3a768322b84c089967e114d8a485b97238))
+
+
+### Chores
+
+* automatically generate demo gifs ([a057170](https://github.com/stainless-api/stainless-api-cli/commit/a057170713df9e759738dc76d2325a7a00120a2a))
+* **internal:** version bump ([d6f4985](https://github.com/stainless-api/stainless-api-cli/commit/d6f49850f5572ccff1f65a40a54efde6f0427fcc))
+
+
+### Refactors
+
+* auto-set Before hook on all subcommands via traversal ([73a12cd](https://github.com/stainless-api/stainless-api-cli/commit/73a12cd0a3a9bf2392ada6c3873a2c8ad23c373e))
+* **cmd/lint:** move getDiagnostics to cmd/lint.go ([44a8a3a](https://github.com/stainless-api/stainless-api-cli/commit/44a8a3a98f9b632732bda3152808bf0138c65b6d))
+* **cmd/lint:** remove unused canSkip logic ([c7d5b10](https://github.com/stainless-api/stainless-api-cli/commit/c7d5b10184eef720bbb731b7dc5b4eb1edfae34a))
+* **cmd/lint:** remove unused canSkip logic ([48c573e](https://github.com/stainless-api/stainless-api-cli/commit/48c573e52b46bd27ce1d7f7decd268f21a43607e))
+* don't use deprecated .Completed property ([397114c](https://github.com/stainless-api/stainless-api-cli/commit/397114c2f0ac3587405c67f25f3a52f0ead4b277))
+
 ## 0.1.0-alpha.84 (2026-03-16)
 
 Full Changelog: [v0.1.0-alpha.83...v0.1.0-alpha.84](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.83...v0.1.0-alpha.84)
