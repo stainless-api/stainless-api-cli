@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.0-alpha.86 (2026-03-20)
+
+Full Changelog: [v0.1.0-alpha.85...v0.1.0-alpha.86](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.85...v0.1.0-alpha.86)
+
+### Bug Fixes
+
+* fill project property more uniformly ([24487ec](https://github.com/stainless-api/stainless-api-cli/commit/24487ec77f26ccc49675569a994e579325226a16))
+* rename asset file with invalid colon character ([af88372](https://github.com/stainless-api/stainless-api-cli/commit/af88372d6054975cf762d146373e878c59a5c517))
+
+
+### Refactors
+
+* auto-set Before hook on all subcommands via traversal ([da47655](https://github.com/stainless-api/stainless-api-cli/commit/da476552b441eb3c48e5645cfe66309eabbb725a))
+
 ## 0.1.0-alpha.85 (2026-03-19)
 
 Full Changelog: [v0.1.0-alpha.84...v0.1.0-alpha.85](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.84...v0.1.0-alpha.85)
