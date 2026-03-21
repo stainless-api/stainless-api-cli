@@ -34,6 +34,7 @@ var buildsTargetOutputsRetrieve = cli.Command{
 		},
 		&requestflag.Flag[string]{
 			Name:      "type",
+			Usage:     `Allowed values: "source", "dist", "wheel", "openapi-with-transforms", "openapi-with-code-samples", "openapi-sdk-spec", "file".`,
 			Required:  true,
 			QueryPath: "type",
 		},
