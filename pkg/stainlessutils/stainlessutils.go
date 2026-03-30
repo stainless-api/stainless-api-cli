@@ -113,6 +113,10 @@ func (b *Build) Languages() []stainless.Target {
 	if targets.JSON.Csharp.Valid() {
 		languages = append(languages, "csharp")
 	}
+	if targets.JSON.OpenAPI.Valid() {
+		languages = append(languages, "openapi")
+	}
+
 
 	return languages
 }
