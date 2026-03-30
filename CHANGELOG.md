@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.87 (2026-03-30)
+
+Full Changelog: [v0.1.0-alpha.86...v0.1.0-alpha.87](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.86...v0.1.0-alpha.87)
+
+### Features
+
+* wait for openapi target when --wait=commit ([361817f](https://github.com/stainless-api/stainless-api-cli/commit/361817f97f15dcca18a5be8f1a143b35ea6f7d83))
+
 ## 0.1.0-alpha.86 (2026-03-20)
 
 Full Changelog: [v0.1.0-alpha.85...v0.1.0-alpha.86](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.85...v0.1.0-alpha.86)
