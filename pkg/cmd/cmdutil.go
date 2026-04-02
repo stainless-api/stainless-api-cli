@@ -423,7 +423,7 @@ func countTerminalLines(data []byte, terminalWidth int) int {
 	return bytes.Count([]byte(wrap.String(string(data), terminalWidth)), []byte("\n"))
 }
 
-type HasRawJSON interface {
+type hasRawJSON interface {
 	RawJSON() string
 }
 
@@ -449,7 +449,7 @@ func ShowJSONIterator[T any](stdout *os.File, title string, iter jsonview.Iterat
 	for itemsToDisplay != 0 && iter.Next() {
 		item := iter.Current()
 		var obj gjson.Result
-		if hasRaw, ok := any(item).(HasRawJSON); ok {
+		if hasRaw, ok := any(item).(hasRawJSON); ok {
 			obj = gjson.Parse(hasRaw.RawJSON())
 		} else {
 			jsonData, err := json.Marshal(item)
@@ -496,7 +496,7 @@ func ShowJSONIterator[T any](stdout *os.File, title string, iter jsonview.Iterat
 			}
 			item := iter.Current()
 			var obj gjson.Result
-			if hasRaw, ok := any(item).(HasRawJSON); ok {
+			if hasRaw, ok := any(item).(hasRawJSON); ok {
 				obj = gjson.Parse(hasRaw.RawJSON())
 			} else {
 				jsonData, err := json.Marshal(item)
