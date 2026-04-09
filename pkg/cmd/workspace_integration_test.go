@@ -35,7 +35,11 @@ type workspaceFixture struct {
 func TestWorkspaceProjectAutofillIntegration(t *testing.T) {
 	t.Parallel()
 
-	server := newMockServer(t)
+	server := newMockServer(t, func(m *mockstainless.Mock) {
+		// Register the fixture project slugs so GET /v0/projects/{project} returns 200.
+		mockstainless.WithProject(mockstainless.MockProject{Name: "workspace-project", Org: "acme-corp"})(m)
+		mockstainless.WithProject(mockstainless.MockProject{Name: "flag-project", Org: "acme-corp"})(m)
+	})
 
 	t.Run("workspace", func(t *testing.T) {
 		fixture := newWorkspaceFixture(t)
