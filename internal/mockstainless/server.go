@@ -76,6 +76,50 @@ func newServeMux(m *Mock) http.Handler {
 		writeJSON(w, http.StatusOK, Page(m.Projects))
 	})
 
+	mux.HandleFunc("POST /v0/projects", func(w http.ResponseWriter, r *http.Request) {
+		body := mustReadBody(r)
+		slug := gjson.GetBytes(body, "slug").String()
+		displayName := gjson.GetBytes(body, "display_name").String()
+		org := gjson.GetBytes(body, "org").String()
+
+		if slug == "" {
+			writeJSON(w, http.StatusBadRequest, M{"error": "slug is required"})
+			return
+		}
+		if displayName == "" {
+			displayName = slug
+		}
+
+		var targets []any
+		gjson.GetBytes(body, "targets").ForEach(func(_, v gjson.Result) bool {
+			targets = append(targets, v.String())
+			return true
+		})
+		if len(targets) == 0 {
+			targets = []any{"typescript", "python", "go"}
+		}
+
+		project := M{
+			"slug":         slug,
+			"display_name": displayName,
+			"object":       "project",
+			"org":          org,
+			"config_repo":  fmt.Sprintf("https://github.com/%s/%s", org, slug),
+			"targets":      targets,
+		}
+
+		m.mu.Lock()
+		m.Projects = append(m.Projects, project)
+		m.mu.Unlock()
+
+		// Create a build so the post-creation build-wait step succeeds.
+		if len(m.Builds) > 0 {
+			m.CreateBuildFromTemplate(m.Builds[0])
+		}
+
+		writeJSON(w, http.StatusOK, project)
+	})
+
 	mux.HandleFunc("GET /v0/projects/{project}", func(w http.ResponseWriter, r *http.Request) {
 		slug := r.PathValue("project")
 		for _, p := range m.Projects {
@@ -84,9 +128,7 @@ func newServeMux(m *Mock) http.Handler {
 				return
 			}
 		}
-		if len(m.Projects) > 0 {
-			writeJSON(w, http.StatusOK, m.Projects[0])
-		}
+		writeJSON(w, http.StatusNotFound, M{"error": "project not found"})
 	})
 
 	mux.HandleFunc("PATCH /v0/projects/{project}", func(w http.ResponseWriter, r *http.Request) {
