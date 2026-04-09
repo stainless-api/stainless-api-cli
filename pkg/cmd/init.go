@@ -144,7 +144,15 @@ func handleInit(ctx context.Context, cmd *cli.Command) error {
 
 	console.Spacer()
 
-	return initializeWorkspace(ctx, cmd, client, projectName, project.Targets)
+	targets := project.Targets
+	if cmd.IsSet("targets") {
+		targets = nil
+		for target := range strings.SplitSeq(cmd.String("targets"), ",") {
+			targets = append(targets, stainless.Target(strings.TrimSpace(target)))
+		}
+	}
+
+	return initializeWorkspace(ctx, cmd, client, projectName, targets)
 }
 
 func ensureExistingWorkspaceIsDeleted(cmd *cli.Command) error {
