@@ -117,6 +117,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case build.TickMsg, build.DownloadMsg, build.ErrorMsg, spinner.TickMsg:
 		m.Build, cmd = m.Build.Update(msg)
 		cmds = append(cmds, cmd)
+		if m.Build.Err != nil {
+			m.Err = m.Build.Err
+		}
 
 	case diagnostics.FetchDiagnosticsMsg:
 		m.Diagnostics, cmd = m.Diagnostics.Update(msg)
