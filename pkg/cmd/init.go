@@ -550,9 +550,8 @@ func askExistingOpenAPISpec(cmd *cli.Command, group console.Group) (content stri
 			group.Property("openapi_spec", specPath)
 			return string(fileBytes), nil
 		}
-		// Default to example spec in non-interactive mode
-		group.Property("openapi_spec", "example")
-		return exampleSpecJSON, nil
+		return "", fmt.Errorf("specify an OpenAPI spec with --openapi-spec")
+
 	}
 
 	type Source string
