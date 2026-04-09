@@ -388,6 +388,27 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Cl
 		},
 	}
 
+	if cmd.IsSet("stainless-config") {
+		configPath := cmd.String("stainless-config")
+		if configBytes, err := os.ReadFile(configPath); err == nil {
+			group.Property("stainless_config", configPath)
+
+			var configName string
+			trimmedConfig := strings.TrimSpace(string(configBytes))
+			if strings.HasPrefix(trimmedConfig, "{") {
+				configName = "stainless.json"
+			} else {
+				configName = "stainless.yml"
+			}
+
+			params.Revision[configName] = stainless.FileInputUnionParam{
+				OfFileInputContent: &stainless.FileInputContentParam{
+					Content: string(configBytes),
+				},
+			}
+		}
+	}
+
 	var project *stainless.Project
 	err = group.Spinner("Creating project...", func() error {
 		options := []option.RequestOption{}
