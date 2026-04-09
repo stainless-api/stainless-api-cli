@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.1.0-alpha.88 (2026-04-09)
+
+Full Changelog: [v0.1.0-alpha.87...v0.1.0-alpha.88](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.87...v0.1.0-alpha.88)
+
+### Features
+
+* add console.IsInteractive() helper ([d2bd149](https://github.com/stainless-api/stainless-api-cli/commit/d2bd149865971de55adf17296f685f5c4c78b072))
+* **components/dev:** forward error from build ([a4d78c6](https://github.com/stainless-api/stainless-api-cli/commit/a4d78c6b86282ca1f68d02f4c1bacc06a6502820))
+* **dev:** require project parameter ([ee8b94d](https://github.com/stainless-api/stainless-api-cli/commit/ee8b94d20030127b3f0893917d8e793fa6ed5965))
+* **init/builds create:** use dev component instead ([6e06b1e](https://github.com/stainless-api/stainless-api-cli/commit/6e06b1e0e180989faaf497bcd1ba074eafcd0428))
+* **init:** don't overwrite config files by default ([96f9d11](https://github.com/stainless-api/stainless-api-cli/commit/96f9d116a27385c6ab1366abe001026eed17158a))
+* **init:** support non-interactive mode for stl init ([7fbcaeb](https://github.com/stainless-api/stainless-api-cli/commit/7fbcaeb617ade079c002bac50cd4ebb935df349b))
+* **init:** upload --stainless-config when creating a new project ([d96e641](https://github.com/stainless-api/stainless-api-cli/commit/d96e6416d2001f753540007235b7d17a77a03095))
+
+
+### Bug Fixes
+
+* handle openapi target in BuildTarget lookup ([d09eede](https://github.com/stainless-api/stainless-api-cli/commit/d09eede6ca8f6f4ea7d9e42d77e39a4d2400228b))
+* **init:** require --openapi-spec for non-interactive project creation ([1b338ad](https://github.com/stainless-api/stainless-api-cli/commit/1b338ad116591b18eee735bdd3354d82e82b6a4b))
+* **init:** respect --targets flag for existing projects ([c6444a0](https://github.com/stainless-api/stainless-api-cli/commit/c6444a098b86d9072ebbb551e868550f5e0df216))
+
+
+### Refactors
+
+* **init:** extract askSelectTargets from init flow ([62c6102](https://github.com/stainless-api/stainless-api-cli/commit/62c610247ee9bd411836a9b683fbf74c01772954))
+
 ## 0.1.0-alpha.87 (2026-03-30)
 
 Full Changelog: [v0.1.0-alpha.86...v0.1.0-alpha.87](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.86...v0.1.0-alpha.87)
