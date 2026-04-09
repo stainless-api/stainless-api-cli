@@ -264,6 +264,63 @@ func askSelectProject(projects []stainless.Project) (string, *stainless.Project,
 	return picked.Slug, picked, nil
 }
 
+// askSelectTargets resolves which targets to use. If --targets is set, it parses the flag.
+// If defaults are provided (e.g. from an existing project), they are returned as-is.
+// Otherwise, shows an interactive multi-select prompt.
+func askSelectTargets(cmd *cli.Command, defaults []stainless.Target, group *console.Group) ([]stainless.Target, error) {
+	if cmd.IsSet("targets") {
+		var targets []stainless.Target
+		for target := range strings.SplitSeq(cmd.String("targets"), ",") {
+			targets = append(targets, stainless.Target(strings.TrimSpace(target)))
+		}
+		if len(targets) == 0 {
+			return nil, fmt.Errorf("You must select at least one target!")
+		}
+		return targets, nil
+	}
+
+	if len(defaults) > 0 {
+		return defaults, nil
+	}
+
+	if !console.IsInteractive() {
+		return nil, fmt.Errorf("specify targets with --targets (comma-separated, e.g. --targets python,typescript)")
+	}
+
+	allTargets := slices.DeleteFunc(getAllTargetInfo(), func(item TargetInfo) bool {
+		return item.Name == "node" // Remove node (deprecated option)
+	})
+
+	options := make([]huh.Option[stainless.Target], len(allTargets))
+	for i, target := range allTargets {
+		options[i] = huh.NewOption(target.DisplayName, stainless.Target(target.Name)).Selected(target.DefaultSelected)
+	}
+
+	var selected []stainless.Target
+	field := huh.NewMultiSelect[stainless.Target]().
+		Title("targets").
+		Description("Select target languages for code generation").
+		Options(options...).
+		Validate(func(selected []stainless.Target) error {
+			if len(selected) == 0 {
+				return fmt.Errorf("You must select at least one target!")
+			}
+			return nil
+		}).
+		Value(&selected)
+
+	var err error
+	if group != nil {
+		err = group.Field(field)
+	} else {
+		err = console.Field(field)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return selected, nil
+}
+
 func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Client, org, projectName string) (string, *stainless.Project, error) {
 	group := console.Property("project", "(new)")
 
@@ -294,40 +351,9 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Cl
 	group.Property("name", projectName)
 
 	// Determine targets
-	var selectedTargets []stainless.Target
-	if cmd.IsSet("targets") {
-		for target := range strings.SplitSeq(cmd.String("targets"), ",") {
-			selectedTargets = append(selectedTargets, stainless.Target(strings.TrimSpace(target)))
-		}
-		if len(selectedTargets) == 0 {
-			return "", nil, fmt.Errorf("You must select at least one target!")
-		}
-	} else {
-		if !console.IsInteractive() {
-			return "", nil, fmt.Errorf("specify targets with --targets (comma-separated, e.g. --targets python,typescript)")
-		}
-		allTargets := slices.DeleteFunc(getAllTargetInfo(), func(item TargetInfo) bool {
-			return item.Name == "node" // Remove node (deprecated option)
-		})
-
-		options := make([]huh.Option[stainless.Target], len(allTargets))
-		for i, target := range allTargets {
-			options[i] = huh.NewOption(target.DisplayName, stainless.Target(target.Name)).Selected(target.DefaultSelected)
-		}
-		err := group.Field(huh.NewMultiSelect[stainless.Target]().
-			Title("targets").
-			Description("Select target languages for code generation").
-			Options(options...).
-			Validate(func(selected []stainless.Target) error {
-				if len(selected) == 0 {
-					return fmt.Errorf("You must select at least one target!")
-				}
-				return nil
-			}).
-			Value(&selectedTargets))
-		if err != nil {
-			return "", nil, err
-		}
+	selectedTargets, err := askSelectTargets(cmd, nil, &group)
+	if err != nil {
+		return "", nil, err
 	}
 
 	group.Property("targets", fmt.Sprintf("%v", selectedTargets))
