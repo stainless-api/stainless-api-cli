@@ -11,10 +11,10 @@ import (
 	"path"
 	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	cbuild "github.com/stainless-api/stainless-api-cli/pkg/components/build"
+	cdev "github.com/stainless-api/stainless-api-cli/pkg/components/dev"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
@@ -25,24 +25,15 @@ import (
 	"github.com/urfave/cli/v3"
 )
 
-// WaitMode represents the level of waiting for build completion
-type WaitMode int
-
-const (
-	WaitNone   WaitMode = iota // Don't wait
-	WaitCommit                 // Wait for commit only
-	WaitAll                    // Wait for everything including workflows
-)
-
 // parseWaitMode converts the --wait flag string to a WaitMode
-func parseWaitMode(wait string) (WaitMode, error) {
+func parseWaitMode(wait string) (cdev.WaitMode, error) {
 	switch wait {
 	case "none", "false": // Accept both "none" and "false" for backwards compatibility
-		return WaitNone, nil
+		return cdev.WaitNone, nil
 	case "commit":
-		return WaitCommit, nil
+		return cdev.WaitCommit, nil
 	case "all":
-		return WaitAll, nil
+		return cdev.WaitAll, nil
 	default:
 		return 0, fmt.Errorf("invalid --wait value: %q (must be 'none', 'commit', or 'all')", wait)
 	}
@@ -429,20 +420,26 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 	buildGroup.Property("build_id", build.ID)
 
-	if waitMode > WaitNone {
+	if waitMode > cdev.WaitNone {
 		console.Spacer()
-		buildModel := cbuild.NewModel(client, ctx, *build, cmd.String("branch"), downloadPaths)
-		buildModel.CommitOnly = waitMode == WaitCommit
-		model := tea.Model(buildCompletionModel{
-			Build:    buildModel,
-			WaitMode: waitMode,
+		devModel := cdev.NewModel(cdev.ModelConfig{
+			Client:        client,
+			Ctx:           ctx,
+			Branch:        cmd.String("branch"),
+			Start:         func() (*stainless.Build, error) { return build, nil },
+			DownloadPaths: downloadPaths,
+			Label:         "BUILD",
+			WaitMode:      waitMode,
+			Indent:        "  ",
 		})
-		model, err = console.NewProgram(model).Run()
+		devModel.Build.CommitOnly = waitMode == cdev.WaitCommit
+		model, err := console.NewProgram(devModel).Run()
 		if err != nil {
 			console.Warn("%s", err.Error())
 		}
-		b := model.(buildCompletionModel).Build
-		build = &b.Build
+		if m, ok := model.(cdev.Model); ok {
+			build = &m.Build.Build
+		}
 		console.Spacer()
 	}
 
@@ -454,7 +451,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	// Only check for failures if we waited for the build
-	if waitMode == WaitNone {
+	if waitMode == cdev.WaitNone {
 		return nil
 	}
 
@@ -475,7 +472,7 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		}
 
 		// Only check workflow failures if we waited for them
-		if waitMode >= WaitAll {
+		if waitMode >= cdev.WaitAll {
 			if bt.Lint.Conclusion == "failure" || bt.Test.Conclusion == "failure" || bt.Build.Conclusion == "failure" {
 				failures = append(failures, fmt.Errorf("%s workflow failed", target))
 			}
@@ -487,65 +484,6 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	return nil
-}
-
-type buildCompletionModel struct {
-	Build    cbuild.Model
-	WaitMode WaitMode
-}
-
-func (c buildCompletionModel) Init() tea.Cmd {
-	return c.Build.Init()
-}
-
-func (c buildCompletionModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	c.Build, cmd = c.Build.Update(msg)
-
-	if c.IsCompleted() {
-		return c, tea.Sequence(
-			cmd,
-			tea.Quit,
-		)
-	}
-
-	return c, cmd
-}
-
-func (c buildCompletionModel) IsCompleted() bool {
-	b := stainlessutils.NewBuild(c.Build.Build)
-	for _, target := range b.Languages() {
-		buildTarget := b.BuildTarget(target)
-
-		if buildTarget == nil {
-			return false
-		}
-
-		// Check if download is completed (if applicable)
-		downloadIsCompleted := true
-		if buildTarget.IsCommitCompleted() && buildTarget.IsGoodCommitConclusion() {
-			if download, ok := c.Build.Downloads[target]; ok {
-				downloadIsCompleted = download.Status == "completed"
-			}
-		}
-
-		// Check if target is done based on wait mode
-		done := buildTarget.IsCommitCompleted()
-		if c.WaitMode >= WaitAll {
-			done = buildTarget.IsCompleted()
-		}
-
-		if !done || !downloadIsCompleted {
-			return false
-		}
-	}
-
-	return true
-}
-
-func (c buildCompletionModel) View() string {
-	c.Build.CommitOnly = c.WaitMode == WaitCommit
-	return c.Build.View()
 }
 
 func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {

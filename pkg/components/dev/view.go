@@ -30,7 +30,21 @@ func (m Model) View() string {
 		s.WriteString("\n" + m.Err.Error() + "\n")
 	}
 
-	return s.String()
+	return m.applyIndent(s.String())
+}
+
+// applyIndent prefixes every non-empty line with m.Indent.
+func (m Model) applyIndent(s string) string {
+	if m.Indent == "" {
+		return s
+	}
+	lines := strings.Split(s, "\n")
+	for i, line := range lines {
+		if line != "" {
+			lines[i] = m.Indent + line
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 // ViewPart represents a single part of the build view
@@ -43,7 +57,7 @@ var parts = []ViewPart{
 	{
 		Name: "header",
 		View: func(m *Model, s *strings.Builder) {
-			s.WriteString(build.ViewHeader("PREVIEW", m.Build.Build))
+			s.WriteString(build.ViewHeader(m.label, m.Build.Build))
 		},
 	},
 	{
@@ -69,6 +83,9 @@ var parts = []ViewPart{
 	{
 		Name: "studio",
 		View: func(m *Model, s *strings.Builder) {
+			if !m.Watch {
+				return
+			}
 			if m.Build.ID != "" {
 				url := fmt.Sprintf("https://app.stainless.com/%s/%s/studio?branch=%s", m.Build.Org, m.Build.Project, m.Branch)
 				s.WriteString("\n")
@@ -80,6 +97,9 @@ var parts = []ViewPart{
 	{
 		Name: "help",
 		View: func(m *Model, s *strings.Builder) {
+			if !m.Watch {
+				return
+			}
 			s.WriteString("\n")
 			s.WriteString(m.Help.View(m))
 		},
@@ -100,7 +120,7 @@ func (m *Model) updateView(targetState string) tea.Cmd {
 		return nil
 	}
 
-	output := ViewBuildRange(m, m.view, targetState)
+	output := m.applyIndent(ViewBuildRange(m, m.view, targetState))
 
 	// Update model state
 	m.view = targetState
