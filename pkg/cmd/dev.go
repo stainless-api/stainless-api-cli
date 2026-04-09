@@ -164,6 +164,9 @@ func gitRepoRoot(dir string) string {
 
 func runDevBuild(ctx context.Context, client stainless.Client, wc workspace.Config, cmd *cli.Command) error {
 	projectName := cmd.String("project")
+	if projectName == "" {
+		return fmt.Errorf("project is required: use --project or set it in .stainless/workspace.json")
+	}
 	oasPath := cmd.String("openapi-spec")
 	configPath := cmd.String("stainless-config")
 
