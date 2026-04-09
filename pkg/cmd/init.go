@@ -58,6 +58,11 @@ var initCommand = cli.Command{
 			Aliases: []string{"oas"},
 			Usage:   "Path to OpenAPI spec file",
 		},
+		&cli.StringFlag{
+			Name:    "stainless-config",
+			Aliases: []string{"config"},
+			Usage:   "Path to Stainless config file",
+		},
 		&cli.BoolFlag{
 			Name:  "workspace-init",
 			Usage: "Initialize workspace configuration",
@@ -194,6 +199,9 @@ func askSelectOrganization(cmd *cli.Command, orgs []string) (string, error) {
 	case len(orgs) == 1:
 		org = orgs[0]
 	default:
+		if !console.IsInteractive() {
+			return "", fmt.Errorf("multiple organizations found; specify one with --org")
+		}
 		err := console.Field(huh.NewSelect[string]().
 			Title("org").
 			Description("Enter the organization for this project").
@@ -218,6 +226,9 @@ func fetchUserProjects(ctx context.Context, client stainless.Client, org string)
 
 // askSelectProject prompts the user to select from existing projects or create a new one
 func askSelectProject(projects []stainless.Project) (string, *stainless.Project, error) {
+	if !console.IsInteractive() {
+		return "", nil, fmt.Errorf("specify a project with --project")
+	}
 	options := make([]huh.Option[*stainless.Project], 0, len(projects)+1)
 	options = append(options, huh.NewOption("<New Project>", (*stainless.Project)(nil)))
 	projects = slices.SortedFunc(slices.Values(projects), func(p1, p2 stainless.Project) int {
@@ -249,6 +260,9 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Cl
 	group := console.Property("project", "(new)")
 
 	if projectName == "" {
+		if !console.IsInteractive() {
+			return "", nil, fmt.Errorf("specify a project name with --project")
+		}
 		err := group.Field(huh.NewInput().
 			Title("name").
 			Description("Enter a display name for your new project").
@@ -281,6 +295,9 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Cl
 			return "", nil, fmt.Errorf("You must select at least one target!")
 		}
 	} else {
+		if !console.IsInteractive() {
+			return "", nil, fmt.Errorf("specify targets with --targets (comma-separated, e.g. --targets python,typescript)")
+		}
 		allTargets := slices.DeleteFunc(getAllTargetInfo(), func(item TargetInfo) bool {
 			return item.Name == "node" // Remove node (deprecated option)
 		})
@@ -317,7 +334,7 @@ func askCreateProject(ctx context.Context, cmd *cli.Command, client stainless.Cl
 	}
 
 	// Get OpenAPI spec content
-	oasContent, err := askExistingOpenAPISpec(group)
+	oasContent, err := askExistingOpenAPISpec(cmd, group)
 	if err != nil {
 		return "", nil, err
 	}
@@ -467,7 +484,22 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, client stainless
 // askExistingOpenAPISpec provides the location of an _existing_ openapi spec. We first ask how the user would like
 // provide the openapi spec, either 1. from computer, 2. from url, or 3. from an example. Then, we should fan
 // out to the various options.
-func askExistingOpenAPISpec(group console.Group) (content string, err error) {
+func askExistingOpenAPISpec(cmd *cli.Command, group console.Group) (content string, err error) {
+	if !console.IsInteractive() {
+		if cmd.IsSet("openapi-spec") {
+			specPath := cmd.String("openapi-spec")
+			fileBytes, err := os.ReadFile(specPath)
+			if err != nil {
+				return "", fmt.Errorf("failed to read OpenAPI spec from %s: %w", specPath, err)
+			}
+			group.Property("openapi_spec", specPath)
+			return string(fileBytes), nil
+		}
+		// Default to example spec in non-interactive mode
+		group.Property("openapi_spec", "example")
+		return exampleSpecJSON, nil
+	}
+
 	type Source string
 	const (
 		SourceComputer Source = "computer"
@@ -582,6 +614,11 @@ func askOpenAPISpecLocation(group console.Group) (string, error) {
 		}
 	}
 
+	if !console.IsInteractive() {
+		group.Property("openapi_spec", suggestion)
+		return suggestion, nil
+	}
+
 	path := suggestion
 	err := group.Field(huh.NewInput().
 		Title("openapi_spec").
@@ -609,6 +646,11 @@ func chooseStainlessConfigLocation(group console.Group) (string, error) {
 			suggestion = path
 			break
 		}
+	}
+
+	if !console.IsInteractive() {
+		group.Property("stainless_config", suggestion)
+		return suggestion, nil
 	}
 
 	path := suggestion
@@ -731,36 +773,47 @@ func configureTargets(slug string, targets []stainless.Target, config *workspace
 		targetConfigs[target] = &workspace.TargetConfig{OutputPath: defaultPath}
 	}
 
-	// Create form fields for each target
-	pathVars := make(map[stainless.Target]*string, len(targets))
-	fields := make([]huh.Field, 0, len(targets))
+	if console.IsInteractive() {
+		// Create form fields for each target
+		pathVars := make(map[stainless.Target]*string, len(targets))
+		fields := make([]huh.Field, 0, len(targets))
 
-	for _, target := range targets {
-		pathVar := targetConfigs[target].OutputPath
-		pathVars[target] = &pathVar
-		fields = append(fields, huh.NewInput().
-			Title(fmt.Sprintf("%s output path", target)).
-			Value(pathVars[target]))
-	}
+		for _, target := range targets {
+			pathVar := targetConfigs[target].OutputPath
+			pathVars[target] = &pathVar
+			fields = append(fields, huh.NewInput().
+				Title(fmt.Sprintf("%s output path", target)).
+				Value(pathVars[target]))
+		}
 
-	// Run the form
-	form := huh.NewForm(huh.NewGroup(fields...)).
-		WithTheme(console.GetFormTheme(1)).
-		WithKeyMap(console.GetFormKeyMap())
-	if err := form.Run(); err != nil {
-		return fmt.Errorf("failed to get target output paths: %v", err)
-	}
+		// Run the form
+		form := huh.NewForm(huh.NewGroup(fields...)).
+			WithTheme(console.GetFormTheme(1)).
+			WithKeyMap(console.GetFormKeyMap())
+		if err := form.Run(); err != nil {
+			return fmt.Errorf("failed to get target output paths: %v", err)
+		}
 
-	// Update config with user-provided paths (convert to absolute)
-	for target, pathVar := range pathVars {
-		if path := strings.TrimSpace(*pathVar); path != "" {
-			absPath, err := filepath.Abs(path)
+		// Update config with user-provided paths (convert to absolute)
+		for target, pathVar := range pathVars {
+			if path := strings.TrimSpace(*pathVar); path != "" {
+				absPath, err := filepath.Abs(path)
+				if err != nil {
+					return fmt.Errorf("failed to get absolute path for %s target: %w", target, err)
+				}
+				targetConfigs[target] = &workspace.TargetConfig{OutputPath: absPath}
+			} else {
+				delete(targetConfigs, target)
+			}
+		}
+	} else {
+		// Non-interactive: use default paths
+		for target, tc := range targetConfigs {
+			absPath, err := filepath.Abs(tc.OutputPath)
 			if err != nil {
 				return fmt.Errorf("failed to get absolute path for %s target: %w", target, err)
 			}
 			targetConfigs[target] = &workspace.TargetConfig{OutputPath: absPath}
-		} else {
-			delete(targetConfigs, target)
 		}
 	}
 
