@@ -71,6 +71,10 @@ func (b *Build) BuildTarget(target stainless.Target) *BuildTarget {
 		if b.Targets.JSON.Csharp.Valid() {
 			return NewBuildTarget(&b.Targets.Csharp, target)
 		}
+	case "openapi":
+		if b.Targets.JSON.OpenAPI.Valid() {
+			return NewBuildTarget(&b.Targets.OpenAPI, target)
+		}
 	}
 	return nil
 }
