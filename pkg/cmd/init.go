@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	cbuild "github.com/stainless-api/stainless-api-cli/pkg/components/build"
+	cdev "github.com/stainless-api/stainless-api-cli/pkg/components/dev"
 	"github.com/stainless-api/stainless-api-cli/pkg/console"
 	"github.com/stainless-api/stainless-api-cli/pkg/stainlessutils"
 	"github.com/stainless-api/stainless-api-cli/pkg/workspace"
@@ -483,8 +483,6 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, client stainless
 
 	console.Spacer()
 
-	console.Info("Waiting for build to complete...")
-
 	// Try to get the latest build for this project (which should have been created automatically)
 	build, err := getLatestBuild(ctx, client, projectSlug, "main")
 	if err != nil {
@@ -496,14 +494,20 @@ func initializeWorkspace(ctx context.Context, cmd *cli.Command, client stainless
 		downloadPaths[stainless.Target(targetName)] = targetConfig.OutputPath
 	}
 
-	buildModel := cbuild.NewModel(client, ctx, *build, "main", downloadPaths)
-	buildModel.CommitOnly = true
-	model := buildCompletionModel{
-		Build:    buildModel,
-		WaitMode: WaitCommit,
-	}
+	devModel := cdev.NewModel(cdev.ModelConfig{
+		Client:        client,
+		Ctx:           ctx,
+		Branch:        "main",
+		Start:         func() (*stainless.Build, error) { return build, nil },
+		DownloadPaths: downloadPaths,
+		Label:         "BUILD",
+		WaitMode:      cdev.WaitCommit,
+		Indent:        "  ",
+	})
+	devModel.Build.CommitOnly = true
+	devModel.Diagnostics.WorkspaceConfig = config
 
-	_, err = console.NewProgram(model).Run()
+	_, err = console.NewProgram(devModel).Run()
 	if err != nil {
 		console.Warn("%s", err.Error())
 	}
