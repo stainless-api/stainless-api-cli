@@ -739,7 +739,7 @@ func downloadConfigFiles(ctx context.Context, client stainless.Client, wc worksp
 				return nil
 			}
 
-			shouldOverwrite, _, err := group.Confirm(nil, "", fmt.Sprintf("File %s already exists", path), "Do you want to overwrite it?", true)
+			shouldOverwrite, _, err := group.Confirm(nil, "", fmt.Sprintf("File %s already exists, and it differs from the version that exists in main", path), "Do you want to overwrite it?", false)
 			if err != nil {
 				return fmt.Errorf("failed to confirm file overwrite: %w", err)
 			}
