@@ -15,6 +15,12 @@ import (
 	"golang.org/x/term"
 )
 
+// IsInteractive returns true if stderr is a terminal (TTY).
+// Use this to decide whether to show interactive prompts.
+func IsInteractive() bool {
+	return term.IsTerminal(int(os.Stderr.Fd()))
+}
+
 // NewProgram wraps tea.NewProgram with better handling for tty environments
 func NewProgram(model tea.Model, opts ...tea.ProgramOption) *tea.Program {
 	// Always output to stderr, in case we want to also output JSON so that the json is redirectable e.g. to jq.
