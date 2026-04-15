@@ -69,8 +69,9 @@ func handleOrgsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "orgs retrieve", obj, format, transform)
+	return ShowJSON(os.Stdout, os.Stderr, "orgs retrieve", obj, format, explicitFormat, transform)
 }
 
 func handleOrgsList(ctx context.Context, cmd *cli.Command) error {
@@ -101,6 +102,7 @@ func handleOrgsList(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "orgs list", obj, format, transform)
+	return ShowJSON(os.Stdout, os.Stderr, "orgs list", obj, format, explicitFormat, transform)
 }
