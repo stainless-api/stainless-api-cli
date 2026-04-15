@@ -445,8 +445,9 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 	data := gjson.Parse(string(build.RawJSON()))
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	if err := ShowJSON(os.Stdout, "builds create", data, format, transform); err != nil {
+	if err := ShowJSON(os.Stdout, os.Stderr, "builds create", data, format, explicitFormat, transform); err != nil {
 		return err
 	}
 
@@ -517,8 +518,9 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "builds retrieve", obj, format, transform)
+	return ShowJSON(os.Stdout, os.Stderr, "builds retrieve", obj, format, explicitFormat, transform)
 }
 
 func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
@@ -543,6 +545,7 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 	}
 
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
 	if format == "raw" {
 		var res []byte
@@ -552,7 +555,7 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 			return err
 		}
 		obj := gjson.ParseBytes(res)
-		return ShowJSON(os.Stdout, "builds list", obj, format, transform)
+		return ShowJSON(os.Stdout, os.Stderr, "builds list", obj, format, explicitFormat, transform)
 	} else {
 		iter := client.Builds.ListAutoPaging(ctx, params, options...)
 		maxItems := int64(-1)
@@ -576,7 +579,7 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 			return iter.Err()
 		}
 
-		return ShowJSONIterator(os.Stdout, "builds list", iter, format, transform, maxItems)
+		return ShowJSONIterator(os.Stdout, os.Stderr, "builds list", iter, format, explicitFormat, transform, maxItems)
 	}
 }
 
@@ -610,6 +613,7 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "builds compare", obj, format, transform)
+	return ShowJSON(os.Stdout, os.Stderr, "builds compare", obj, format, explicitFormat, transform)
 }

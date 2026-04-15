@@ -119,8 +119,9 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 		if !isPull {
 			json := gjson.Parse(res.RawJSON())
 			format := cmd.Root().String("format")
+			explicitFormat := cmd.Root().IsSet("format")
 			transform := cmd.Root().String("transform")
-			if err := ShowJSON(os.Stdout, "builds:target_outputs retrieve", json, format, transform); err != nil {
+			if err := ShowJSON(os.Stdout, os.Stderr, "builds:target_outputs retrieve", json, format, explicitFormat, transform); err != nil {
 				return err
 			}
 		}
