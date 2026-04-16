@@ -5,7 +5,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
@@ -178,7 +177,12 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	format := cmd.Root().String("format")
 	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, os.Stderr, "projects create", obj, format, explicitFormat, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		Title:          "projects create",
+		Transform:      transform,
+	})
 }
 
 func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
@@ -215,7 +219,12 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	format := cmd.Root().String("format")
 	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, os.Stderr, "projects retrieve", obj, format, explicitFormat, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		Title:          "projects retrieve",
+		Transform:      transform,
+	})
 }
 
 func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
@@ -252,7 +261,12 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 	format := cmd.Root().String("format")
 	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, os.Stderr, "projects update", obj, format, explicitFormat, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		Title:          "projects update",
+		Transform:      transform,
+	})
 }
 
 func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
@@ -287,14 +301,24 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 			return err
 		}
 		obj := gjson.ParseBytes(res)
-		return ShowJSON(os.Stdout, os.Stderr, "projects list", obj, format, explicitFormat, transform)
+		return ShowJSON(obj, ShowJSONOpts{
+			ExplicitFormat: explicitFormat,
+			Format:         format,
+			Title:          "projects list",
+			Transform:      transform,
+		})
 	} else {
 		iter := client.Projects.ListAutoPaging(ctx, params, options...)
 		maxItems := int64(-1)
 		if cmd.IsSet("max-items") {
 			maxItems = cmd.Value("max-items").(int64)
 		}
-		return ShowJSONIterator(os.Stdout, os.Stderr, "projects list", iter, format, explicitFormat, transform, maxItems)
+		return ShowJSONIterator(iter, maxItems, ShowJSONOpts{
+			ExplicitFormat: explicitFormat,
+			Format:         format,
+			Title:          "projects list",
+			Transform:      transform,
+		})
 	}
 }
 
@@ -332,5 +356,10 @@ func handleProjectsGenerateCommitMessage(ctx context.Context, cmd *cli.Command) 
 	format := cmd.Root().String("format")
 	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, os.Stderr, "projects generate-commit-message", obj, format, explicitFormat, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		Title:          "projects generate-commit-message",
+		Transform:      transform,
+	})
 }

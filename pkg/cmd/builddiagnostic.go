@@ -100,7 +100,12 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 			return err
 		}
 		obj := gjson.ParseBytes(res)
-		return ShowJSON(os.Stdout, os.Stderr, "builds:diagnostics list", obj, format, explicitFormat, transform)
+		return ShowJSON(obj, ShowJSONOpts{
+			ExplicitFormat: explicitFormat,
+			Format:         format,
+			Title:          "builds:diagnostics list",
+			Transform:      transform,
+		})
 	} else {
 		iter := client.Builds.Diagnostics.ListAutoPaging(
 			ctx,
@@ -130,6 +135,11 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 			return nil
 		}
 
-		return ShowJSONIterator(os.Stdout, os.Stderr, "builds:diagnostics list", iter, format, explicitFormat, transform, maxItems)
+		return ShowJSONIterator(iter, maxItems, ShowJSONOpts{
+			ExplicitFormat: explicitFormat,
+			Format:         format,
+			Title:          "builds:diagnostics list",
+			Transform:      transform,
+		})
 	}
 }

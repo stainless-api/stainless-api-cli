@@ -5,7 +5,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
@@ -121,7 +120,12 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 			format := cmd.Root().String("format")
 			explicitFormat := cmd.Root().IsSet("format")
 			transform := cmd.Root().String("transform")
-			if err := ShowJSON(os.Stdout, os.Stderr, "builds:target_outputs retrieve", json, format, explicitFormat, transform); err != nil {
+			if err := ShowJSON(json, ShowJSONOpts{
+				ExplicitFormat: explicitFormat,
+				Format:         format,
+				Title:          "builds:target_outputs retrieve",
+				Transform:      transform,
+			}); err != nil {
 				return err
 			}
 		}
