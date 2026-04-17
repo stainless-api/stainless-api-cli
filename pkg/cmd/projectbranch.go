@@ -195,6 +195,7 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON(obj, ShowJSONOpts{
 		ExplicitFormat: explicitFormat,
 		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
 		Title:          "projects:branches create",
 		Transform:      transform,
 	})
@@ -245,6 +246,7 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 	return ShowJSON(obj, ShowJSONOpts{
 		ExplicitFormat: explicitFormat,
 		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
 		Title:          "projects:branches retrieve",
 		Transform:      transform,
 	})
@@ -287,6 +289,7 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 		return ShowJSON(obj, ShowJSONOpts{
 			ExplicitFormat: explicitFormat,
 			Format:         format,
+			RawOutput:      cmd.Root().Bool("raw-output"),
 			Title:          "projects:branches list",
 			Transform:      transform,
 		})
@@ -299,6 +302,7 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 		return ShowJSONIterator(iter, maxItems, ShowJSONOpts{
 			ExplicitFormat: explicitFormat,
 			Format:         format,
+			RawOutput:      cmd.Root().Bool("raw-output"),
 			Title:          "projects:branches list",
 			Transform:      transform,
 		})
@@ -350,6 +354,7 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON(obj, ShowJSONOpts{
 		ExplicitFormat: explicitFormat,
 		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
 		Title:          "projects:branches delete",
 		Transform:      transform,
 	})
@@ -400,6 +405,7 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON(obj, ShowJSONOpts{
 		ExplicitFormat: explicitFormat,
 		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
 		Title:          "projects:branches rebase",
 		Transform:      transform,
 	})
@@ -450,6 +456,7 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON(obj, ShowJSONOpts{
 		ExplicitFormat: explicitFormat,
 		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
 		Title:          "projects:branches reset",
 		Transform:      transform,
 	})
