@@ -123,6 +123,7 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 			if err := ShowJSON(json, ShowJSONOpts{
 				ExplicitFormat: explicitFormat,
 				Format:         format,
+				RawOutput:      cmd.Root().Bool("raw-output"),
 				Title:          "builds:target_outputs retrieve",
 				Transform:      transform,
 			}); err != nil {

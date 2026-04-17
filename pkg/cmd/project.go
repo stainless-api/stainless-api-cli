@@ -180,6 +180,7 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON(obj, ShowJSONOpts{
 		ExplicitFormat: explicitFormat,
 		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
 		Title:          "projects create",
 		Transform:      transform,
 	})
@@ -222,6 +223,7 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON(obj, ShowJSONOpts{
 		ExplicitFormat: explicitFormat,
 		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
 		Title:          "projects retrieve",
 		Transform:      transform,
 	})
@@ -264,6 +266,7 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 	return ShowJSON(obj, ShowJSONOpts{
 		ExplicitFormat: explicitFormat,
 		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
 		Title:          "projects update",
 		Transform:      transform,
 	})
@@ -304,6 +307,7 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 		return ShowJSON(obj, ShowJSONOpts{
 			ExplicitFormat: explicitFormat,
 			Format:         format,
+			RawOutput:      cmd.Root().Bool("raw-output"),
 			Title:          "projects list",
 			Transform:      transform,
 		})
@@ -316,6 +320,7 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 		return ShowJSONIterator(iter, maxItems, ShowJSONOpts{
 			ExplicitFormat: explicitFormat,
 			Format:         format,
+			RawOutput:      cmd.Root().Bool("raw-output"),
 			Title:          "projects list",
 			Transform:      transform,
 		})
@@ -359,6 +364,7 @@ func handleProjectsGenerateCommitMessage(ctx context.Context, cmd *cli.Command) 
 	return ShowJSON(obj, ShowJSONOpts{
 		ExplicitFormat: explicitFormat,
 		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
 		Title:          "projects generate-commit-message",
 		Transform:      transform,
 	})
