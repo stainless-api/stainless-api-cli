@@ -61,6 +61,7 @@ var projectsRetrieve = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 	},
 	Action:          handleProjectsRetrieve,
@@ -74,6 +75,7 @@ var projectsUpdate = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[*string]{
 			Name:     "display-name",
@@ -121,6 +123,7 @@ var projectsGenerateCommitMessage = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:      "target",
@@ -153,8 +156,6 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectNewParams{}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -165,6 +166,8 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
+	params := stainless.ProjectNewParams{}
 
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
@@ -194,10 +197,6 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectGetParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -207,6 +206,10 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectGetParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte
@@ -237,10 +240,6 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectUpdateParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -250,6 +249,10 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectUpdateParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte
@@ -280,8 +283,6 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectListParams{}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -292,6 +293,8 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
+	params := stainless.ProjectListParams{}
 
 	format := cmd.Root().String("format")
 	explicitFormat := cmd.Root().IsSet("format")
@@ -335,10 +338,6 @@ func handleProjectsGenerateCommitMessage(ctx context.Context, cmd *cli.Command) 
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectGenerateCommitMessageParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -348,6 +347,10 @@ func handleProjectsGenerateCommitMessage(ctx context.Context, cmd *cli.Command) 
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectGenerateCommitMessageParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte

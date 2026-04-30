@@ -21,6 +21,7 @@ var projectsBranchesCreate = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:     "branch",
@@ -52,10 +53,12 @@ var projectsBranchesRetrieve = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
-			Name:     "branch",
-			Required: true,
+			Name:      "branch",
+			Required:  true,
+			PathParam: "branch",
 		},
 	},
 	Action:          handleProjectsBranchesRetrieve,
@@ -69,6 +72,7 @@ var projectsBranchesList = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:      "cursor",
@@ -98,10 +102,12 @@ var projectsBranchesDelete = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
-			Name:     "branch",
-			Required: true,
+			Name:      "branch",
+			Required:  true,
+			PathParam: "branch",
 		},
 	},
 	Action:          handleProjectsBranchesDelete,
@@ -115,10 +121,12 @@ var projectsBranchesRebase = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
-			Name:     "branch",
-			Required: true,
+			Name:      "branch",
+			Required:  true,
+			PathParam: "branch",
 		},
 		&requestflag.Flag[string]{
 			Name:        "base",
@@ -139,10 +147,12 @@ var projectsBranchesReset = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
-			Name:     "branch",
-			Required: true,
+			Name:      "branch",
+			Required:  true,
+			PathParam: "branch",
 		},
 		&requestflag.Flag[string]{
 			Name:      "target-config-sha",
@@ -162,10 +172,6 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchNewParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -175,6 +181,10 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectBranchNewParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte
@@ -208,10 +218,6 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchGetParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -221,6 +227,10 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectBranchGetParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte
@@ -256,10 +266,6 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchListParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -269,6 +275,10 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectBranchListParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	format := cmd.Root().String("format")
@@ -316,10 +326,6 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchDeleteParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -329,6 +335,10 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectBranchDeleteParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte
@@ -367,10 +377,6 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchRebaseParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -380,6 +386,10 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectBranchRebaseParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte
@@ -418,10 +428,6 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchResetParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -431,6 +437,10 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectBranchResetParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte

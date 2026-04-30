@@ -23,9 +23,10 @@ var buildsDiagnosticsList = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "build-id",
-			Usage:    "Build ID",
-			Required: true,
+			Name:      "build-id",
+			Usage:     "Build ID",
+			Required:  true,
+			PathParam: "buildId",
 		},
 		&requestflag.Flag[string]{
 			Name:      "cursor",
@@ -71,8 +72,6 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 
 	wc := getWorkspace(ctx)
 
-	params := stainless.BuildDiagnosticListParams{}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -83,6 +82,8 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
+	params := stainless.BuildDiagnosticListParams{}
 
 	format := cmd.Root().String("format")
 	explicitFormat := cmd.Root().IsSet("format")

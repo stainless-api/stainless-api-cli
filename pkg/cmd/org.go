@@ -20,8 +20,9 @@ var orgsRetrieve = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "org",
-			Required: true,
+			Name:      "org",
+			Required:  true,
+			PathParam: "org",
 		},
 	},
 	Action:          handleOrgsRetrieve,

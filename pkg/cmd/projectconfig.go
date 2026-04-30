@@ -20,8 +20,9 @@ var projectsConfigsRetrieve = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "project",
-			Required: true,
+			Name:      "project",
+			Required:  true,
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:        "branch",
@@ -45,8 +46,9 @@ var projectsConfigsGuess = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "project",
-			Required: true,
+			Name:      "project",
+			Required:  true,
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:     "spec",
@@ -74,10 +76,6 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectConfigGetParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -87,6 +85,10 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectConfigGetParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte
@@ -117,10 +119,6 @@ func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectConfigGuessParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -130,6 +128,10 @@ func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectConfigGuessParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte
