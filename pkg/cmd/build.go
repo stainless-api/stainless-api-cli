@@ -128,9 +128,10 @@ var buildsRetrieve = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "build-id",
-			Usage:    "Build ID",
-			Required: true,
+			Name:      "build-id",
+			Usage:     "Build ID",
+			Required:  true,
+			PathParam: "buildId",
 		},
 	},
 	Action:          handleBuildsRetrieve,
@@ -255,8 +256,6 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.BuildNewParams{}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -267,6 +266,8 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
+	params := stainless.BuildNewParams{}
 
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
@@ -338,8 +339,6 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.BuildListParams{}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -350,6 +349,8 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
+	params := stainless.BuildListParams{}
 
 	format := cmd.Root().String("format")
 	explicitFormat := cmd.Root().IsSet("format")
@@ -393,8 +394,6 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.BuildCompareParams{}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -405,6 +404,8 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
+	params := stainless.BuildCompareParams{}
 
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
