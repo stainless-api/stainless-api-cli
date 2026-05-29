@@ -83,6 +83,25 @@ func TestProjectsBranchesRebase(t *testing.T) {
 			"--project", "project",
 			"--branch", "branch",
 			"--base", "base",
+			"--commit-message", "commit_message",
+			"--files", "{foo: {content: content}}",
+		)
+	})
+
+	t.Run("piping data", func(t *testing.T) {
+		// Test piping YAML data over stdin
+		pipeData := []byte("" +
+			"commit_message: commit_message\n" +
+			"files:\n" +
+			"  foo:\n" +
+			"    content: content\n")
+		mocktest.TestRunMockTestWithPipeAndFlags(
+			t, pipeData,
+			"--api-key", "string",
+			"projects:branches", "rebase",
+			"--project", "project",
+			"--branch", "branch",
+			"--base", "base",
 		)
 	})
 }

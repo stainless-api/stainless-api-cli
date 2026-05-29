@@ -16,7 +16,7 @@ func TestBuildsCreate(t *testing.T) {
 			"--api-key", "string",
 			"builds", "create",
 			"--project", "project",
-			"--revision", "string",
+			"--revision", "{files: {foo: {content: content}}, merge: merge}",
 			"--allow-empty=true",
 			"--branch", "branch",
 			"--commit-message", "commit_message",
@@ -36,7 +36,7 @@ func TestBuildsCreate(t *testing.T) {
 			"--api-key", "string",
 			"builds", "create",
 			"--project", "project",
-			"--revision", "string",
+			"--revision", "{files: {foo: {content: content}}, merge: merge}",
 			"--allow-empty=true",
 			"--branch", "branch",
 			"--commit-message", "commit_message",
@@ -62,7 +62,11 @@ func TestBuildsCreate(t *testing.T) {
 		// Test piping YAML data over stdin
 		pipeData := []byte("" +
 			"project: project\n" +
-			"revision: string\n" +
+			"revision:\n" +
+			"  files:\n" +
+			"    foo:\n" +
+			"      content: content\n" +
+			"  merge: merge\n" +
 			"allow_empty: true\n" +
 			"branch: branch\n" +
 			"commit_message: commit_message\n" +
@@ -124,8 +128,8 @@ func TestBuildsCompare(t *testing.T) {
 			t,
 			"--api-key", "string",
 			"builds", "compare",
-			"--base", "{branch: branch, revision: string, commit_message: commit_message}",
-			"--head", "{branch: branch, revision: string, commit_message: commit_message}",
+			"--base", "{branch: branch, revision: {files: {foo: {content: content}}, merge: merge}, commit_message: commit_message}",
+			"--head", "{branch: branch, revision: {files: {foo: {content: content}}, merge: merge}, commit_message: commit_message}",
 			"--project", "project",
 			"--target", "node",
 		)
@@ -141,10 +145,10 @@ func TestBuildsCompare(t *testing.T) {
 			"--api-key", "string",
 			"builds", "compare",
 			"--base.branch", "branch",
-			"--base.revision", "string",
+			"--base.revision", "{files: {foo: {content: content}}, merge: merge}",
 			"--base.commit-message", "commit_message",
 			"--head.branch", "branch",
-			"--head.revision", "string",
+			"--head.revision", "{files: {foo: {content: content}}, merge: merge}",
 			"--head.commit-message", "commit_message",
 			"--project", "project",
 			"--target", "node",
@@ -156,11 +160,19 @@ func TestBuildsCompare(t *testing.T) {
 		pipeData := []byte("" +
 			"base:\n" +
 			"  branch: branch\n" +
-			"  revision: string\n" +
+			"  revision:\n" +
+			"    files:\n" +
+			"      foo:\n" +
+			"        content: content\n" +
+			"    merge: merge\n" +
 			"  commit_message: commit_message\n" +
 			"head:\n" +
 			"  branch: branch\n" +
-			"  revision: string\n" +
+			"  revision:\n" +
+			"    files:\n" +
+			"      foo:\n" +
+			"        content: content\n" +
+			"    merge: merge\n" +
 			"  commit_message: commit_message\n" +
 			"project: project\n" +
 			"targets:\n" +
