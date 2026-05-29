@@ -135,6 +135,16 @@ var projectsBranchesRebase = cli.Command{
 			DefaultText: "main",
 			QueryPath:   "base",
 		},
+		&requestflag.Flag[string]{
+			Name:     "commit-message",
+			Usage:    "Optional commit message to use when `files` is provided.",
+			BodyPath: "commit_message",
+		},
+		&requestflag.Flag[map[string]any]{
+			Name:     "files",
+			Usage:    "File contents to commit directly on top of `base`. When provided,\nthe auto-rebase is skipped and the branch is hard-reset to `base`\nbefore the files are committed.",
+			BodyPath: "files",
+		},
 	},
 	Action:          handleProjectsBranchesRebase,
 	HideHelpCommand: true,
@@ -381,7 +391,7 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
 		apiquery.ArrayQueryFormatComma,
-		EmptyBody,
+		ApplicationJSON,
 		false,
 	)
 	if err != nil {
