@@ -145,7 +145,7 @@ var projectsBranchesRebase = cli.Command{
 		},
 		&requestflag.Flag[map[string]any]{
 			Name:     "files",
-			Usage:    "File contents to commit directly on top of `base`. When provided,\nthe auto-rebase is skipped and the branch is hard-reset to `base`\nbefore the files are committed.",
+			Usage:    "File contents to commit directly on top of `base`. When provided, the\nauto-rebase is skipped and the branch is hard-reset to `base` before the\nfiles are committed.",
 			BodyPath: "files",
 		},
 	},
