@@ -11,8 +11,9 @@ import (
 func TestProjectsBranchesCreate(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "projects:branches", "create",
+			t,
 			"--api-key", "string",
+			"projects:branches", "create",
 			"--project", "project",
 			"--branch", "branch",
 			"--branch-from", "branch_from",
@@ -27,8 +28,9 @@ func TestProjectsBranchesCreate(t *testing.T) {
 			"branch_from: branch_from\n" +
 			"force: true\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
-			t, pipeData, "projects:branches", "create",
+			t, pipeData,
 			"--api-key", "string",
+			"projects:branches", "create",
 			"--project", "project",
 		)
 	})
@@ -37,8 +39,9 @@ func TestProjectsBranchesCreate(t *testing.T) {
 func TestProjectsBranchesRetrieve(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "projects:branches", "retrieve",
+			t,
 			"--api-key", "string",
+			"projects:branches", "retrieve",
 			"--project", "project",
 			"--branch", "branch",
 		)
@@ -48,8 +51,9 @@ func TestProjectsBranchesRetrieve(t *testing.T) {
 func TestProjectsBranchesList(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "projects:branches", "list",
+			t,
 			"--api-key", "string",
+			"projects:branches", "list",
 			"--max-items", "10",
 			"--project", "project",
 			"--cursor", "cursor",
@@ -61,8 +65,9 @@ func TestProjectsBranchesList(t *testing.T) {
 func TestProjectsBranchesDelete(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "projects:branches", "delete",
+			t,
 			"--api-key", "string",
+			"projects:branches", "delete",
 			"--project", "project",
 			"--branch", "branch",
 		)
@@ -72,8 +77,9 @@ func TestProjectsBranchesDelete(t *testing.T) {
 func TestProjectsBranchesRebase(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "projects:branches", "rebase",
+			t,
 			"--api-key", "string",
+			"projects:branches", "rebase",
 			"--project", "project",
 			"--branch", "branch",
 			"--base", "base",
@@ -84,8 +90,9 @@ func TestProjectsBranchesRebase(t *testing.T) {
 func TestProjectsBranchesReset(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "projects:branches", "reset",
+			t,
 			"--api-key", "string",
+			"projects:branches", "reset",
 			"--project", "project",
 			"--branch", "branch",
 			"--target-config-sha", "target_config_sha",

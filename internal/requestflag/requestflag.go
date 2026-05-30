@@ -379,6 +379,9 @@ func (f *Flag[T]) Count() int {
 	return f.count
 }
 
+// Implementation for the cli.LocalFlag interface
+var _ cli.LocalFlag = (*Flag[any])(nil) // Type assertion to ensure interface compliance
+
 // cliValue is a generic implementation of cli.Value for common types
 type cliValue[
 	T []any | []map[string]any | []DateTimeValue | []DateValue | []TimeValue | []string | []float64 |

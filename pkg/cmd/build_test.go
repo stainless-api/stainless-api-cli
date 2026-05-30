@@ -12,9 +12,10 @@ import (
 func TestBuildsCreate(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "builds", "create",
-			"--wait", "none",
+			t,
 			"--api-key", "string",
+			"builds", "create",
+			"--wait", "none",
 			"--project", "project",
 			"--revision", "string",
 			"--allow-empty=true",
@@ -32,9 +33,10 @@ func TestBuildsCreate(t *testing.T) {
 
 		// Alternative argument passing style using inner flags
 		mocktest.TestRunMockTestWithFlags(
-			t, "builds", "create",
-			"--wait", "none",
+			t,
 			"--api-key", "string",
+			"builds", "create",
+			"--wait", "none",
 			"--project", "project",
 			"--revision", "string",
 			"--allow-empty=true",
@@ -84,8 +86,9 @@ func TestBuildsCreate(t *testing.T) {
 			"targets:\n" +
 			"  - node\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
-			t, pipeData, "builds", "create",
+			t, pipeData,
 			"--api-key", "string",
+			"builds", "create",
 			"--wait", "none",
 		)
 	})
@@ -94,8 +97,9 @@ func TestBuildsCreate(t *testing.T) {
 func TestBuildsRetrieve(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "builds", "retrieve",
+			t,
 			"--api-key", "string",
+			"builds", "retrieve",
 			"--build-id", "buildId",
 		)
 	})
@@ -104,8 +108,9 @@ func TestBuildsRetrieve(t *testing.T) {
 func TestBuildsList(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "builds", "list",
+			t,
 			"--api-key", "string",
+			"builds", "list",
 			"--max-items", "10",
 			"--project", "project",
 			"--branch", "branch",
@@ -119,8 +124,9 @@ func TestBuildsList(t *testing.T) {
 func TestBuildsCompare(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "builds", "compare",
+			t,
 			"--api-key", "string",
+			"builds", "compare",
 			"--base", "{branch: branch, revision: string, commit_message: commit_message}",
 			"--head", "{branch: branch, revision: string, commit_message: commit_message}",
 			"--project", "project",
@@ -134,8 +140,9 @@ func TestBuildsCompare(t *testing.T) {
 
 		// Alternative argument passing style using inner flags
 		mocktest.TestRunMockTestWithFlags(
-			t, "builds", "compare",
+			t,
 			"--api-key", "string",
+			"builds", "compare",
 			"--base.branch", "branch",
 			"--base.revision", "string",
 			"--base.commit-message", "commit_message",
@@ -162,8 +169,9 @@ func TestBuildsCompare(t *testing.T) {
 			"targets:\n" +
 			"  - node\n")
 		mocktest.TestRunMockTestWithPipeAndFlags(
-			t, pipeData, "builds", "compare",
+			t, pipeData,
 			"--api-key", "string",
+			"builds", "compare",
 		)
 	})
 }
