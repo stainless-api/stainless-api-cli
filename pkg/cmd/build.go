@@ -213,9 +213,10 @@ var buildsRetrieve = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "build-id",
-			Usage:    "Build ID",
-			Required: true,
+			Name:      "build-id",
+			Usage:     "Build ID",
+			Required:  true,
+			PathParam: "buildId",
 		},
 	},
 	Action:          handleBuildsRetrieve,
@@ -397,7 +398,6 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 		cmd.Set("target", string(t))
 	}
 
-	params := stainless.BuildNewParams{}
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -408,6 +408,8 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 	if err != nil {
 		return err
 	}
+
+	params := stainless.BuildNewParams{}
 
 	build, err := client.Builds.New(
 		ctx,
@@ -445,8 +447,15 @@ func handleBuildsCreate(ctx context.Context, cmd *cli.Command) error {
 
 	data := gjson.Parse(string(build.RawJSON()))
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	if err := ShowJSON(os.Stdout, "builds create", data, format, transform); err != nil {
+	if err := ShowJSON(data, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "builds create",
+		Transform:      transform,
+	}); err != nil {
 		return err
 	}
 
@@ -517,8 +526,15 @@ func handleBuildsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "builds retrieve", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "builds retrieve",
+		Transform:      transform,
+	})
 }
 
 func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
@@ -528,8 +544,6 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-
-	params := stainless.BuildListParams{}
 
 	options, err := flagOptions(
 		cmd,
@@ -542,7 +556,10 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	params := stainless.BuildListParams{}
+
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
 	if format == "raw" {
 		var res []byte
@@ -552,7 +569,13 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 			return err
 		}
 		obj := gjson.ParseBytes(res)
-		return ShowJSON(os.Stdout, "builds list", obj, format, transform)
+		return ShowJSON(obj, ShowJSONOpts{
+			ExplicitFormat: explicitFormat,
+			Format:         format,
+			RawOutput:      cmd.Root().Bool("raw-output"),
+			Title:          "builds list",
+			Transform:      transform,
+		})
 	} else {
 		iter := client.Builds.ListAutoPaging(ctx, params, options...)
 		maxItems := int64(-1)
@@ -576,7 +599,13 @@ func handleBuildsList(ctx context.Context, cmd *cli.Command) error {
 			return iter.Err()
 		}
 
-		return ShowJSONIterator(os.Stdout, "builds list", iter, format, transform, maxItems)
+		return ShowJSONIterator(iter, maxItems, ShowJSONOpts{
+			ExplicitFormat: explicitFormat,
+			Format:         format,
+			RawOutput:      cmd.Root().Bool("raw-output"),
+			Title:          "builds list",
+			Transform:      transform,
+		})
 	}
 }
 
@@ -587,8 +616,6 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-
-	params := stainless.BuildCompareParams{}
 
 	options, err := flagOptions(
 		cmd,
@@ -601,6 +628,8 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	params := stainless.BuildCompareParams{}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
 	_, err = client.Builds.Compare(ctx, params, options...)
@@ -610,6 +639,13 @@ func handleBuildsCompare(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "builds compare", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "builds compare",
+		Transform:      transform,
+	})
 }

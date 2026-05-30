@@ -11,8 +11,9 @@ import (
 func TestBuildsDiagnosticsList(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "builds:diagnostics", "list",
+			t,
 			"--api-key", "string",
+			"builds:diagnostics", "list",
 			"--max-items", "10",
 			"--build-id", "buildId",
 			"--cursor", "cursor",

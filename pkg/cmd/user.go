@@ -5,7 +5,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-go"
@@ -51,6 +50,13 @@ func handleUserRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "user retrieve", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "user retrieve",
+		Transform:      transform,
+	})
 }
