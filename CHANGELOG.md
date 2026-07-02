@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-alpha.90 (2026-07-02)
+
+Full Changelog: [v0.1.0-alpha.89...v0.1.0-alpha.90](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.89...v0.1.0-alpha.90)
+
+### Features
+
+* add option to get raw openapi spec content, bypassing gcs ([f899f2d](https://github.com/stainless-api/stainless-api-cli/commit/f899f2d93a10d6da7c6c9ae1e7dac51a5675499c))
+
 ## 0.1.0-alpha.89 (2026-05-30)
 
 Full Changelog: [v0.1.0-alpha.88...v0.1.0-alpha.89](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.88...v0.1.0-alpha.89)
