@@ -51,7 +51,7 @@ var buildsTargetOutputsRetrieve = cli.Command{
 		},
 		&requestflag.Flag[string]{
 			Name:        "output",
-			Usage:       "Output format: url (download URL) or git (temporary access token).",
+			Usage:       "Output format: url (download URL), git (temporary access token), or content\n(raw content returned inline, only supported for the \"openapi-*\" and \"file\"\ntypes).",
 			DefaultText: "url",
 			HideDefault: true,
 			QueryPath:   "output",
