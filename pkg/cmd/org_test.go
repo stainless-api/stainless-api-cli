@@ -11,8 +11,9 @@ import (
 func TestOrgsRetrieve(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "orgs", "retrieve",
+			t,
 			"--api-key", "string",
+			"orgs", "retrieve",
 			"--org", "org",
 		)
 	})
@@ -21,8 +22,9 @@ func TestOrgsRetrieve(t *testing.T) {
 func TestOrgsList(t *testing.T) {
 	t.Run("regular flags", func(t *testing.T) {
 		mocktest.TestRunMockTestWithFlags(
-			t, "orgs", "list",
+			t,
 			"--api-key", "string",
+			"orgs", "list",
 		)
 	})
 }

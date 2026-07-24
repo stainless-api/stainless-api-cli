@@ -1,5 +1,76 @@
 # Changelog
 
+## 0.1.0-alpha.89 (2026-05-30)
+
+Full Changelog: [v0.1.0-alpha.88...v0.1.0-alpha.89](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.88...v0.1.0-alpha.89)
+
+### Features
+
+* add default description for enum CLI flags without an explicit description ([5b91b33](https://github.com/stainless-api/stainless-api-cli/commit/5b91b33fd7cf5b97dda36bd1d3e17c2ec8bf29c7))
+* allow `-` as value representing stdin to binary-only file parameters in CLIs ([0d07ef3](https://github.com/stainless-api/stainless-api-cli/commit/0d07ef3b5ef233f4ab4b8c44c91d40d791ca86ac))
+* allow direct upload of spec/config to v0 builds api when merging/rebasing ([4e9115f](https://github.com/stainless-api/stainless-api-cli/commit/4e9115f6074ad2c6356ed330a15b245452962112))
+* better error message if scheme forgotten in CLI `*_BASE_URL`/`--base-url` ([c2f424c](https://github.com/stainless-api/stainless-api-cli/commit/c2f424c416c494f32903a2147f3b20902162b6f8))
+* binary-only parameters become CLI flags that take filenames only ([deb778e](https://github.com/stainless-api/stainless-api-cli/commit/deb778e2d68de2f0461925b7f59cff667d126dd9))
+* **cli:** add `--raw-output`/`-r` option to print raw (non-JSON) strings ([fa6f042](https://github.com/stainless-api/stainless-api-cli/commit/fa6f042c21023d4f6dcc4f6df9df82ceff7b4731))
+* **cli:** alias parameters in data with `x-stainless-cli-data-alias` ([63cb8c6](https://github.com/stainless-api/stainless-api-cli/commit/63cb8c6985f63d0656eebe89be59491d626591a0))
+* **cli:** send filename and content type when reading input from files ([be7af23](https://github.com/stainless-api/stainless-api-cli/commit/be7af2356960c8d613279eac15c1ed7321aa3c9a))
+* do not require body in rebase api ([24c4223](https://github.com/stainless-api/stainless-api-cli/commit/24c42236b5a44bddb8696f398762cec0d6484fe4))
+* set CLI flag constant values automatically where `x-stainless-const` is set ([a7447d3](https://github.com/stainless-api/stainless-api-cli/commit/a7447d3650e8baa2f54aeae4e59fc1c70e997ead))
+* support passing path and query params over stdin ([503519c](https://github.com/stainless-api/stainless-api-cli/commit/503519cf40c2632a63ec8c1b24163a6f12d0648b))
+
+
+### Bug Fixes
+
+* avoid reading from stdin unless request body is form encoded or json ([33b0f1d](https://github.com/stainless-api/stainless-api-cli/commit/33b0f1d41027491119bfa33f8c05009ff16123c4))
+* better support passing client args in any position ([48b8a0f](https://github.com/stainless-api/stainless-api-cli/commit/48b8a0fd934dc1dd5c5277b5a2cbe676e0c505c4))
+* cli no longer hangs when stdin is attached to a pipe with empty input ([d3a9a3a](https://github.com/stainless-api/stainless-api-cli/commit/d3a9a3a13fd0385200be8a2bc55790125b05ff2a))
+* **cli:** correctly load zsh autocompletion ([2f444ad](https://github.com/stainless-api/stainless-api-cli/commit/2f444ad356dfbae90a363961e66db94773823378))
+* fall back to main branch if linking fails in CI ([4591b75](https://github.com/stainless-api/stainless-api-cli/commit/4591b751a10f61ced5dcb19a32a70dfbc55f6cde))
+* fix for failing to drop invalid module replace in link script ([6ba8953](https://github.com/stainless-api/stainless-api-cli/commit/6ba895335b12daccae3436502281a80c1d983f05))
+* fix for off-by-one error in pagination logic ([932831c](https://github.com/stainless-api/stainless-api-cli/commit/932831c499057abe2267435af9ec544891a8f524))
+* fix quoting typo ([8a951e7](https://github.com/stainless-api/stainless-api-cli/commit/8a951e7103fa64a4779f36b370d9cf8e406d5563))
+* flags for nullable body scalar fields are strictly typed ([3e2b538](https://github.com/stainless-api/stainless-api-cli/commit/3e2b538ab43a89f8303031ed4b7afd6062f02e30))
+* handle empty data set using `--format explore` ([1bd23c5](https://github.com/stainless-api/stainless-api-cli/commit/1bd23c553d2da507110ddb92dafed6605964389c))
+* improve linking behavior when developing on a branch not in the Go SDK ([e1a2e8f](https://github.com/stainless-api/stainless-api-cli/commit/e1a2e8f9ab17c10fa176dd853c2f9b83715c667e))
+* improved workflow for developing on branches ([e116763](https://github.com/stainless-api/stainless-api-cli/commit/e116763b576de1dbacfa49fbeb337636dbd814af))
+* no longer require an API key when building on production repos ([c4a11f2](https://github.com/stainless-api/stainless-api-cli/commit/c4a11f27d8c75b42a0afb1a14508fcd0bce5958a))
+* use `RawJSON` when iterating items with `--format explore` in the CLI ([c9283e7](https://github.com/stainless-api/stainless-api-cli/commit/c9283e7b273a26f598f52ccfceceebf17ff838b1))
+
+
+### Chores
+
+* add documentation for ./scripts/link ([5f4af84](https://github.com/stainless-api/stainless-api-cli/commit/5f4af84a3b348a96988684eb8db58535a4e968f3))
+* **ci:** skip lint on metadata-only changes ([532af1e](https://github.com/stainless-api/stainless-api-cli/commit/532af1e097a9b6e1c303b1f09f06662d6313091c))
+* **ci:** support manually triggering release workflow ([f665af7](https://github.com/stainless-api/stainless-api-cli/commit/f665af793fed0157b4adbe2a6a3c36bb03aa1ff6))
+* **cli:** additional test cases for `ShowJSONIterator` ([be6d172](https://github.com/stainless-api/stainless-api-cli/commit/be6d172a673b6fc6d58381711c1ddde0ebda5128))
+* **cli:** fall back to JSON when using default "explore" with non-TTY ([a9a6a1d](https://github.com/stainless-api/stainless-api-cli/commit/a9a6a1d16dbd1971fa9cc0c22b406e4219b21e53))
+* **cli:** let `--format raw` be used in conjunction with `--transform` ([7e45d32](https://github.com/stainless-api/stainless-api-cli/commit/7e45d32f9b41414118bdc985c10d38d64018573c))
+* **cli:** switch long lists of positional args over to param structs ([ec1ee78](https://github.com/stainless-api/stainless-api-cli/commit/ec1ee78ef6be529f67cc9ba3e535017dc389d1f7))
+* **cli:** use `ShowJSONOpts` as argument to `formatJSON` instead of many positionals ([21ecd6d](https://github.com/stainless-api/stainless-api-cli/commit/21ecd6d9964b446e4c2405b88b5c6f90868efc9f))
+* **internal:** more robust bootstrap script ([206705e](https://github.com/stainless-api/stainless-api-cli/commit/206705ead34ef60c147e00cc5a3bcb15a9ed5039))
+* **internal:** tweak CI branches ([f5fb149](https://github.com/stainless-api/stainless-api-cli/commit/f5fb1499119ac2015543bdc9f99aa72034e4c208))
+* **internal:** update gitignore ([0a84430](https://github.com/stainless-api/stainless-api-cli/commit/0a84430b8aad63364cdcee82d1f5689d28ca2a68))
+* **internal:** update multipart form array serialization ([3adb010](https://github.com/stainless-api/stainless-api-cli/commit/3adb0104a167e7ee2a4cdf0b5cfeec23db4f2c03))
+* **internal:** version bump ([cceccaf](https://github.com/stainless-api/stainless-api-cli/commit/cceccaf70b219006380894bcf5cb0035259356c0))
+* **internal:** version bump ([834431c](https://github.com/stainless-api/stainless-api-cli/commit/834431c2a7c08757a3ee5a67bbecca79fe75f80e))
+* mark all CLI-related tests in Go with `t.Parallel()` ([26689ee](https://github.com/stainless-api/stainless-api-cli/commit/26689eec3deec8fe015a01987c8d4fc8cdf6ef16))
+* modify CLI tests to inject stdout so mutating `os.Stdout` isn't necessary ([30d9e9b](https://github.com/stainless-api/stainless-api-cli/commit/30d9e9b68316523fad66ed6ffa3d3fa6d2b50b0d))
+* omit full usage information when missing required CLI parameters ([b0d3a36](https://github.com/stainless-api/stainless-api-cli/commit/b0d3a36c8e9d3847c499a22fb8917429a4446cb9))
+* redact api-key headers in debug logs ([9df85a2](https://github.com/stainless-api/stainless-api-cli/commit/9df85a24388bc904ebb20e4bb367f3a498200911))
+* switch some CLI Go tests from `os.Chdir` to `t.Chdir` ([e0e0b53](https://github.com/stainless-api/stainless-api-cli/commit/e0e0b53524eee473bac15575e9adb50ccc0fe307))
+* **tests:** bump steady to v0.19.4 ([21efcef](https://github.com/stainless-api/stainless-api-cli/commit/21efcef05c6197083b846ac521ae1f8e29bcced9))
+* **tests:** bump steady to v0.19.5 ([1941229](https://github.com/stainless-api/stainless-api-cli/commit/1941229a54a7a1ded0764344d52ace32b2ddd71d))
+* **tests:** bump steady to v0.19.6 ([9002467](https://github.com/stainless-api/stainless-api-cli/commit/9002467d9ae56a6bcece9a101a26d4a90b86dc97))
+* **tests:** bump steady to v0.19.7 ([7091164](https://github.com/stainless-api/stainless-api-cli/commit/70911642b35cb4323f55832f6c892bb5d9f8c3d7))
+* **tests:** bump steady to v0.20.1 ([836db0e](https://github.com/stainless-api/stainless-api-cli/commit/836db0e56b8c69082b9c0511bd48dd2c107a3833))
+* **tests:** bump steady to v0.20.2 ([5bc29b4](https://github.com/stainless-api/stainless-api-cli/commit/5bc29b497e3e4c9c95d644636cda015b48880f56))
+* **tests:** bump steady to v0.22.1 ([ca2efc2](https://github.com/stainless-api/stainless-api-cli/commit/ca2efc2dc92aaeb48a609eea383e1b0a2d78fd08))
+
+
+### Refactors
+
+* **tests:** switch from prism to steady ([0bf70b1](https://github.com/stainless-api/stainless-api-cli/commit/0bf70b1840a41227c7e7a7c15f36c42cdeb4c2a9))
+
 ## 0.1.0-alpha.88 (2026-04-09)
 
 Full Changelog: [v0.1.0-alpha.87...v0.1.0-alpha.88](https://github.com/stainless-api/stainless-api-cli/compare/v0.1.0-alpha.87...v0.1.0-alpha.88)

@@ -5,7 +5,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
 	"github.com/stainless-api/stainless-api-cli/pkg/components/build"
@@ -46,6 +45,7 @@ var buildsTargetOutputsRetrieve = cli.Command{
 		},
 		&requestflag.Flag[string]{
 			Name:      "type",
+			Usage:     `Allowed values: "source", "dist", "wheel", "openapi-with-transforms", "openapi-with-code-samples", "openapi-sdk-spec", "file".`,
 			Required:  true,
 			QueryPath: "type",
 		},
@@ -118,8 +118,15 @@ func handleBuildsTargetOutputsRetrieve(ctx context.Context, cmd *cli.Command) er
 		if !isPull {
 			json := gjson.Parse(res.RawJSON())
 			format := cmd.Root().String("format")
+			explicitFormat := cmd.Root().IsSet("format")
 			transform := cmd.Root().String("transform")
-			if err := ShowJSON(os.Stdout, "builds:target_outputs retrieve", json, format, transform); err != nil {
+			if err := ShowJSON(json, ShowJSONOpts{
+				ExplicitFormat: explicitFormat,
+				Format:         format,
+				RawOutput:      cmd.Root().Bool("raw-output"),
+				Title:          "builds:target_outputs retrieve",
+				Transform:      transform,
+			}); err != nil {
 				return err
 			}
 		}

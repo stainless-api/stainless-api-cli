@@ -5,7 +5,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
@@ -62,6 +61,7 @@ var projectsRetrieve = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 	},
 	Action:          handleProjectsRetrieve,
@@ -75,8 +75,9 @@ var projectsUpdate = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
-		&requestflag.Flag[any]{
+		&requestflag.Flag[*string]{
 			Name:     "display-name",
 			BodyPath: "display_name",
 		},
@@ -122,6 +123,7 @@ var projectsGenerateCommitMessage = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:      "target",
@@ -154,8 +156,6 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectNewParams{}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -167,6 +167,8 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	params := stainless.ProjectNewParams{}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
 	_, err = client.Projects.New(ctx, params, options...)
@@ -176,8 +178,15 @@ func handleProjectsCreate(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "projects create", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "projects create",
+		Transform:      transform,
+	})
 }
 
 func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
@@ -186,10 +195,6 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
-
-	params := stainless.ProjectGetParams{
-		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
@@ -201,6 +206,10 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectGetParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte
@@ -212,8 +221,15 @@ func handleProjectsRetrieve(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "projects retrieve", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "projects retrieve",
+		Transform:      transform,
+	})
 }
 
 func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
@@ -222,10 +238,6 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
-
-	params := stainless.ProjectUpdateParams{
-		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
@@ -239,6 +251,10 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	params := stainless.ProjectUpdateParams{
+		Project: stainless.String(cmd.Value("project").(string)),
+	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
 	_, err = client.Projects.Update(ctx, params, options...)
@@ -248,8 +264,15 @@ func handleProjectsUpdate(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "projects update", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "projects update",
+		Transform:      transform,
+	})
 }
 
 func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
@@ -259,8 +282,6 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
-
-	params := stainless.ProjectListParams{}
 
 	options, err := flagOptions(
 		cmd,
@@ -273,7 +294,10 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	params := stainless.ProjectListParams{}
+
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
 	if format == "raw" {
 		var res []byte
@@ -283,14 +307,26 @@ func handleProjectsList(ctx context.Context, cmd *cli.Command) error {
 			return err
 		}
 		obj := gjson.ParseBytes(res)
-		return ShowJSON(os.Stdout, "projects list", obj, format, transform)
+		return ShowJSON(obj, ShowJSONOpts{
+			ExplicitFormat: explicitFormat,
+			Format:         format,
+			RawOutput:      cmd.Root().Bool("raw-output"),
+			Title:          "projects list",
+			Transform:      transform,
+		})
 	} else {
 		iter := client.Projects.ListAutoPaging(ctx, params, options...)
 		maxItems := int64(-1)
 		if cmd.IsSet("max-items") {
 			maxItems = cmd.Value("max-items").(int64)
 		}
-		return ShowJSONIterator(os.Stdout, "projects list", iter, format, transform, maxItems)
+		return ShowJSONIterator(iter, maxItems, ShowJSONOpts{
+			ExplicitFormat: explicitFormat,
+			Format:         format,
+			RawOutput:      cmd.Root().Bool("raw-output"),
+			Title:          "projects list",
+			Transform:      transform,
+		})
 	}
 }
 
@@ -300,10 +336,6 @@ func handleProjectsGenerateCommitMessage(ctx context.Context, cmd *cli.Command) 
 
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
-
-	params := stainless.ProjectGenerateCommitMessageParams{
-		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
@@ -317,6 +349,10 @@ func handleProjectsGenerateCommitMessage(ctx context.Context, cmd *cli.Command) 
 		return err
 	}
 
+	params := stainless.ProjectGenerateCommitMessageParams{
+		Project: stainless.String(cmd.Value("project").(string)),
+	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
 	_, err = client.Projects.GenerateCommitMessage(ctx, params, options...)
@@ -326,6 +362,13 @@ func handleProjectsGenerateCommitMessage(ctx context.Context, cmd *cli.Command) 
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "projects generate-commit-message", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "projects generate-commit-message",
+		Transform:      transform,
+	})
 }

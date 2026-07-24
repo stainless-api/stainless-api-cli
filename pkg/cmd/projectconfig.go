@@ -5,7 +5,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
@@ -21,8 +20,9 @@ var projectsConfigsRetrieve = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "project",
-			Required: true,
+			Name:      "project",
+			Required:  true,
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:        "branch",
@@ -46,8 +46,9 @@ var projectsConfigsGuess = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "project",
-			Required: true,
+			Name:      "project",
+			Required:  true,
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:     "spec",
@@ -75,10 +76,6 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectConfigGetParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -90,6 +87,10 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 		return err
 	}
 
+	params := stainless.ProjectConfigGetParams{
+		Project: stainless.String(cmd.Value("project").(string)),
+	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
 	_, err = client.Projects.Configs.Get(ctx, params, options...)
@@ -99,8 +100,15 @@ func handleProjectsConfigsRetrieve(ctx context.Context, cmd *cli.Command) error 
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "projects:configs retrieve", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "projects:configs retrieve",
+		Transform:      transform,
+	})
 }
 
 func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
@@ -109,10 +117,6 @@ func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
-
-	params := stainless.ProjectConfigGuessParams{
-		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
@@ -126,6 +130,10 @@ func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	params := stainless.ProjectConfigGuessParams{
+		Project: stainless.String(cmd.Value("project").(string)),
+	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
 	_, err = client.Projects.Configs.Guess(ctx, params, options...)
@@ -135,6 +143,13 @@ func handleProjectsConfigsGuess(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "projects:configs guess", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "projects:configs guess",
+		Transform:      transform,
+	})
 }

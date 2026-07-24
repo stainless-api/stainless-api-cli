@@ -23,9 +23,10 @@ var buildsDiagnosticsList = cli.Command{
 	Suggest: true,
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
-			Name:     "build-id",
-			Usage:    "Build ID",
-			Required: true,
+			Name:      "build-id",
+			Usage:     "Build ID",
+			Required:  true,
+			PathParam: "buildId",
 		},
 		&requestflag.Flag[string]{
 			Name:      "cursor",
@@ -71,8 +72,6 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 
 	wc := getWorkspace(ctx)
 
-	params := stainless.BuildDiagnosticListParams{}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -84,7 +83,10 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	params := stainless.BuildDiagnosticListParams{}
+
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
 	if format == "raw" {
 		var res []byte
@@ -99,7 +101,13 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 			return err
 		}
 		obj := gjson.ParseBytes(res)
-		return ShowJSON(os.Stdout, "builds:diagnostics list", obj, format, transform)
+		return ShowJSON(obj, ShowJSONOpts{
+			ExplicitFormat: explicitFormat,
+			Format:         format,
+			RawOutput:      cmd.Root().Bool("raw-output"),
+			Title:          "builds:diagnostics list",
+			Transform:      transform,
+		})
 	} else {
 		iter := client.Builds.Diagnostics.ListAutoPaging(
 			ctx,
@@ -129,6 +137,12 @@ func handleBuildsDiagnosticsList(ctx context.Context, cmd *cli.Command) error {
 			return nil
 		}
 
-		return ShowJSONIterator(os.Stdout, "builds:diagnostics list", iter, format, transform, maxItems)
+		return ShowJSONIterator(iter, maxItems, ShowJSONOpts{
+			ExplicitFormat: explicitFormat,
+			Format:         format,
+			RawOutput:      cmd.Root().Bool("raw-output"),
+			Title:          "builds:diagnostics list",
+			Transform:      transform,
+		})
 	}
 }

@@ -5,7 +5,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/stainless-api/stainless-api-cli/internal/apiquery"
 	"github.com/stainless-api/stainless-api-cli/internal/requestflag"
@@ -22,6 +21,7 @@ var projectsBranchesCreate = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:     "branch",
@@ -53,10 +53,12 @@ var projectsBranchesRetrieve = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
-			Name:     "branch",
-			Required: true,
+			Name:      "branch",
+			Required:  true,
+			PathParam: "branch",
 		},
 	},
 	Action:          handleProjectsBranchesRetrieve,
@@ -70,6 +72,7 @@ var projectsBranchesList = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
 			Name:      "cursor",
@@ -99,10 +102,12 @@ var projectsBranchesDelete = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
-			Name:     "branch",
-			Required: true,
+			Name:      "branch",
+			Required:  true,
+			PathParam: "branch",
 		},
 	},
 	Action:          handleProjectsBranchesDelete,
@@ -116,10 +121,12 @@ var projectsBranchesRebase = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
-			Name:     "branch",
-			Required: true,
+			Name:      "branch",
+			Required:  true,
+			PathParam: "branch",
 		},
 		&requestflag.Flag[string]{
 			Name:        "base",
@@ -127,6 +134,16 @@ var projectsBranchesRebase = cli.Command{
 			Default:     "main",
 			DefaultText: "main",
 			QueryPath:   "base",
+		},
+		&requestflag.Flag[string]{
+			Name:     "commit-message",
+			Usage:    "Optional commit message to use when `files` is provided.",
+			BodyPath: "commit_message",
+		},
+		&requestflag.Flag[map[string]any]{
+			Name:     "files",
+			Usage:    "File contents to commit directly on top of `base`. When provided, the\nauto-rebase is skipped and the branch is hard-reset to `base` before the\nfiles are committed.",
+			BodyPath: "files",
 		},
 	},
 	Action:          handleProjectsBranchesRebase,
@@ -140,10 +157,12 @@ var projectsBranchesReset = cli.Command{
 	Flags: []cli.Flag{
 		&requestflag.Flag[string]{
 			Name: "project",
+			PathParam: "project",
 		},
 		&requestflag.Flag[string]{
-			Name:     "branch",
-			Required: true,
+			Name:      "branch",
+			Required:  true,
+			PathParam: "branch",
 		},
 		&requestflag.Flag[string]{
 			Name:      "target-config-sha",
@@ -163,10 +182,6 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchNewParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -178,6 +193,10 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	params := stainless.ProjectBranchNewParams{
+		Project: stainless.String(cmd.Value("project").(string)),
+	}
+
 	var res []byte
 	options = append(options, option.WithResponseBodyInto(&res))
 	_, err = client.Projects.Branches.New(ctx, params, options...)
@@ -187,8 +206,15 @@ func handleProjectsBranchesCreate(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "projects:branches create", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "projects:branches create",
+		Transform:      transform,
+	})
 }
 
 func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error {
@@ -202,10 +228,6 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchGetParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -215,6 +237,10 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectBranchGetParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte
@@ -231,8 +257,15 @@ func handleProjectsBranchesRetrieve(ctx context.Context, cmd *cli.Command) error
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "projects:branches retrieve", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "projects:branches retrieve",
+		Transform:      transform,
+	})
 }
 
 func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
@@ -241,10 +274,6 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 
 	if len(unusedArgs) > 0 {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
-	}
-
-	params := stainless.ProjectBranchListParams{
-		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	options, err := flagOptions(
@@ -258,7 +287,12 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
+	params := stainless.ProjectBranchListParams{
+		Project: stainless.String(cmd.Value("project").(string)),
+	}
+
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
 	if format == "raw" {
 		var res []byte
@@ -268,14 +302,26 @@ func handleProjectsBranchesList(ctx context.Context, cmd *cli.Command) error {
 			return err
 		}
 		obj := gjson.ParseBytes(res)
-		return ShowJSON(os.Stdout, "projects:branches list", obj, format, transform)
+		return ShowJSON(obj, ShowJSONOpts{
+			ExplicitFormat: explicitFormat,
+			Format:         format,
+			RawOutput:      cmd.Root().Bool("raw-output"),
+			Title:          "projects:branches list",
+			Transform:      transform,
+		})
 	} else {
 		iter := client.Projects.Branches.ListAutoPaging(ctx, params, options...)
 		maxItems := int64(-1)
 		if cmd.IsSet("max-items") {
 			maxItems = cmd.Value("max-items").(int64)
 		}
-		return ShowJSONIterator(os.Stdout, "projects:branches list", iter, format, transform, maxItems)
+		return ShowJSONIterator(iter, maxItems, ShowJSONOpts{
+			ExplicitFormat: explicitFormat,
+			Format:         format,
+			RawOutput:      cmd.Root().Bool("raw-output"),
+			Title:          "projects:branches list",
+			Transform:      transform,
+		})
 	}
 }
 
@@ -290,10 +336,6 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchDeleteParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -303,6 +345,10 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectBranchDeleteParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte
@@ -319,8 +365,15 @@ func handleProjectsBranchesDelete(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "projects:branches delete", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "projects:branches delete",
+		Transform:      transform,
+	})
 }
 
 func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
@@ -334,19 +387,19 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchRebaseParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
 		apiquery.ArrayQueryFormatComma,
-		EmptyBody,
+		ApplicationJSON,
 		false,
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectBranchRebaseParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte
@@ -363,8 +416,15 @@ func handleProjectsBranchesRebase(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "projects:branches rebase", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "projects:branches rebase",
+		Transform:      transform,
+	})
 }
 
 func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
@@ -378,10 +438,6 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("Unexpected extra arguments: %v", unusedArgs)
 	}
 
-	params := stainless.ProjectBranchResetParams{
-		Project: stainless.String(cmd.Value("project").(string)),
-	}
-
 	options, err := flagOptions(
 		cmd,
 		apiquery.NestedQueryFormatBrackets,
@@ -391,6 +447,10 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 	)
 	if err != nil {
 		return err
+	}
+
+	params := stainless.ProjectBranchResetParams{
+		Project: stainless.String(cmd.Value("project").(string)),
 	}
 
 	var res []byte
@@ -407,6 +467,13 @@ func handleProjectsBranchesReset(ctx context.Context, cmd *cli.Command) error {
 
 	obj := gjson.ParseBytes(res)
 	format := cmd.Root().String("format")
+	explicitFormat := cmd.Root().IsSet("format")
 	transform := cmd.Root().String("transform")
-	return ShowJSON(os.Stdout, "projects:branches reset", obj, format, transform)
+	return ShowJSON(obj, ShowJSONOpts{
+		ExplicitFormat: explicitFormat,
+		Format:         format,
+		RawOutput:      cmd.Root().Bool("raw-output"),
+		Title:          "projects:branches reset",
+		Transform:      transform,
+	})
 }
